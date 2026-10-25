@@ -5,14 +5,16 @@
 
 ---
 
-## 👥 Thành viên nhóm thực hiện
+## 👥 Thành viên nhóm thực hiện & Phân chia màn hình
 
-| STT | Họ và tên | MSSV | Vai trò |
-| :---: | :--- | :---: | :--- |
-| 1 | **Trần Thị Tường Vân** | 24642841 | Thành viên |
-| 2 | **Bùi Thái Vy** | 24636361 | Thành viên |
-| 3 | **Nguyễn Xuân Việt Anh** | 24725141 | Thành viên |
-| 4 | **Nguyễn Tuấn Vũ** | 24642961 | Thành viên |
+> 📖 **Xem hướng dẫn chi tiết:** Toàn bộ kiến trúc 3 lớp MVC, chuẩn đặt tên code (Coding Conventions) và mẫu triển khai từng tầng được quy định tại [HUONG_DAN_KIEN_TRUC_VA_CHUAN_CODE.md](HUONG_DAN_KIEN_TRUC_VA_CHUAN_CODE.md).
+
+| STT | Họ và tên | MSSV | Vai trò | Màn hình chức năng phân công phụ trách |
+| :---: | :--- | :---: | :---: | :--- |
+| 1 | **Nguyễn Tuấn Vũ** | 24642961 | Thành viên | **Trang chủ Lễ tân**, **Quản lý hồ sơ xe**, **Quản lý bàn giao xe**, **In phiếu xuất xưởng**, **Quản lý nhân viên**. |
+| 2 | **Trần Thị Tường Vân** | 24642841 | Thành viên | **Quản lý khách hàng**, **Quản lý hóa đơn**, **Chi tiết hóa đơn & Thanh toán**, **Tạo tài khoản và phân quyền**. |
+| 3 | **Nguyễn Xuân Việt Anh** | 24725141 | Thành viên | **Đăng nhập**, **Trang chủ Quản lý (Khung sườn GiaoDienChinh)**, **Quản lý tiếp nhận & Lập phiếu sửa chữa**, **Chi tiết phiếu sửa chữa & Chỉ định thợ**, **Quản lý khuyến mãi**. |
+| 4 | **Bùi Thái Vy** | 24636361 | Thành viên | **Thống kê báo cáo**, **Trang chủ Kỹ thuật viên / Thủ kho**, **Quản lý tiến độ sửa chữa & Phiếu yêu cầu phụ tùng**, **Quản lý phụ tùng & tồn kho**, **Quản lý nhập kho & Duyệt xuất kho**. |
 
 ---
 
