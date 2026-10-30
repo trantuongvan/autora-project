@@ -109,11 +109,19 @@ public class QLBanGiaoXe extends JPanel {
         // --- Hàng dưới: thẻ xác nhận (trái) + cột phải ---
         JPanel hangDuoi = UIComponents.trong(new GridBagLayout());
         GridBagConstraints gt = new GridBagConstraints();
-        gt.gridx = 0; gt.weightx = 0.6; gt.weighty = 1; gt.fill = GridBagConstraints.BOTH; gt.anchor = GridBagConstraints.NORTH;
+        gt.gridx = 0;
+        gt.weightx = 0.6;
+        gt.weighty = 1;
+        gt.fill = GridBagConstraints.BOTH;
+        gt.anchor = GridBagConstraints.NORTH;
         gt.insets = new Insets(0, 0, 0, 8);
         hangDuoi.add(taoTheChiTiet(), gt);
         GridBagConstraints gp = new GridBagConstraints();
-        gp.gridx = 1; gp.weightx = 0.4; gp.weighty = 1; gp.fill = GridBagConstraints.BOTH; gp.anchor = GridBagConstraints.NORTH;
+        gp.gridx = 1;
+        gp.weightx = 0.4;
+        gp.weighty = 1;
+        gp.fill = GridBagConstraints.BOTH;
+        gp.anchor = GridBagConstraints.NORTH;
         gp.insets = new Insets(0, 8, 0, 0);
         hangDuoi.add(taoCotPhai(), gp);
         noiDung.them(hangDuoi, 16);
@@ -307,7 +315,8 @@ public class QLBanGiaoXe extends JPanel {
     public void hienChiTiet(ChiTietBanGiao ct) {
         lblXeTieuDe.setText(ct.xe);
         lblChuXePhieu.setText(ct.chuXeVaPhieu);
-        badgeTienDo.set(ct.nhanTienDo, ct.hoanTat100 ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
+        badgeTienDo.set(ct.nhanTienDo,
+                ct.hoanTat100 ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
         lblTienCong.setText(ct.tienCong);
         lblPhuTung.setText(ct.phuTung);
         lblGiamGia.setText(ct.giamGia);
@@ -315,10 +324,24 @@ public class QLBanGiaoXe extends JPanel {
         lblVAT.setText(ct.vat);
         lblTongThanhToan.setText(ct.tongThanhToan);
 
-        Color nen = ct.duDieuKien ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER;
-        boxThongBao.setBackground(UIComponents.tint(nen, 0.88f));
-        lblIconThongBao.setIcon(new LineIcon(ct.duDieuKien ? Loai.CHECK : Loai.ALERT, ct.duDieuKien ? UIConstants.STATUS_SUCCESS : UIConstants.ROLE_RECEPTION));
-        lblThongBao.setForeground(ct.duDieuKien ? UIComponents.shade(UIConstants.STATUS_SUCCESS, 0.7f) : UIConstants.ROLE_RECEPTION);
+        Color backgroundColor;
+        Color iconColor;
+        Color textColor;
+        Loai iconType;
+        if (ct.duDieuKien) {
+            backgroundColor = UIConstants.STATUS_SUCCESS;
+            iconColor = UIConstants.STATUS_SUCCESS;
+            textColor = UIComponents.shade(UIConstants.STATUS_SUCCESS, 0.7f);
+            iconType = Loai.CHECK;
+        } else {
+            backgroundColor = UIConstants.STATUS_DANGER;
+            iconColor = UIConstants.ROLE_RECEPTION;
+            textColor = UIConstants.ROLE_RECEPTION;
+            iconType = Loai.ALERT;
+        }
+        boxThongBao.setBackground(UIComponents.tint(backgroundColor, 0.88f));
+        lblIconThongBao.setIcon(new LineIcon(iconType, iconColor));
+        lblThongBao.setForeground(textColor);
         lblThongBao.setText("<html>" + ct.thongBao + "</html>");
 
         btnXacNhan.setEnabled(ct.duDieuKien && !ct.daBanGiao);
@@ -337,7 +360,9 @@ public class QLBanGiaoXe extends JPanel {
         bannerThanhCong.setVisible(true);
         bannerThanhCong.getParent().revalidate();
     }
-    public void anThongBaoThanhCong() { bannerThanhCong.setVisible(false); }
+    public void anThongBaoThanhCong() {
+        bannerThanhCong.setVisible(false);
+    }
 
     /** msg = null để ẩn hộp cảnh báo đỏ trong thẻ "Điều kiện bàn giao". */
     public void setCanhBaoDieuKien(String msg) {

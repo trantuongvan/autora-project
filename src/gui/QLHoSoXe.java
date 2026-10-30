@@ -115,10 +115,16 @@ public class QLHoSoXe extends JPanel {
         // --- Hàng dưới: Form (trái) + Lịch sử (phải) ---
         JPanel hangDuoi = UIComponents.trong(new GridBagLayout());
         GridBagConstraints gt = new GridBagConstraints();
-        gt.gridx = 0; gt.weightx = 0.58; gt.fill = GridBagConstraints.BOTH; gt.insets = new Insets(0, 0, 0, 8);
+        gt.gridx = 0;
+        gt.weightx = 0.58;
+        gt.fill = GridBagConstraints.BOTH;
+        gt.insets = new Insets(0, 0, 0, 8);
         hangDuoi.add(taoTheForm(), gt);
         GridBagConstraints gp = new GridBagConstraints();
-        gp.gridx = 1; gp.weightx = 0.42; gp.fill = GridBagConstraints.BOTH; gp.insets = new Insets(0, 8, 0, 0);
+        gp.gridx = 1;
+        gp.weightx = 0.42;
+        gp.fill = GridBagConstraints.BOTH;
+        gp.insets = new Insets(0, 8, 0, 0);
         hangDuoi.add(taoTheLichSu(), gp);
         noiDung.them(hangDuoi, 16);
         noiDung.ketThuc();
@@ -231,10 +237,33 @@ public class QLHoSoXe extends JPanel {
 
     private void ganSuKienGiaoDien() {
         txtBienSo.getDocument().addDocumentListener(new DocumentListener() {
-            private void capNhat(){if(entity.Xe.bienSoHopLe(txtBienSo.getText()))hienLoiBienSo(null);}
-            public void insertUpdate(DocumentEvent e){capNhat();} public void removeUpdate(DocumentEvent e){capNhat();} public void changedUpdate(DocumentEvent e){capNhat();}
+            private void capNhat() {
+                if (entity.Xe.bienSoHopLe(txtBienSo.getText())) {
+                    hienLoiBienSo(null);
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                capNhat();
+            }
         });
-        cboChuSoHuu.addActionListener(e->{Object v=cboChuSoHuu.getSelectedItem();if(v!=null&&!v.toString().startsWith("Chọn"))hienLoiChuSoHuu(null);});
+        cboChuSoHuu.addActionListener(e -> {
+            Object value = cboChuSoHuu.getSelectedItem();
+            if (value != null && !value.toString().startsWith("Chọn")) {
+                hienLoiChuSoHuu(null);
+            }
+        });
         tblDanhSach.setToolTipText("Chọn hồ sơ và nhấn Delete để xóa");
         // Chọn Hãng -> nạp lại danh sách Dòng tương ứng
         cboHang.addActionListener(e -> {
@@ -287,26 +316,46 @@ public class QLHoSoXe extends JPanel {
         lblTieuDeForm.setText(sua ? "Sửa hồ sơ xe" : "Thêm hồ sơ xe");
         btnLuu.setText(sua ? "Cập nhật" : "Lưu hồ sơ");
         txtBienSo.setEditable(!sua);
-        txtBienSo.setEnabled(true); txtVIN.setEnabled(true); txtNam.setEnabled(true); txtMauSon.setEnabled(true);
-        cboHang.setEnabled(true); cboDong.setEnabled(true); cboChuSoHuu.setEnabled(true);
-        btnLuu.setEnabled(true); btnHuy.setText("Hủy");
+        txtBienSo.setEnabled(true);
+        txtVIN.setEnabled(true);
+        txtNam.setEnabled(true);
+        txtMauSon.setEnabled(true);
+        cboHang.setEnabled(true);
+        cboDong.setEnabled(true);
+        cboChuSoHuu.setEnabled(true);
+        btnLuu.setEnabled(true);
+        btnHuy.setText("Hủy");
     }
     /** Chế độ xem thông tin: giữ nguyên form nhưng khóa tất cả trường và nút lưu. */
     public void setCheDoXem(boolean xem) {
-        if (!xem) { setCheDoSua(false); return; }
+        if (!xem) {
+            setCheDoSua(false);
+            return;
+        }
         lblTieuDeForm.setText("Thông tin hồ sơ xe");
-        txtBienSo.setEditable(false); txtBienSo.setEnabled(false); txtVIN.setEnabled(false);
-        txtNam.setEnabled(false); txtMauSon.setEnabled(false); cboHang.setEnabled(false); cboDong.setEnabled(false); cboChuSoHuu.setEnabled(false);
-        btnLuu.setText("Chế độ xem"); btnLuu.setEnabled(false); btnHuy.setText("Đóng");
+        txtBienSo.setEditable(false);
+        txtBienSo.setEnabled(false);
+        txtVIN.setEnabled(false);
+        txtNam.setEnabled(false);
+        txtMauSon.setEnabled(false);
+        cboHang.setEnabled(false);
+        cboDong.setEnabled(false);
+        cboChuSoHuu.setEnabled(false);
+        btnLuu.setText("Chế độ xem");
+        btnLuu.setEnabled(false);
+        btnHuy.setText("Đóng");
     }
     public void dienForm(entity.Xe xe) {
         maChuSoHuuCanChon = xe.getMaKH();
-        txtBienSo.setText(xe.getBienSo()); txtVIN.setText(xe.getSoVIN());
-        cboHang.setSelectedItem(xe.getHangXe()); cboDong.setSelectedItem(xe.getDongXe());
-        txtNam.setText(xe.getDoiXe()==null?"":xe.getDoiXe().toString());
+        txtBienSo.setText(xe.getBienSo());
+        txtVIN.setText(xe.getSoVIN());
+        cboHang.setSelectedItem(xe.getHangXe());
+        cboDong.setSelectedItem(xe.getDongXe());
+        txtNam.setText(xe.getDoiXe() == null ? "" : xe.getDoiXe().toString());
         txtMauSon.setText(xe.getMauSon());
         chonChuSoHuu();
-        hienLoiBienSo(null); hienLoiChuSoHuu(null);
+        hienLoiBienSo(null);
+        hienLoiChuSoHuu(null);
     }
 
     public void setDanhSachChuSoHuu(List<String> hienThi) {
@@ -315,17 +364,26 @@ public class QLHoSoXe extends JPanel {
         if (maCanChon == null && dangChon.contains(" - ")) maCanChon = dangChon.split(" - ", 2)[0];
         cboChuSoHuu.removeAllItems();
         cboChuSoHuu.addItem("Chọn chủ sở hữu");
-        for (String s : hienThi) cboChuSoHuu.addItem(s);
+        for (String s : hienThi) {
+            cboChuSoHuu.addItem(s);
+        }
         maChuSoHuuCanChon = maCanChon;
         if (maCanChon != null) chonChuSoHuu();
-        else if (!"null".equals(dangChon) && !"Chọn chủ sở hữu".equals(dangChon)) cboChuSoHuu.setSelectedItem(dangChon);
+        else if (!"null".equals(dangChon) && !"Chọn chủ sở hữu".equals(dangChon)) {
+            cboChuSoHuu.setSelectedItem(dangChon);
+        }
     }
 
     private void chonChuSoHuu() {
-        if (maChuSoHuuCanChon == null) return;
+        if (maChuSoHuuCanChon == null) {
+            return;
+        }
         String prefix = maChuSoHuuCanChon + " - ";
-        for (int i=0; i<cboChuSoHuu.getItemCount(); i++) {
-            if (cboChuSoHuu.getItemAt(i).startsWith(prefix)) { cboChuSoHuu.setSelectedIndex(i); return; }
+        for (int i = 0; i < cboChuSoHuu.getItemCount(); i++) {
+            if (cboChuSoHuu.getItemAt(i).startsWith(prefix)) {
+                cboChuSoHuu.setSelectedIndex(i);
+                return;
+            }
         }
     }
 
@@ -380,7 +438,8 @@ public class QLHoSoXe extends JPanel {
         lblThongTinXe.setText("");
         pnlDanhSachLichSu.removeAll();
         pnlThongBaoKhoa.setVisible(false);
-        pnlDanhSachLichSu.revalidate(); pnlDanhSachLichSu.repaint();
+        pnlDanhSachLichSu.revalidate();
+        pnlDanhSachLichSu.repaint();
     }
 
     private JPanel taoTheLichSu(Object[] p, boolean noiBat) {
@@ -389,21 +448,38 @@ public class QLHoSoXe extends JPanel {
         the.setLayout(new GridBagLayout());
         the.setBorder(new EmptyBorder(12, 14, 12, 14));
         GridBagConstraints g = new GridBagConstraints();
-        g.gridy = 0; g.gridx = 0; g.weightx = 1; g.anchor = GridBagConstraints.WEST;
+        g.gridy = 0;
+        g.gridx = 0;
+        g.weightx = 1;
+        g.anchor = GridBagConstraints.WEST;
         the.add(UIComponents.label(String.valueOf(p[0]), UIConstants.FONT_FORM_LABEL.deriveFont(15f), noiBat ? UIConstants.PRIMARY : UIConstants.TEXT_DARK), g);
         g = new GridBagConstraints();
-        g.gridy = 0; g.gridx = 1; g.anchor = GridBagConstraints.EAST;
+        g.gridy = 0;
+        g.gridx = 1;
+        g.anchor = GridBagConstraints.EAST;
         the.add(UIComponents.label(String.valueOf(p[1]), UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_MUTED), g);
         g = new GridBagConstraints();
-        g.gridy = 1; g.gridx = 0; g.gridwidth = 2; g.anchor = GridBagConstraints.WEST; g.insets = new Insets(6, 0, 8, 0);
+        g.gridy = 1;
+        g.gridx = 0;
+        g.gridwidth = 2;
+        g.anchor = GridBagConstraints.WEST;
+        g.insets = new Insets(6, 0, 8, 0);
         the.add(UIComponents.label(String.valueOf(p[2]), UIConstants.FONT_BODY.deriveFont(14f), UIConstants.TEXT_DARK), g);
         g = new GridBagConstraints();
-        g.gridy = 2; g.gridx = 0; g.anchor = GridBagConstraints.WEST;
+        g.gridy = 2;
+        g.gridx = 0;
+        g.anchor = GridBagConstraints.WEST;
         String tt = String.valueOf(p[3]);
-        if (tt.startsWith("Hoàn tất")) the.add(new Badge(tt, UIConstants.STATUS_SUCCESS), g);
-        else the.add(UIComponents.label(tt, UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK), g);
+        if (tt.startsWith("Hoàn tất")) {
+            the.add(new Badge(tt, UIConstants.STATUS_SUCCESS), g);
+        } else {
+            the.add(UIComponents.label(
+                    tt, UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK), g);
+        }
         g = new GridBagConstraints();
-        g.gridy = 2; g.gridx = 1; g.anchor = GridBagConstraints.EAST;
+        g.gridy = 2;
+        g.gridx = 1;
+        g.anchor = GridBagConstraints.EAST;
         the.add(UIComponents.label(String.valueOf(p[4]), UIConstants.FONT_FORM_LABEL.deriveFont(15f), UIConstants.TEXT_DARK), g);
         return the;
     }
