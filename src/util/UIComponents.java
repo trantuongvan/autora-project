@@ -565,7 +565,8 @@ public final class UIComponents {
     // 5. ICON VẼ BẰNG JAVA2D (không cần file ảnh)
     // ==========================================================
 
-    public enum Loai { EYE, PENCIL, TRASH, SEARCH, LOCK, CLOSE, CHECK, ALERT, CLIPBOARD, WRENCH, KEY, REFRESH }
+    public enum Loai { EYE, PENCIL, TRASH, SEARCH, LOCK, CLOSE, CHECK, ALERT, CLIPBOARD, WRENCH, KEY, REFRESH,
+        HOME, CAR, USER, USERS, BOX, DOWNLOAD, UPLOAD, RECEIPT, PERCENT, CHART, HISTORY, LOGOUT, PLUS, SAVE, PRINT, PLAY, CALENDAR }
 
     public static class LineIcon implements Icon {
         private final Loai loai;
@@ -664,8 +665,236 @@ public final class UIComponents {
                     g2.draw(new Line2D.Float(13.6f, 12.9f, 16f, 10f));
                     g2.draw(new Line2D.Float(13.6f, 12.9f, 10.5f, 14f));
                     break;
+                case HOME:
+                    g2.draw(new Line2D.Float(2, 9, 9, 2.5f));
+                    g2.draw(new Line2D.Float(9, 2.5f, 16, 9));
+                    g2.draw(new RoundRectangle2D.Float(4, 8, 10, 8, 1.5f, 1.5f));
+                    break;
+                case CAR:
+                    g2.draw(new RoundRectangle2D.Float(2, 8, 14, 6, 2, 2));
+                    g2.draw(new Line2D.Float(4, 8, 5.5f, 3.5f));
+                    g2.draw(new Line2D.Float(5.5f, 3.5f, 12.5f, 3.5f));
+                    g2.draw(new Line2D.Float(12.5f, 3.5f, 14, 8));
+                    g2.draw(new Line2D.Float(4.5f, 14, 4.5f, 16));
+                    g2.draw(new Line2D.Float(13.5f, 14, 13.5f, 16));
+                    g2.fill(new Ellipse2D.Float(4.2f, 10, 2, 2));
+                    g2.fill(new Ellipse2D.Float(11.8f, 10, 2, 2));
+                    break;
+                case USER:
+                    g2.draw(new Ellipse2D.Float(5.5f, 2, 7, 7));
+                    g2.draw(new Arc2D.Float(2.5f, 10.5f, 13, 11, 0, 180, Arc2D.OPEN));
+                    break;
+                case USERS:
+                    g2.draw(new Ellipse2D.Float(2.5f, 3, 6, 6));
+                    g2.draw(new Arc2D.Float(1, 11, 9, 9, 0, 180, Arc2D.OPEN));
+                    g2.draw(new Ellipse2D.Float(10, 3, 5.5f, 5.5f));
+                    g2.draw(new Arc2D.Float(10.5f, 10.5f, 6.5f, 9, 0, 150, Arc2D.OPEN));
+                    break;
+                case BOX:
+                    g2.draw(new Line2D.Float(9, 1.5f, 16, 5));
+                    g2.draw(new Line2D.Float(16, 5, 16, 13));
+                    g2.draw(new Line2D.Float(16, 13, 9, 16.5f));
+                    g2.draw(new Line2D.Float(9, 16.5f, 2, 13));
+                    g2.draw(new Line2D.Float(2, 13, 2, 5));
+                    g2.draw(new Line2D.Float(2, 5, 9, 1.5f));
+                    g2.draw(new Line2D.Float(2, 5, 9, 8.5f));
+                    g2.draw(new Line2D.Float(16, 5, 9, 8.5f));
+                    g2.draw(new Line2D.Float(9, 8.5f, 9, 16.5f));
+                    break;
+                case DOWNLOAD:
+                    g2.draw(new Line2D.Float(9, 2, 9, 11));
+                    g2.draw(new Line2D.Float(5, 7.5f, 9, 11.5f));
+                    g2.draw(new Line2D.Float(13, 7.5f, 9, 11.5f));
+                    g2.draw(new Line2D.Float(2.5f, 12, 2.5f, 15.5f));
+                    g2.draw(new Line2D.Float(2.5f, 15.5f, 15.5f, 15.5f));
+                    g2.draw(new Line2D.Float(15.5f, 15.5f, 15.5f, 12));
+                    break;
+                case UPLOAD:
+                    g2.draw(new Line2D.Float(9, 11.5f, 9, 2.5f));
+                    g2.draw(new Line2D.Float(5, 6.5f, 9, 2.5f));
+                    g2.draw(new Line2D.Float(13, 6.5f, 9, 2.5f));
+                    g2.draw(new Line2D.Float(2.5f, 12, 2.5f, 15.5f));
+                    g2.draw(new Line2D.Float(2.5f, 15.5f, 15.5f, 15.5f));
+                    g2.draw(new Line2D.Float(15.5f, 15.5f, 15.5f, 12));
+                    break;
+                case RECEIPT:
+                    g2.draw(new RoundRectangle2D.Float(1.5f, 4, 15, 10.5f, 2, 2));
+                    g2.draw(new Line2D.Float(1.5f, 7.5f, 16.5f, 7.5f));
+                    g2.draw(new Line2D.Float(4, 11, 8, 11));
+                    break;
+                case PERCENT:
+                    g2.draw(new Ellipse2D.Float(1.5f, 1.5f, 15, 15));
+                    g2.draw(new Line2D.Float(6, 12, 12, 6));
+                    g2.fill(new Ellipse2D.Float(5.2f, 5.2f, 2.2f, 2.2f));
+                    g2.fill(new Ellipse2D.Float(10.6f, 10.6f, 2.2f, 2.2f));
+                    break;
+                case CHART:
+                    g2.draw(new Line2D.Float(3.5f, 14, 7, 8));
+                    g2.draw(new Line2D.Float(7, 8, 11, 11));
+                    g2.draw(new Line2D.Float(11, 11, 14.5f, 4));
+                    g2.draw(new Ellipse2D.Float(2, 13, 3, 3));
+                    g2.draw(new Ellipse2D.Float(5.5f, 6.5f, 3, 3));
+                    g2.draw(new Ellipse2D.Float(9.5f, 9.5f, 3, 3));
+                    g2.draw(new Ellipse2D.Float(13, 2, 3, 3));
+                    break;
+                case HISTORY:
+                    g2.draw(new Arc2D.Float(2, 2, 14, 14, 200, -320, Arc2D.OPEN));
+                    g2.draw(new Line2D.Float(2.4f, 5, 2.4f, 8.5f));
+                    g2.draw(new Line2D.Float(2.4f, 8.5f, 5.5f, 8.5f));
+                    g2.draw(new Line2D.Float(9, 5.5f, 9, 9.5f));
+                    g2.draw(new Line2D.Float(9, 9.5f, 12, 11));
+                    break;
+                case LOGOUT:
+                    g2.draw(new Line2D.Float(7, 2.5f, 2.5f, 2.5f));
+                    g2.draw(new Line2D.Float(2.5f, 2.5f, 2.5f, 15.5f));
+                    g2.draw(new Line2D.Float(2.5f, 15.5f, 7, 15.5f));
+                    g2.draw(new Line2D.Float(7, 9, 16, 9));
+                    g2.draw(new Line2D.Float(12.5f, 5.5f, 16, 9));
+                    g2.draw(new Line2D.Float(12.5f, 12.5f, 16, 9));
+                    break;
+                case PLUS:
+                    g2.draw(new Line2D.Float(9, 3, 9, 15));
+                    g2.draw(new Line2D.Float(3, 9, 15, 9));
+                    break;
+                case SAVE:
+                    g2.draw(new RoundRectangle2D.Float(2.5f, 2.5f, 13, 13, 2, 2));
+                    g2.draw(new RoundRectangle2D.Float(5.5f, 2.5f, 7, 4.5f, 0.5f, 0.5f));
+                    g2.draw(new Ellipse2D.Float(7, 9.5f, 4, 4));
+                    break;
+                case PRINT:
+                    g2.draw(new RoundRectangle2D.Float(2, 6.5f, 14, 7, 1.5f, 1.5f));
+                    g2.draw(new RoundRectangle2D.Float(5, 2, 8, 4.5f, 0.5f, 0.5f));
+                    g2.draw(new RoundRectangle2D.Float(5, 11, 8, 5, 0.5f, 0.5f));
+                    break;
+                case PLAY:
+                    Path2D tamGiac = new Path2D.Float();
+                    tamGiac.moveTo(5, 3);
+                    tamGiac.lineTo(14, 9);
+                    tamGiac.lineTo(5, 15);
+                    tamGiac.closePath();
+                    g2.fill(tamGiac);
+                    break;
+                case CALENDAR:
+                    g2.draw(new RoundRectangle2D.Float(2.5f, 3.5f, 13, 12, 2, 2));
+                    g2.draw(new Line2D.Float(2.5f, 7.5f, 15.5f, 7.5f));
+                    g2.draw(new Line2D.Float(6, 2, 6, 5));
+                    g2.draw(new Line2D.Float(12, 2, 12, 5));
+                    break;
                 default:
                     break;
+            }
+            g2.dispose();
+        }
+    }
+
+    // ==========================================================
+    // 7. THÀNH PHẦN THEO THIẾT KẾ FIGMA
+    // ==========================================================
+
+    /** Căn phải tiêu đề các cột số cho thẳng với giá trị; renderer tiêu đề dùng chung nên phải đặt lại mỗi lần vẽ. */
+    public static void canPhaiTieuDe(JTable bang, int... cot) {
+        TableCellRenderer goc = bang.getTableHeader().getDefaultRenderer();
+        java.util.Set<Integer> cotPhai = new java.util.HashSet<>();
+        for (int c : cot) {
+            cotPhai.add(c);
+        }
+        bang.getTableHeader().setDefaultRenderer((t, v, chon, focus, h, c) -> {
+            Component o = goc.getTableCellRendererComponent(t, v, chon, focus, h, c);
+            if (o instanceof JLabel) {
+                ((JLabel) o).setHorizontalAlignment(cotPhai.contains(c) ? SwingConstants.RIGHT : SwingConstants.LEFT);
+            }
+            return o;
+        });
+    }
+
+    /** Logo AUTORA dùng chung cho màn hình đăng nhập và thanh trên cùng. */
+    public static JPanel logoAutora() {
+        RoundedPanel bieuTrung = new RoundedPanel(8, UIConstants.PRIMARY, null);
+        bieuTrung.setLayout(new GridBagLayout());
+        bieuTrung.setPreferredSize(new Dimension(36, 36));
+        bieuTrung.add(new JLabel(new LineIcon(Loai.WRENCH, Color.WHITE, 22)));
+        JPanel ten = trong(new GridLayout(2, 1));
+        ten.add(label("AUTORA", UIConstants.FONT_SECTION_TITLE.deriveFont(19f), UIConstants.PRIMARY));
+        ten.add(label("GARAGE", UIConstants.FONT_CAPTION.deriveFont(Font.BOLD, 10f), UIConstants.TEXT_MUTED));
+        JPanel logo = trong(new FlowLayout(FlowLayout.LEFT, 10, 0));
+        logo.add(bieuTrung);
+        logo.add(ten);
+        return logo;
+    }
+
+    /** Thẻ nội dung có vạch màu phía trên và tiêu đề kèm icon; trả về thẻ, nội dung thêm vào phần CENTER. */
+    public static RoundedPanel theMuc(String tieuDe, Loai loai, Color mau) {
+        RoundedPanel the = card();
+        the.setLayout(new BorderLayout());
+        JPanel vach = new JPanel();
+        vach.setBackground(mau);
+        vach.setPreferredSize(new Dimension(10, 8));
+        JLabel lblTieuDe = label(tieuDe, UIConstants.FONT_PAGE_TITLE, UIConstants.TEXT_DARK);
+        lblTieuDe.setIcon(new LineIcon(loai, mau, 26));
+        lblTieuDe.setIconTextGap(12);
+        lblTieuDe.setBorder(new EmptyBorder(20, 20, 12, 20));
+        JPanel dau = trong(new BorderLayout());
+        dau.add(vach, BorderLayout.NORTH);
+        dau.add(lblTieuDe, BorderLayout.CENTER);
+        the.add(dau, BorderLayout.NORTH);
+        return the;
+    }
+
+    /** Thanh tiến trình của phiếu: bước trước đã xong (xanh), bước hiện tại (đỏ), bước sau (xám). */
+    public static class ThanhTienTrinh extends JPanel {
+        private final String[] buoc;
+        private int hienTai;
+
+        public ThanhTienTrinh(int hienTai, String... buoc) {
+            this.buoc = buoc;
+            this.hienTai = hienTai;
+            setOpaque(false);
+            setPreferredSize(new Dimension(100, 48));
+        }
+
+        /** Bước hiện tại, tính từ 1. */
+        public void setHienTai(int hienTai) {
+            this.hienTai = hienTai;
+            repaint();
+        }
+
+        public int getHienTai() {
+            return hienTai;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(UIConstants.FONT_FORM_LABEL.deriveFont(15f));
+            FontMetrics fm = g2.getFontMetrics();
+            int tongChu = 0;
+            for (String b : buoc) {
+                tongChu += 32 + 10 + fm.stringWidth(b);
+            }
+            int khoang = buoc.length > 1 ? Math.max(0, (getWidth() - tongChu) / (buoc.length - 1)) : 0;
+            int cy = getHeight() / 2;
+            int x = 0;
+            for (int i = 0; i < buoc.length; i++) {
+                int so = i + 1;
+                Color mauBuoc = so < hienTai ? UIConstants.STATUS_SUCCESS
+                        : so == hienTai ? UIConstants.ROLE_RECEPTION : UIConstants.TEXT_MUTED;
+                g2.setColor(mauBuoc);
+                g2.fill(new Ellipse2D.Float(x, cy - 16, 32, 32));
+                g2.setColor(Color.WHITE);
+                String chu = String.valueOf(so);
+                g2.drawString(chu, x + 16 - fm.stringWidth(chu) / 2, cy + fm.getAscent() / 2 - 2);
+                g2.setColor(mauBuoc);
+                int xChu = x + 42;
+                g2.drawString(buoc[i], xChu, cy + fm.getAscent() / 2 - 2);
+                x = xChu + fm.stringWidth(buoc[i]);
+                if (i < buoc.length - 1) {
+                    g2.setColor(UIConstants.TEXT_MUTED);
+                    g2.draw(new Line2D.Float(x + 14, cy, x + khoang - 14, cy));
+                    x += khoang;
+                }
             }
             g2.dispose();
         }
