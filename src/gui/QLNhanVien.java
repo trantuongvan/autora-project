@@ -100,11 +100,19 @@ public class QLNhanVien extends JPanel {
         // --- Hàng dưới: Form (trái) + Xác nhận xóa (phải) ---
         JPanel hangDuoi = UIComponents.trong(new GridBagLayout());
         GridBagConstraints gt = new GridBagConstraints();
-        gt.gridx = 0; gt.weightx = 0.6; gt.weighty = 1; gt.fill = GridBagConstraints.BOTH; gt.anchor = GridBagConstraints.NORTH;
+        gt.gridx = 0;
+        gt.weightx = 0.6;
+        gt.weighty = 1;
+        gt.fill = GridBagConstraints.BOTH;
+        gt.anchor = GridBagConstraints.NORTH;
         gt.insets = new Insets(0, 0, 0, 8);
         hangDuoi.add(taoTheForm(), gt);
         GridBagConstraints gp = new GridBagConstraints();
-        gp.gridx = 1; gp.weightx = 0.4; gp.weighty = 1; gp.fill = GridBagConstraints.BOTH; gp.anchor = GridBagConstraints.NORTH;
+        gp.gridx = 1;
+        gp.weightx = 0.4;
+        gp.weighty = 1;
+        gp.fill = GridBagConstraints.BOTH;
+        gp.anchor = GridBagConstraints.NORTH;
         gp.insets = new Insets(0, 8, 0, 0);
         hangDuoi.add(taoTheXoa(), gp);
         noiDung.them(hangDuoi, 16);
@@ -213,8 +221,50 @@ public class QLNhanVien extends JPanel {
     }
 
     private void ganSuKienGiaoDien() {
-        txtHoTen.getDocument().addDocumentListener(new DocumentListener(){private void capNhat(){if(!txtHoTen.getText().trim().isEmpty())hienLoiHoTen(null);}public void insertUpdate(DocumentEvent e){capNhat();}public void removeUpdate(DocumentEvent e){capNhat();}public void changedUpdate(DocumentEvent e){capNhat();}});
-        txtSoDienThoai.getDocument().addDocumentListener(new DocumentListener(){private void capNhat(){if(txtSoDienThoai.getText().trim().matches("0[0-9]{9}"))hienLoiSoDienThoai(null);}public void insertUpdate(DocumentEvent e){capNhat();}public void removeUpdate(DocumentEvent e){capNhat();}public void changedUpdate(DocumentEvent e){capNhat();}});
+        txtHoTen.getDocument().addDocumentListener(new DocumentListener() {
+            private void capNhat() {
+                if (!txtHoTen.getText().trim().isEmpty()) {
+                    hienLoiHoTen(null);
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                capNhat();
+            }
+        });
+        txtSoDienThoai.getDocument().addDocumentListener(new DocumentListener() {
+            private void capNhat() {
+                if (txtSoDienThoai.getText().trim().matches("0[0-9]{9}")) {
+                    hienLoiSoDienThoai(null);
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                capNhat();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                capNhat();
+            }
+        });
         btnDongXoa.addActionListener(e -> theXoa.setVisible(false));
         btnHuyXoa.addActionListener(e -> theXoa.setVisible(false));
         tblDanhSach.addMouseMotionListener(new MouseAdapter() {

@@ -1,33 +1,43 @@
 package entity;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public class ChiTietSuaChua_DichVu {
+    public static final String[] TIEN_DO = {
+        "Chờ sửa", "Đang sửa", "Hoàn thành"
+    };
+
     private String maPhieuTNSC;
     private String maDichVu;
+    private String tenDichVu;
     private String maNVKyThuat;
+    private String tenKyThuatVien;
     private String trangThaiTienDo;
     private double tienCongThucTe;
 
-    // Thuộc tính hiển thị khi JOIN với bảng DichVu và NhanVien
-    private String tenDichVu;
-    private String tenKyThuatVien;
-
     public ChiTietSuaChua_DichVu() {
-        this.trangThaiTienDo = "Chờ sửa";
     }
 
     public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu) {
-        this();
-        this.maPhieuTNSC = maPhieuTNSC;
-        this.maDichVu = maDichVu;
+        setMaPhieuTNSC(maPhieuTNSC);
+        setMaDichVu(maDichVu);
     }
 
-    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu, String maNVKyThuat,
-                                 String trangThaiTienDo, double tienCongThucTe) {
-        this.maPhieuTNSC = maPhieuTNSC;
-        this.maDichVu = maDichVu;
-        this.maNVKyThuat = maNVKyThuat;
+    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
+            String maNVKyThuat, String trangThaiTienDo, double tienCongThucTe) {
+        this(maPhieuTNSC, maDichVu, null, maNVKyThuat, null,
+                trangThaiTienDo, tienCongThucTe);
+    }
+
+    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
+            String tenDichVu, String maNVKyThuat, String tenKyThuatVien,
+            String trangThaiTienDo, double tienCongThucTe) {
+        setMaPhieuTNSC(maPhieuTNSC);
+        setMaDichVu(maDichVu);
+        setTenDichVu(tenDichVu);
+        setMaNVKyThuat(maNVKyThuat);
+        setTenKyThuatVien(tenKyThuatVien);
         setTrangThaiTienDo(trangThaiTienDo);
         setTienCongThucTe(tienCongThucTe);
     }
@@ -35,32 +45,59 @@ public class ChiTietSuaChua_DichVu {
     public String getMaPhieuTNSC() {
         return maPhieuTNSC;
     }
+
     public void setMaPhieuTNSC(String maPhieuTNSC) {
-        this.maPhieuTNSC = maPhieuTNSC;
+        if (maPhieuTNSC == null || maPhieuTNSC.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã phiếu tiếp nhận không được để trống.");
+        }
+        this.maPhieuTNSC = maPhieuTNSC.trim();
     }
 
     public String getMaDichVu() {
         return maDichVu;
     }
+
     public void setMaDichVu(String maDichVu) {
-        this.maDichVu = maDichVu;
+        if (maDichVu == null || maDichVu.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã dịch vụ không được để trống.");
+        }
+        this.maDichVu = maDichVu.trim();
+    }
+
+    public String getTenDichVu() {
+        return tenDichVu;
+    }
+
+    public void setTenDichVu(String tenDichVu) {
+        this.tenDichVu = tenDichVu;
     }
 
     public String getMaNVKyThuat() {
         return maNVKyThuat;
     }
+
     public void setMaNVKyThuat(String maNVKyThuat) {
-        this.maNVKyThuat = maNVKyThuat;
+        if (maNVKyThuat != null && maNVKyThuat.trim().isEmpty()) {
+            throw new IllegalArgumentException("Mã kỹ thuật viên phải có nội dung hoặc là null.");
+        }
+        this.maNVKyThuat = maNVKyThuat == null ? null : maNVKyThuat.trim();
+    }
+
+    public String getTenKyThuatVien() {
+        return tenKyThuatVien;
+    }
+
+    public void setTenKyThuatVien(String tenKyThuatVien) {
+        this.tenKyThuatVien = tenKyThuatVien;
     }
 
     public String getTrangThaiTienDo() {
         return trangThaiTienDo;
     }
+
     public void setTrangThaiTienDo(String trangThaiTienDo) {
-        if (trangThaiTienDo == null || (!trangThaiTienDo.equals("Chờ sửa")
-                && !trangThaiTienDo.equals("Đang sửa")
-                && !trangThaiTienDo.equals("Hoàn thành"))) {
-            throw new IllegalArgumentException("Trạng thái tiến độ hạng mục không hợp lệ.");
+        if (!Arrays.asList(TIEN_DO).contains(trangThaiTienDo)) {
+            throw new IllegalArgumentException("Trạng thái tiến độ dịch vụ không hợp lệ.");
         }
         this.trangThaiTienDo = trangThaiTienDo;
     }
@@ -68,37 +105,25 @@ public class ChiTietSuaChua_DichVu {
     public double getTienCongThucTe() {
         return tienCongThucTe;
     }
+
     public void setTienCongThucTe(double tienCongThucTe) {
-        if (tienCongThucTe < 0) {
-            throw new IllegalArgumentException("Tiền công thực tế không được là số âm.");
+        if (!Double.isFinite(tienCongThucTe) || tienCongThucTe < 0) {
+            throw new IllegalArgumentException("Tiền công thực tế phải là số hữu hạn không âm.");
         }
         this.tienCongThucTe = tienCongThucTe;
     }
 
-    public void capNhatTienDo(String trangThaiMoi) {
-        setTrangThaiTienDo(trangThaiMoi);
-    }
-
-    public String getTenDichVu() {
-        return tenDichVu;
-    }
-    public void setTenDichVu(String tenDichVu) {
-        this.tenDichVu = tenDichVu;
-    }
-
-    public String getTenKyThuatVien() {
-        return tenKyThuatVien;
-    }
-    public void setTenKyThuatVien(String tenKyThuatVien) {
-        this.tenKyThuatVien = tenKyThuatVien;
-    }
-
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ChiTietSuaChua_DichVu)) return false;
-        ChiTietSuaChua_DichVu that = (ChiTietSuaChua_DichVu) o;
-        return Objects.equals(maPhieuTNSC, that.maPhieuTNSC) && Objects.equals(maDichVu, that.maDichVu);
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        ChiTietSuaChua_DichVu other = (ChiTietSuaChua_DichVu) obj;
+        return Objects.equals(maPhieuTNSC, other.maPhieuTNSC)
+                && Objects.equals(maDichVu, other.maDichVu);
     }
 
     @Override
@@ -108,6 +133,6 @@ public class ChiTietSuaChua_DichVu {
 
     @Override
     public String toString() {
-        return maPhieuTNSC + " - " + (tenDichVu != null ? tenDichVu : maDichVu) + " (" + trangThaiTienDo + ")";
+        return maPhieuTNSC + " - " + maDichVu;
     }
 }
