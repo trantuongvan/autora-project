@@ -99,31 +99,92 @@ public class NhanVien_Dao {
     }
 
     public boolean insert(NhanVien employee) throws SQLException {
+        return insert(employee, "system");
+    }
+
+    public boolean insert(NhanVien employee, String tenDangNhap) throws SQLException {
         String sql = "INSERT INTO NhanVien(maNV, hoTen, soDienThoai, diaChi, viTriLamViec) "
                 + "VALUES(?, ?, ?, ?, ?)";
-        try (Connection connection = ConnectDB.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, employee.getMaNV());
-            statement.setString(2, employee.getHoTen());
-            statement.setString(3, employee.getSoDienThoai());
-            statement.setString(4, employee.getDiaChi());
-            statement.setString(5, employee.getViTriLamViec());
-            return statement.executeUpdate() == 1;
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, employee.getMaNV());
+                statement.setString(2, employee.getHoTen());
+                statement.setString(3, employee.getSoDienThoai());
+                statement.setString(4, employee.getDiaChi());
+                statement.setString(5, employee.getViTriLamViec());
+                if (statement.executeUpdate() != 1) {
+                    connection.rollback();
+                    return false;
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Thêm nhân viên",
+                        employee.getMaNV(), null, giaTri(employee));
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
         }
     }
 
     public boolean update(NhanVien employee) throws SQLException {
+        return update(employee, "system");
+    }
+
+    public boolean update(NhanVien employee, String tenDangNhap) throws SQLException {
+        String sqlCu = "SELECT hoTen, soDienThoai, diaChi, viTriLamViec "
+                + "FROM NhanVien WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
         String sql = "UPDATE NhanVien SET hoTen = ?, soDienThoai = ?, diaChi = ?, "
                 + "viTriLamViec = ? WHERE maNV = ?";
-        try (Connection connection = ConnectDB.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, employee.getHoTen());
-            statement.setString(2, employee.getSoDienThoai());
-            statement.setString(3, employee.getDiaChi());
-            statement.setString(4, employee.getViTriLamViec());
-            statement.setString(5, employee.getMaNV());
-            return statement.executeUpdate() == 1;
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                String oldValue;
+                try (PreparedStatement statement = connection.prepareStatement(sqlCu)) {
+                    statement.setString(1, employee.getMaNV());
+                    try (ResultSet result = statement.executeQuery()) {
+                        if (!result.next()) {
+                            connection.rollback();
+                            return false;
+                        }
+                        oldValue = giaTri(
+                                result.getString("hoTen"),
+                                result.getString("soDienThoai"),
+                                result.getString("diaChi"),
+                                result.getString("viTriLamViec"));
+                    }
+                }
+                try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                    statement.setString(1, employee.getHoTen());
+                    statement.setString(2, employee.getSoDienThoai());
+                    statement.setString(3, employee.getDiaChi());
+                    statement.setString(4, employee.getViTriLamViec());
+                    statement.setString(5, employee.getMaNV());
+                    if (statement.executeUpdate() != 1) {
+                        connection.rollback();
+                        return false;
+                    }
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Cập nhật nhân viên",
+                        employee.getMaNV(), oldValue, giaTri(employee));
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
         }
+    }
+
+    private String giaTri(NhanVien employee) {
+        return giaTri(employee.getHoTen(), employee.getSoDienThoai(),
+                employee.getDiaChi(), employee.getViTriLamViec());
+    }
+
+    private String giaTri(String hoTen, String soDienThoai, String diaChi, String viTri) {
+        return "Họ tên=" + hoTen + "; SĐT=" + soDienThoai + "; Địa chỉ="
+                + (diaChi == null ? "" : diaChi) + "; Vị trí=" + viTri;
     }
 
     public boolean delete(String id) throws SQLException {
