@@ -121,17 +121,9 @@ public class PhuTung {
         return Objects.hash(maSKU);
     }
 
+
     @Override
     public String toString() {
-        return "PhuTung{" +
-                "maSKU='" + maSKU + '\'' +
-                ", tenPhuTung='" + tenPhuTung + '\'' +
-                ", hangSanXuat='" + hangSanXuat + '\'' +
-                ", viTriLuuKho='" + viTriLuuKho + '\'' +
-                ", giaNhap=" + giaNhap +
-                ", giaBanLe=" + giaBanLe +
-                ", soLuongTon=" + soLuongTon +
-                ", nguongCanhBao=" + nguongCanhBao +
-                '}';
+        return maSKU + " - " + tenPhuTung;
     }
 }

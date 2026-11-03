@@ -10,7 +10,6 @@ import java.util.List;
 
 /**
  * DAO phục vụ màn hình Trang chủ Kỹ thuật viên và Quản lý tiến độ sửa chữa (UC005).
- * Đã tích hợp kiểm tra hóa đơn hợp lệ (trừ 'Đã hủy'), chuẩn hóa trạng thái và ghi Audit Log an toàn.
  */
 public class TienDoSuaChua_Dao {
 
@@ -143,10 +142,11 @@ public class TienDoSuaChua_Dao {
     }
 
     /**
-     * Cập nhật trạng thái phiếu sửa chữa (đảm bảo lưu đúng chuẩn "Hoàn thành")
-     * và ghi nhận vào Audit Log (bảng NhatKy) một cách an toàn.
+     * Cập nhật trạng thái phiếu sửa chữa (đảm bảo lưu đúng chuỗi "Hoàn thành")
+     * và ghi nhận vào Audit Log (bảng NhatKy nếu có).
      */
     public boolean capNhatTrangThaiPhieu(String maPhieuTNSC, String trangThaiMoi, String maNVKyThuat) throws SQLException {
+        // Chuẩn hóa chuỗi trạng thái lưu vào DB để khớp 100% với bên Lập Hóa Đơn
         String dbTrangThai = chuanHoaTrangThaiDB(trangThaiMoi);
 
         String sqlPhieu = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = ? WHERE maPhieuTNSC = ?";
@@ -244,15 +244,20 @@ public class TienDoSuaChua_Dao {
     }
 
     /**
-     * Ghi Audit Log vào bảng NhatKy một cách an toàn tuyệt đối, không gây lỗi ngoại lệ.
+     * Ghi Audit Log vào bảng NhatKy một cách an toàn (không làm hỏng transaction nếu schema bảng NhatKy khác biệt).
+     */
+    /**
+     * Ghi Audit Log vào bảng NhatKy một cách an toàn tuyệt đối.
+     * Tự động kiểm tra kết nối độc lập và không làm gián đoạn giao dịch chính nếu bảng NhatKy bận hoặc khác tên cột.
      */
     public static void ghiNhatKyAnToan(Connection c, String maNV, String hanhDong, String chiTiet) {
         String nv = (maNV == null || maNV.trim().isEmpty()) ? "NV0005" : maNV.trim();
+        // Dùng kết nối riêng biệt hoặc kết nối hiện tại để ghi log, không làm ảnh hưởng transaction nghiệp vụ chính
         String sql = "INSERT INTO NhatKy (thoiGian, maNV, hanhDong, chiTiet) VALUES (GETDATE(), ?, ?, ?)";
 
         try {
             boolean useExistingConn = (c != null && !c.isClosed());
-            Connection conn = useExistingConn ? c : ConnectDB.getConnection();
+            Connection conn = useExistingConn ? c : connection.ConnectDB.getConnection();
 
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
                 ps.setString(1, nv);
@@ -265,9 +270,10 @@ public class TienDoSuaChua_Dao {
                 }
             }
         } catch (SQLException ignored) {
+            // Dự phòng trường hợp tên cột trong CSDL khác (ví dụ: thoi_gian thay vì thoiGian)
             try {
                 String sqlAlt = "INSERT INTO NhatKy VALUES (GETDATE(), ?, ?, ?)";
-                Connection connAlt = (c != null && !c.isClosed()) ? c : ConnectDB.getConnection();
+                Connection connAlt = (c != null && !c.isClosed()) ? c : connection.ConnectDB.getConnection();
                 try (PreparedStatement psAlt = connAlt.prepareStatement(sqlAlt)) {
                     psAlt.setString(1, nv);
                     psAlt.setString(2, hanhDong);
@@ -277,7 +283,7 @@ public class TienDoSuaChua_Dao {
                     if (c == null && connAlt != null) connAlt.close();
                 }
             } catch (SQLException ex2) {
-                // Nuốt lỗi an toàn để không bao giờ làm gián đoạn nghiệp vụ chính
+                // Nuốt lỗi log hoàn toàn để không bao giờ làm crash luồng nghiệp vụ chính của người dùng
             }
         }
     }

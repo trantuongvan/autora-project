@@ -36,7 +36,7 @@ public class PhieuTiepNhanVaSuaChua {
     private String maNVPhuTrach;
     private String sdtKhachHang;
 
-    // Các thuộc tính phụ trợ hiển thị cho Kỹ thuật viên & Thủ kho
+    // Thuộc tính bổ sung cho phân hệ Kỹ thuật viên & Thủ kho
     private String hangXe;
     private String dongXe;
     private int doiXe;
@@ -73,6 +73,7 @@ public class PhieuTiepNhanVaSuaChua {
         setMucNhienLieu(mucNhienLieu);
         setTrayXuoc(trayXuoc);
         setTaiSanTrenXe(taiSanTrenXe);
+        // Gán thẳng vì dữ liệu đọc từ CSDL không được phép làm hỏng danh sách khi đồng hồ máy bị lệch.
         this.thoiGianTiepNhan = thoiGianTiepNhan;
         setThoiGianDuKien(thoiGianDuKien);
         setTrangThai(trangThai);
@@ -291,29 +292,66 @@ public class PhieuTiepNhanVaSuaChua {
         this.sdtKhachHang = sdtKhachHang;
     }
 
-    // Các hàm Get/Set phục vụ Kỹ thuật viên & Thủ kho
-    public String getHangXe() { return hangXe; }
-    public void setHangXe(String hangXe) { this.hangXe = hangXe; }
+    public String getHangXe() {
+        return hangXe;
+    }
 
-    public String getDongXe() { return dongXe; }
-    public void setDongXe(String dongXe) { this.dongXe = dongXe; }
+    public void setHangXe(String hangXe) {
+        this.hangXe = hangXe;
+    }
 
-    public int getDoiXe() { return doiXe; }
-    public void setDoiXe(int doiXe) { this.doiXe = doiXe; }
+    public String getDongXe() {
+        return dongXe;
+    }
 
-    public String getMauSon() { return mauSon; }
-    public void setMauSon(String mauSon) { this.mauSon = mauSon; }
+    public void setDongXe(String dongXe) {
+        this.dongXe = dongXe;
+    }
 
-    public String getTomTatHangMuc() { return tomTatHangMuc; }
-    public void setTomTatHangMuc(String tomTatHangMuc) { this.tomTatHangMuc = tomTatHangMuc; }
+    public int getDoiXe() {
+        return doiXe;
+    }
 
-    public int getTongSoHangMuc() { return tongSoHangMuc; }
-    public void setTongSoHangMuc(int tongSoHangMuc) { this.tongSoHangMuc = tongSoHangMuc; }
+    public void setDoiXe(int doiXe) {
+        this.doiXe = doiXe;
+    }
 
-    public int getSoHangMucHoanThanh() { return soHangMucHoanThanh; }
-    public void setSoHangMucHoanThanh(int soHangMucHoanThanh) { this.soHangMucHoanThanh = soHangMucHoanThanh; }
+    public String getMauSon() {
+        return mauSon;
+    }
 
-    public List<ChiTietSuaChua_DichVu> getDanhSachDichVu() { return danhSachDichVu; }
+    public void setMauSon(String mauSon) {
+        this.mauSon = mauSon;
+    }
+
+    public String getTomTatHangMuc() {
+        return tomTatHangMuc;
+    }
+
+    public void setTomTatHangMuc(String tomTatHangMuc) {
+        this.tomTatHangMuc = tomTatHangMuc;
+    }
+
+    public int getTongSoHangMuc() {
+        return tongSoHangMuc;
+    }
+
+    public void setTongSoHangMuc(int tongSoHangMuc) {
+        this.tongSoHangMuc = tongSoHangMuc;
+    }
+
+    public int getSoHangMucHoanThanh() {
+        return soHangMucHoanThanh;
+    }
+
+    public void setSoHangMucHoanThanh(int soHangMucHoanThanh) {
+        this.soHangMucHoanThanh = soHangMucHoanThanh;
+    }
+
+    public List<ChiTietSuaChua_DichVu> getDanhSachDichVu() {
+        return danhSachDichVu;
+    }
+
     public void setDanhSachDichVu(List<ChiTietSuaChua_DichVu> danhSachDichVu) {
         this.danhSachDichVu = danhSachDichVu != null ? danhSachDichVu : new ArrayList<>();
     }
@@ -326,6 +364,7 @@ public class PhieuTiepNhanVaSuaChua {
         }
     }
 
+    /** Chuỗi hiển thị thông tin xe gọn gàng: "Honda Civic • 2021" */
     public String getThongTinXeNgan() {
         String h = hangXe == null ? "" : hangXe;
         String d = dongXe == null ? "" : dongXe;
@@ -356,6 +395,7 @@ public class PhieuTiepNhanVaSuaChua {
         return "Đang sửa".equalsIgnoreCase(trangThai) ? 50 : 0;
     }
 
+    /** Hiển thị nhãn trạng thái đồng nhất cho riêng phân hệ Kỹ thuật viên */
     public String getTrangThaiHienThiKTV() {
         if ("Chờ kiểm tra".equalsIgnoreCase(trangThai)) return "Chờ sửa";
         return trangThai == null ? "Chờ sửa" : trangThai;
