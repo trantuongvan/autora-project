@@ -1,13 +1,15 @@
 package entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 public class PhieuTiepNhanVaSuaChua {
     public static final String[] UU_TIEN = {"Thường", "Khẩn"};
     public static final String[] TRANG_THAI = {
-        "Chờ kiểm tra", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"
+            "Chờ kiểm tra", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"
     };
     /** Không nằm trong TRANG_THAI vì chỉ đạt được qua thao tác Hủy phiếu. */
     public static final String DA_HUY = "Đã hủy";
@@ -34,6 +36,16 @@ public class PhieuTiepNhanVaSuaChua {
     private String maNVPhuTrach;
     private String sdtKhachHang;
 
+    // Các thuộc tính phụ trợ hiển thị cho Kỹ thuật viên & Thủ kho
+    private String hangXe;
+    private String dongXe;
+    private int doiXe;
+    private String mauSon;
+    private String tomTatHangMuc;
+    private int tongSoHangMuc;
+    private int soHangMucHoanThanh;
+    private List<ChiTietSuaChua_DichVu> danhSachDichVu = new ArrayList<>();
+
     public PhieuTiepNhanVaSuaChua() {
     }
 
@@ -42,26 +54,25 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public PhieuTiepNhanVaSuaChua(String maPhieuTNSC, String yeuCauBanDau,
-            int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
-            LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
-            String trangThai, String bienSo, String maNVLapPhieu) {
+                                  int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
+                                  LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
+                                  String trangThai, String bienSo, String maNVLapPhieu) {
         this(maPhieuTNSC, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc,
                 taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien,
                 trangThai, bienSo, maNVLapPhieu, null, null, null);
     }
 
     public PhieuTiepNhanVaSuaChua(String maPhieuTNSC, String yeuCauBanDau,
-            int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
-            LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
-            String trangThai, String bienSo, String maNVLapPhieu,
-            String tenKhachHang, String thongTinXe, String tenNVLapPhieu) {
+                                  int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
+                                  LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
+                                  String trangThai, String bienSo, String maNVLapPhieu,
+                                  String tenKhachHang, String thongTinXe, String tenNVLapPhieu) {
         setMaPhieuTNSC(maPhieuTNSC);
         setYeuCauBanDau(yeuCauBanDau);
         setSoKm(soKm);
         setMucNhienLieu(mucNhienLieu);
         setTrayXuoc(trayXuoc);
         setTaiSanTrenXe(taiSanTrenXe);
-        // Gán thẳng vì dữ liệu đọc từ CSDL không được phép làm hỏng danh sách khi đồng hồ máy bị lệch.
         this.thoiGianTiepNhan = thoiGianTiepNhan;
         setThoiGianDuKien(thoiGianDuKien);
         setTrangThai(trangThai);
@@ -89,7 +100,7 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setYeuCauBanDau(String yeuCauBanDau) {
-        this.yeuCauBanDau = yeuCauBanDau;
+        this.yeuCauBanDau = yeuCauBanDau == null ? "" : yeuCauBanDau.trim();
     }
 
     public int getSoKm() {
@@ -120,7 +131,7 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setTrayXuoc(String trayXuoc) {
-        this.trayXuoc = trayXuoc;
+        this.trayXuoc = trayXuoc == null ? "" : trayXuoc.trim();
     }
 
     public String getTaiSanTrenXe() {
@@ -128,7 +139,7 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setTaiSanTrenXe(String taiSanTrenXe) {
-        this.taiSanTrenXe = taiSanTrenXe;
+        this.taiSanTrenXe = taiSanTrenXe == null ? "" : taiSanTrenXe.trim();
     }
 
     public LocalDateTime getThoiGianTiepNhan() {
@@ -207,10 +218,10 @@ public class PhieuTiepNhanVaSuaChua {
         this.tenNVLapPhieu = tenNVLapPhieu;
     }
 
-    /** Luồng trạng thái hợp lệ (ràng buộc nghiệp vụ, UC005); phiếu Hoàn thành hoặc Đã hủy không đổi được nữa. */
     public static boolean coTheChuyen(String cu, String moi) {
         switch (String.valueOf(cu)) {
             case "Chờ kiểm tra":
+            case "Chờ sửa":
                 return "Đang sửa".equals(moi) || "Chờ phụ tùng".equals(moi);
             case "Đang sửa":
                 return "Chờ phụ tùng".equals(moi) || "Hoàn thành".equals(moi);
@@ -258,13 +269,12 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setUuTien(String uuTien) {
-        if (!java.util.Arrays.asList(UU_TIEN).contains(uuTien)) {
+        if (!Arrays.asList(UU_TIEN).contains(uuTien)) {
             throw new IllegalArgumentException("Mức ưu tiên không hợp lệ.");
         }
         this.uuTien = uuTien;
     }
 
-    /** Trả về null khi chưa phân công. */
     public String getMaNVPhuTrach() {
         return maNVPhuTrach;
     }
@@ -281,6 +291,33 @@ public class PhieuTiepNhanVaSuaChua {
         this.sdtKhachHang = sdtKhachHang;
     }
 
+    // Các hàm Get/Set phục vụ Kỹ thuật viên & Thủ kho
+    public String getHangXe() { return hangXe; }
+    public void setHangXe(String hangXe) { this.hangXe = hangXe; }
+
+    public String getDongXe() { return dongXe; }
+    public void setDongXe(String dongXe) { this.dongXe = dongXe; }
+
+    public int getDoiXe() { return doiXe; }
+    public void setDoiXe(int doiXe) { this.doiXe = doiXe; }
+
+    public String getMauSon() { return mauSon; }
+    public void setMauSon(String mauSon) { this.mauSon = mauSon; }
+
+    public String getTomTatHangMuc() { return tomTatHangMuc; }
+    public void setTomTatHangMuc(String tomTatHangMuc) { this.tomTatHangMuc = tomTatHangMuc; }
+
+    public int getTongSoHangMuc() { return tongSoHangMuc; }
+    public void setTongSoHangMuc(int tongSoHangMuc) { this.tongSoHangMuc = tongSoHangMuc; }
+
+    public int getSoHangMucHoanThanh() { return soHangMucHoanThanh; }
+    public void setSoHangMucHoanThanh(int soHangMucHoanThanh) { this.soHangMucHoanThanh = soHangMucHoanThanh; }
+
+    public List<ChiTietSuaChua_DichVu> getDanhSachDichVu() { return danhSachDichVu; }
+    public void setDanhSachDichVu(List<ChiTietSuaChua_DichVu> danhSachDichVu) {
+        this.danhSachDichVu = danhSachDichVu != null ? danhSachDichVu : new ArrayList<>();
+    }
+
     public void kiemTraHopLe() throws IllegalArgumentException {
         if (thoiGianTiepNhan != null && thoiGianDuKien != null
                 && thoiGianDuKien.isBefore(thoiGianTiepNhan)) {
@@ -289,14 +326,45 @@ public class PhieuTiepNhanVaSuaChua {
         }
     }
 
+    public String getThongTinXeNgan() {
+        String h = hangXe == null ? "" : hangXe;
+        String d = dongXe == null ? "" : dongXe;
+        String tenXe = (h + " " + d).trim();
+        if (tenXe.isEmpty() && thongTinXe != null && !thongTinXe.trim().isEmpty()) {
+            return thongTinXe.trim();
+        }
+        return doiXe > 0 ? tenXe + " • " + doiXe : tenXe;
+    }
+
+    public String getThongTinXeDayDu() {
+        return getThongTinXeNgan() + " • " + (bienSo == null ? "" : bienSo);
+    }
+
+    public int getPhanTramTienDo() {
+        if ("Hoàn thành".equalsIgnoreCase(trangThai)) return 100;
+        if ("Chờ kiểm tra".equalsIgnoreCase(trangThai) || "Chờ sửa".equalsIgnoreCase(trangThai)) {
+            if (tongSoHangMuc > 0 && soHangMucHoanThanh > 0) {
+                return Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            }
+            return 0;
+        }
+        if (tongSoHangMuc > 0) {
+            int pct = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            if ("Đang sửa".equalsIgnoreCase(trangThai) && pct == 0) return 50;
+            return pct;
+        }
+        return "Đang sửa".equalsIgnoreCase(trangThai) ? 50 : 0;
+    }
+
+    public String getTrangThaiHienThiKTV() {
+        if ("Chờ kiểm tra".equalsIgnoreCase(trangThai)) return "Chờ sửa";
+        return trangThai == null ? "Chờ sửa" : trangThai;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
         PhieuTiepNhanVaSuaChua other = (PhieuTiepNhanVaSuaChua) obj;
         return Objects.equals(maPhieuTNSC, other.maPhieuTNSC);
     }
