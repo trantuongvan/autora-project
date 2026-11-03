@@ -64,7 +64,12 @@ public class TrangChuLeTan extends JPanel {
         hangThe.add(taoTheThongKe("Xe chờ tiếp nhận", "Cần lập hồ sơ tiếp nhận", UIConstants.ROLE_RECEPTION_LIGHT, Loai.CLIPBOARD, lblSoChoTiepNhan));
         hangThe.add(taoTheThongKe("Xe đang sửa", "Đang thực hiện sửa chữa", UIConstants.PRIMARY_LIGHT, Loai.WRENCH, lblSoDangSua));
         hangThe.add(taoTheThongKe("Xe chờ bàn giao", "Kiểm tra điều kiện bàn giao", UIConstants.ROLE_TECH_STOCK_LIGHT, Loai.KEY, lblSoChoBanGiao));
-        hangThe.add(taoTheThongKe("Đã bàn giao hôm nay", "Tính đến " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) + " hôm nay", UIConstants.STATUS_SUCCESS, Loai.CHECK, lblSoDaBanGiao));
+        hangThe.add(taoTheThongKe(
+                "Đã bàn giao hôm nay",
+                "Tính đến " + LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) + " hôm nay",
+                UIConstants.STATUS_SUCCESS,
+                Loai.CHECK,
+                lblSoDaBanGiao));
         noiDung.them(hangThe, 20);
 
         // --- Ô tìm kiếm ---
