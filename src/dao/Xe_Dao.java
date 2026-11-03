@@ -217,6 +217,7 @@ public class Xe_Dao {
                 + "h.trangThaiThanhToan, COALESCE(ti.hoanTat, 0) AS hoanTat "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
+                + "AND h.trangThaiThanhToan <> N'Đã hủy' "
                 + "OUTER APPLY (SELECT SUM(CASE WHEN d.trangThaiTienDo = N'Hoàn thành' "
                 + "THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0) AS hoanTat "
                 + "FROM ChiTietSuaChua_DichVu d WHERE d.maPhieuTNSC = p.maPhieuTNSC) ti "
