@@ -24,10 +24,26 @@ public class QLHoSoXeController {
 
     public QLHoSoXeController(QLHoSoXe view) {
         this.view = view;
+        initController();
+        load();
+    }
+
+    private void initController() {
         view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { load(); }
-            public void removeUpdate(DocumentEvent e) { load(); }
-            public void changedUpdate(DocumentEvent e) { load(); }
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                load();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                load();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                load();
+            }
         });
         view.getBtnLuu().addActionListener(e -> save());
         view.getBtnThemHoSo().addActionListener(e -> selectedPlate = null);
@@ -35,31 +51,42 @@ public class QLHoSoXeController {
         view.getTblDanhSach().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .put(KeyStroke.getKeyStroke("DELETE"), "xoaHoSoXe");
         view.getTblDanhSach().getActionMap().put("xoaHoSoXe", new AbstractAction() {
-            public void actionPerformed(java.awt.event.ActionEvent e) { deleteSelected(); }
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                deleteSelected();
+            }
         });
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
-            @Override public void mouseClicked(MouseEvent e) {
+            @Override
+            public void mouseClicked(MouseEvent e) {
                 JTable table = view.getTblDanhSach();
                 int viewRow = table.rowAtPoint(e.getPoint());
                 int viewColumn = table.columnAtPoint(e.getPoint());
-                if (viewRow < 0 || viewColumn < 0) return;
+                if (viewRow < 0 || viewColumn < 0) {
+                    return;
+                }
                 int actionColumn = table.convertColumnIndexToView(QLHoSoXe.COT_THAO_TAC);
                 if (viewColumn == actionColumn) {
                     Rectangle cell = table.getCellRect(viewRow, viewColumn, false);
                     int icon = util.UIComponents.viTriBieuTuong(table, e, actionColumn, 2);
                     // Chia toàn bộ ô thao tác thành hai vùng để icon vẫn dễ bấm.
-                    if (icon < 0) icon = e.getX() - cell.x < cell.width / 2 ? QLHoSoXe.ICON_XEM : QLHoSoXe.ICON_SUA;
+                    if (icon < 0) {
+                        icon = e.getX() - cell.x < cell.width / 2
+                                ? QLHoSoXe.ICON_XEM : QLHoSoXe.ICON_SUA;
+                    }
                     int modelRow = table.convertRowIndexToModel(viewRow);
                     String plate = String.valueOf(view.getTableModel().getValueAt(modelRow, 0));
-                    if (icon == QLHoSoXe.ICON_XEM) viewRecord(plate, modelRow);
-                    else edit(plate, modelRow);
+                    if (icon == QLHoSoXe.ICON_XEM) {
+                        viewRecord(plate, modelRow);
+                    } else {
+                        edit(plate, modelRow);
+                    }
                 } else if (e.getClickCount() > 1) {
                     int modelRow = table.convertRowIndexToModel(viewRow);
                     edit(String.valueOf(view.getTableModel().getValueAt(modelRow, 0)), modelRow);
                 }
             }
         });
-        load();
     }
 
     private void load() {
