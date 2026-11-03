@@ -384,18 +384,18 @@ public class QLDuyetXuatKho extends JPanel {
     public JButton getBtnTuChoi() { return btnTuChoi; }
     public JButton getBtnXacNhanXuat() { return btnXacNhanXuat; }
 
-//    public static void main(String[] args) {
-//        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//        } catch (Exception ignored) {}
-//
-//        SwingUtilities.invokeLater(() -> {
-//            JFrame frame = new JFrame("AUTORA GARAGE - Duyệt Xuất Kho");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.setContentPane(QLDuyetXuatKho.createPanel());
-//            frame.setSize(1366, 840);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-//    }
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {}
+
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("AUTORA GARAGE - Duyệt Xuất Kho");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(QLDuyetXuatKho.createPanel());
+            frame.setSize(1366, 840);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
 }

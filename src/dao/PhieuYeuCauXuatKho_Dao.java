@@ -187,7 +187,25 @@ public class PhieuYeuCauXuatKho_Dao {
         return list;
     }
 
+    /**
+     * Kiểm tra phiếu sửa chữa đã có Hóa đơn còn hiệu lực hay chưa (loại trừ trạng thái 'Đã hủy').
+     */
+    public boolean kiemTraTonTaiHoaDonHopLe(String maPhieuTNSC) throws SQLException {
+        String sql = "SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy'";
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, maPhieuTNSC);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     public boolean insertWithDetails(PhieuYeuCauXuatKho phieu, List<ChiTietYeuCauXuatKho> chiTietList) throws SQLException {
+        if (kiemTraTonTaiHoaDonHopLe(phieu.getMaPhieuTNSC())) {
+            throw new SQLException("Phiếu sửa chữa " + phieu.getMaPhieuTNSC() + " đã có hóa đơn còn hiệu lực, không thể tạo thêm yêu cầu phụ tùng!");
+        }
+
         String sqlPhieu = "INSERT INTO PhieuYeuCauXuatKho(maPhieuYC, ngayYeuCau, ngayXuat, trangThai, maPhieuTNSC, maNV_KyThuat, maNV_ThuKho) "
                 + "VALUES(?, ?, ?, ?, ?, ?, ?)";
         String sqlChiTiet = "INSERT INTO ChiTietYeuCauXuatKho(maPhieuYC, maSKU, soLuong) VALUES(?, ?, ?)";
@@ -229,6 +247,10 @@ public class PhieuYeuCauXuatKho_Dao {
                 psUpdate.setString(1, phieu.getMaPhieuTNSC());
                 psUpdate.executeUpdate();
 
+                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, phieu.getMaNVKyThuat(),
+                        "Lập phiếu yêu cầu xuất kho",
+                        "Tạo phiếu yêu cầu " + phieu.getMaPhieuYC() + " cho phiếu sửa chữa " + phieu.getMaPhieuTNSC());
+
                 c.commit();
                 c.setAutoCommit(oldAutoCommit);
                 return true;
@@ -239,7 +261,13 @@ public class PhieuYeuCauXuatKho_Dao {
             }
         }
     }
+
     public boolean duyetXuatKho(String maPhieuYC, String maPhieuTNSC, String maNVThuKho, List<ChiTietYeuCauXuatKho> chiTietList) throws SQLException {
+        // Chặn ngay ở tầng DAO nếu phiếu sửa chữa đã có hóa đơn hợp lệ (khác 'Đã hủy')
+        if (kiemTraTonTaiHoaDonHopLe(maPhieuTNSC)) {
+            throw new SQLException("Phiếu sửa chữa " + maPhieuTNSC + " đã có hóa đơn còn hiệu lực. Vui lòng hủy hóa đơn trước khi duyệt xuất kho!");
+        }
+
         String sqlTruTon = "UPDATE PhuTung SET soLuongTon = soLuongTon - ? WHERE maSKU = ? AND soLuongTon >= ?";
         String sqlUpsertCTPT = "IF EXISTS (SELECT 1 FROM ChiTietSuaChua_PhuTung WHERE maPhieuTNSC = ? AND maSKU = ?) "
                 + "UPDATE ChiTietSuaChua_PhuTung SET soLuongSuDung = soLuongSuDung + ? WHERE maPhieuTNSC = ? AND maSKU = ? "
@@ -283,6 +311,10 @@ public class PhieuYeuCauXuatKho_Dao {
                 psPTNSC.setString(1, maPhieuTNSC);
                 psPTNSC.executeUpdate();
 
+                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, maNVThuKho,
+                        "Duyệt xuất kho phụ tùng",
+                        "Duyệt xuất kho phiếu " + maPhieuYC + " cho phiếu sửa chữa " + maPhieuTNSC);
+
                 c.commit();
                 c.setAutoCommit(oldAuto);
                 return true;
@@ -300,7 +332,13 @@ public class PhieuYeuCauXuatKho_Dao {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, maNVThuKho);
             ps.setString(2, maPhieuYC);
-            return ps.executeUpdate() == 1;
+            boolean ok = ps.executeUpdate() == 1;
+            if (ok) {
+                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, maNVThuKho,
+                        "Từ chối yêu cầu xuất kho",
+                        "Từ chối phiếu yêu cầu xuất kho " + maPhieuYC);
+            }
+            return ok;
         }
     }
 }

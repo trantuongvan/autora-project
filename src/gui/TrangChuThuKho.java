@@ -1,6 +1,7 @@
 package gui;
 
 import controller.TrangChuThuKhoController;
+import entity.NhanVien;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -16,6 +17,7 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.RoundRectangle2D;
 
+
 public class TrangChuThuKho extends JPanel {
 
     public static final int SIDEBAR_WIDTH = 265;
@@ -25,8 +27,10 @@ public class TrangChuThuKho extends JPanel {
 
     // TopBar & Sidebar components
     private final JLabel lblAvatar = new JLabel("BV", SwingConstants.CENTER);
-    private final JLabel lblTenThuKhoHeader = UIComponents.label("Bùi Thái Vy", UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
+    private final JLabel lblTenThuKhoHeader = UIComponents.label("Thủ kho", UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
     private final JButton btnDangXuat = TrangChuKyThuatVien.taoNutDangXuat();
+
+    private NhanVien nhanVienDangNhap;
 
     private final JButton btnMenuTrangChu = taoNutMenuThuKho("Trang chủ", MenuThuKho.TRANG_CHU, true);
     private final JButton btnMenuPhuTung = taoNutMenuThuKho("Quản lý phụ tùng & tồn kho", MenuThuKho.PHU_TUNG, false);
@@ -71,15 +75,30 @@ public class TrangChuThuKho extends JPanel {
     private JScrollPane spBangCanhBao;
 
     public TrangChuThuKho() {
+        this(null);
+    }
+
+    public TrangChuThuKho(NhanVien nv) {
+        this.nhanVienDangNhap = nv;
+        if (nv != null) {
+            capNhatHeaderThuKho(lblAvatar, lblTenThuKhoHeader, nv.getHoTen());
+            String ten = nv.getHoTen();
+            String tenGoi = ten.contains(" ") ? ten.substring(ten.lastIndexOf(' ') + 1) : ten;
+            lblMoTaChao.setText("Xin chào " + tenGoi + ", đây là tình hình tồn kho và các yêu cầu xuất kho hôm nay.");
+        }
         setLayout(new BorderLayout());
         setBackground(UIConstants.APP_BG);
         buildUI();
     }
 
-    public static JPanel createPanel() {
-        TrangChuThuKho view = new TrangChuThuKho();
+    public static JPanel createPanel(NhanVien nv) {
+        TrangChuThuKho view = new TrangChuThuKho(nv);
         new TrangChuThuKhoController(view);
         return view;
+    }
+
+    public static JPanel createPanel() {
+        return createPanel(null);
     }
 
     private void buildUI() {
@@ -155,7 +174,6 @@ public class TrangChuThuKho extends JPanel {
         cardCanhBao.add(spBangCanhBao, BorderLayout.CENTER);
         modelCanhBao.addTableModelListener(e -> SwingUtilities.invokeLater(() -> capNhatChieuCaoBang(tblCanhBao, spBangCanhBao)));
 
-        // Gọi ngay khi dựng giao diện để thu ngắn bảng nếu ban đầu có 0 dòng
         SwingUtilities.invokeLater(() -> {
             capNhatChieuCaoBang(tblYeuCau, spBangYeuCau);
             capNhatChieuCaoBang(tblCanhBao, spBangCanhBao);
@@ -279,6 +297,7 @@ public class TrangChuThuKho extends JPanel {
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
     }
+
     public static JPanel taoTopBarThuKho(String tieuDeTrang, JLabel lblAvatar, JLabel lblTenHeader, JButton btnDangXuat) {
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(UIConstants.CARD_BG);
@@ -580,18 +599,18 @@ public class TrangChuThuKho extends JPanel {
     public DefaultTableModel getModelCanhBao() { return modelCanhBao; }
     public JTable getTblCanhBao() { return tblCanhBao; }
 
-//    public static void main(String[] args) {
-//        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//        } catch (Exception ignored) {}
-//
-//        SwingUtilities.invokeLater(() -> {
-//            JFrame frame = new JFrame("AUTORA GARAGE - Trang Chủ Thủ Kho");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.setContentPane(TrangChuThuKho.createPanel());
-//            frame.setSize(1366, 840);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-//    }
+    public static void main(String[] args) {
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ignored) {}
+
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("AUTORA GARAGE - Trang Chủ Thủ Kho");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setContentPane(TrangChuThuKho.createPanel());
+            frame.setSize(1366, 840);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
 }

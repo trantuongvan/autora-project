@@ -315,6 +315,18 @@ public class QLDuyetXuatKhoController {
     private void xacNhanXuatKho() {
         if (yeuCauDangChon == null || !duTonKho) return;
         try {
+            // [VÁ LỖI THẤT THOÁT] Kiểm tra phiếu sửa chữa đã bị chốt Hóa đơn chưa
+            boolean daCoHoaDon = yeuCauDao.kiemTraTonTaiHoaDonHopLe(yeuCauDangChon.getMaPhieuTNSC());
+            if (daCoHoaDon) {
+                JOptionPane.showMessageDialog(view,
+                        "Không thể xuất kho!\nPhiếu sửa chữa " + yeuCauDangChon.getMaPhieuTNSC()
+                                + " đã được Lễ tân lập Hóa đơn thanh toán.\n"
+                                + "Để xuất thêm phụ tùng, Lễ tân cần Hủy hóa đơn hiện tại trước.",
+                        "Chặn xuất kho", JOptionPane.ERROR_MESSAGE);
+                return; // Chặn ngay lập tức, không thực hiện trừ kho
+            }
+
+            // Nếu chưa có hóa đơn, tiến hành trừ kho bình thường
             String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
             yeuCauDao.duyetXuatKho(
                     yeuCauDangChon.getMaPhieuYC(),

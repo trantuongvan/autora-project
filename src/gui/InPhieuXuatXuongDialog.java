@@ -84,27 +84,44 @@ public class InPhieuXuatXuongDialog extends JDialog {
         chuKy.add(khungKy("Khách hàng", "(Ký, ghi rõ họ tên)", tt.tenKhach));
         chuKy.add(khungKy("Nhân viên bàn giao", "(Ký, ghi rõ họ tên)", tt.nhanVienBanGiao));
         GridBagConstraints g = new GridBagConstraints();
-        g.gridx = 0; g.gridy = y; g.gridwidth = 2; g.weightx = 1; g.weighty = 1;
-        g.fill = GridBagConstraints.BOTH; g.insets = new Insets(22, 0, 0, 0);
+        g.gridx = 0;
+        g.gridy = y;
+        g.gridwidth = 2;
+        g.weightx = 1;
+        g.weighty = 1;
+        g.fill = GridBagConstraints.BOTH;
+        g.insets = new Insets(22, 0, 0, 0);
         pnlPhieu.add(chuKy, g);
     }
 
     private int them(Component c, int y, int khoangTren, boolean canGiua) {
         GridBagConstraints g = new GridBagConstraints();
-        g.gridx = 0; g.gridy = y; g.gridwidth = 2; g.weightx = 1;
+        g.gridx = 0;
+        g.gridy = y;
+        g.gridwidth = 2;
+        g.weightx = 1;
         g.fill = GridBagConstraints.HORIZONTAL;
         g.insets = new Insets(khoangTren, 0, 0, 0);
-        if (canGiua && c instanceof JLabel) ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
+        if (canGiua && c instanceof JLabel) {
+            ((JLabel) c).setHorizontalAlignment(SwingConstants.CENTER);
+        }
         pnlPhieu.add(c, g);
         return y + 1;
     }
 
     private int dong(int y, String nhan, String giaTri, int khoangTren) {
         GridBagConstraints g = new GridBagConstraints();
-        g.gridx = 0; g.gridy = y; g.anchor = GridBagConstraints.WEST; g.insets = new Insets(khoangTren, 0, 0, 16);
+        g.gridx = 0;
+        g.gridy = y;
+        g.anchor = GridBagConstraints.WEST;
+        g.insets = new Insets(khoangTren, 0, 0, 16);
         pnlPhieu.add(UIComponents.label(nhan, UIConstants.FONT_BODY.deriveFont(14f), UIConstants.TEXT_MUTED), g);
         g = new GridBagConstraints();
-        g.gridx = 1; g.gridy = y; g.weightx = 1; g.anchor = GridBagConstraints.WEST; g.fill = GridBagConstraints.HORIZONTAL;
+        g.gridx = 1;
+        g.gridy = y;
+        g.weightx = 1;
+        g.anchor = GridBagConstraints.WEST;
+        g.fill = GridBagConstraints.HORIZONTAL;
         g.insets = new Insets(khoangTren, 0, 0, 0);
         pnlPhieu.add(UIComponents.label(giaTri == null ? "" : giaTri, UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK), g);
         return y + 1;
@@ -132,7 +149,9 @@ public class InPhieuXuatXuongDialog extends JDialog {
         PrinterJob job = PrinterJob.getPrinterJob();
         job.setJobName("Phieu xuat xuong");
         job.setPrintable((Graphics g, PageFormat pf, int trang) -> {
-            if (trang > 0) return Printable.NO_SUCH_PAGE;
+            if (trang > 0) {
+                return Printable.NO_SUCH_PAGE;
+            }
             Graphics2D g2 = (Graphics2D) g;
             g2.translate(pf.getImageableX(), pf.getImageableY());
             double tyLe = Math.min(1.0, pf.getImageableWidth() / pnlPhieu.getWidth());
