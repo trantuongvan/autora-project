@@ -1,15 +1,19 @@
 package controller;
 
 import entity.PhienDangNhap;
+import gui.ChiTietHoaDon;
 import gui.ChiTietPhieuSuaChua;
 import gui.DangNhap;
 import gui.GiaoDienChinh;
 import gui.QLBanGiaoXe;
 import gui.QLHoSoXe;
+import gui.QLHoaDon;
+import gui.QLKhachHang;
 import gui.QLKhuyenMai;
 import gui.QLNhanVien;
 import gui.QLNhatKy;
 import gui.QLPhieuSuaChua;
+import gui.QLTaiKhoan;
 import gui.QLTiepNhanSuaChua;
 import gui.TrangChuLeTan;
 import gui.TrangChuQuanLy;
@@ -29,10 +33,12 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 /** Dựng menu theo vai trò, tạo màn hình khi mở lần đầu và điều hướng giữa các màn hình phiếu. */
-public class GiaoDienChinhController implements DieuHuongPhieu {
+public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon {
     private static final String CARD_CHI_TIET = "CT_PHIEU";
     private static final String CARD_TIEP_NHAN = "QL_TIEP_NHAN";
     private static final String CARD_PHIEU = "QL_PHIEU";
+    private static final String CARD_HOA_DON = "QL_HOA_DON";
+    private static final String CARD_CHI_TIET_HOA_DON = "CT_HOA_DON";
 
     private static final Map<String, String> TIEU_DE = new HashMap<>();
     private static final Map<String, Loai> ICON = new HashMap<>();
@@ -50,18 +56,19 @@ public class GiaoDienChinhController implements DieuHuongPhieu {
         muc("QL_PHU_TUNG", "Phụ tùng & Kho", Loai.BOX);
         muc("QL_NHAP_KHO", "Nhập kho", Loai.DOWNLOAD);
         muc("QL_DUYET_XUAT", "Duyệt xuất kho", Loai.UPLOAD);
-        muc("QL_HOA_DON", "Hóa đơn & Thanh toán", Loai.RECEIPT);
+        muc(CARD_HOA_DON, "Hóa đơn & Thanh toán", Loai.RECEIPT);
         muc("QL_BAN_GIAO", "Bàn giao xe", Loai.KEY);
         muc("QL_KHUYEN_MAI", "Khuyến mãi", Loai.PERCENT);
         muc("QL_THONG_KE", "Báo cáo thống kê", Loai.CHART);
-        muc("QL_NHAN_VIEN", "Nhân viên & Tài khoản", Loai.USER);
+        muc("QL_NHAN_VIEN", "Nhân viên", Loai.USER);
+        muc("QL_TAI_KHOAN", "Tài khoản & Phân quyền", Loai.LOCK);
         muc("QL_NHAT_KY", "Nhật ký hệ thống", Loai.HISTORY);
         muc("QL_TIEN_DO", "Tiến độ sửa chữa", Loai.WRENCH);
 
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_CHU_CUA_HANG, Arrays.asList(
                 "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
                 "QL_NHAP_KHO", "QL_DUYET_XUAT", "QL_HOA_DON", "QL_BAN_GIAO", "QL_KHUYEN_MAI", "QL_THONG_KE",
-                "QL_NHAN_VIEN", "QL_NHAT_KY"));
+                "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_LE_TAN, Arrays.asList(
                 "TRANG_CHU_LT", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_HOA_DON", "QL_BAN_GIAO"));
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
@@ -81,6 +88,8 @@ public class GiaoDienChinhController implements DieuHuongPhieu {
     private QLTiepNhanSuaChua manHinhTiepNhan;
     private QLPhieuSuaChua manHinhPhieu;
     private JPanel manHinhChiTiet;
+    private QLHoaDon manHinhHoaDon;
+    private JPanel manHinhChiTietHoaDon;
 
     public GiaoDienChinhController(GiaoDienChinh view) {
         this.view = view;
@@ -104,6 +113,12 @@ public class GiaoDienChinhController implements DieuHuongPhieu {
         nhaMay.put("QL_NHAN_VIEN", QLNhanVien::createPanel);
         nhaMay.put("QL_KHUYEN_MAI", QLKhuyenMai::createPanel);
         nhaMay.put("QL_NHAT_KY", QLNhatKy::createPanel);
+        nhaMay.put("QL_KHACH_HANG", QLKhachHang::createPanel);
+        nhaMay.put("QL_TAI_KHOAN", QLTaiKhoan::createPanel);
+        nhaMay.put(CARD_HOA_DON, () -> {
+            manHinhHoaDon = (QLHoaDon) QLHoaDon.createPanel(this);
+            return manHinhHoaDon;
+        });
 
         view.getBtnDangXuat().addActionListener(e -> dangXuat());
 
@@ -201,5 +216,34 @@ public class GiaoDienChinhController implements DieuHuongPhieu {
     @Override
     public void moBaoCao() {
         moManHinh("QL_THONG_KE");
+    }
+
+    // ==========================================================
+    // DieuHuongHoaDon
+    // ==========================================================
+
+    @Override
+    public void moChiTietHoaDon(String maHD) {
+        hienChiTietHoaDon(ChiTietHoaDon.createPanelHoaDon(maHD, this));
+    }
+
+    @Override
+    public void moLapHoaDon(String maPhieu) {
+        hienChiTietHoaDon(ChiTietHoaDon.createPanelLap(maPhieu, this));
+    }
+
+    @Override
+    public void moDanhSachHoaDon() {
+        moManHinh(CARD_HOA_DON);
+        manHinhHoaDon.getController().taiDuLieu();
+    }
+
+    private void hienChiTietHoaDon(JPanel panel) {
+        if (manHinhChiTietHoaDon != null) {
+            view.xoaManHinh(manHinhChiTietHoaDon);
+        }
+        manHinhChiTietHoaDon = panel;
+        view.themManHinh(CARD_CHI_TIET_HOA_DON, panel);
+        view.hienManHinh(CARD_CHI_TIET_HOA_DON, "Chi tiết hóa đơn", CARD_HOA_DON);
     }
 }
