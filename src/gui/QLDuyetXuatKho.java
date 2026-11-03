@@ -88,8 +88,8 @@ public class QLDuyetXuatKho extends JPanel {
     }
 
     private void buildUI() {
-        add(TrangChuThuKho.taoTopBarThuKho("Duyệt xuất kho", lblAvatar, lblTenThuKhoHeader, btnDangXuat), BorderLayout.NORTH);
-        add(TrangChuThuKho.taoSidebarThuKho(btnMenuTrangChu, btnMenuPhuTung, btnMenuNhapKho, btnMenuDuyetXuat), BorderLayout.WEST);
+
+
 
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));

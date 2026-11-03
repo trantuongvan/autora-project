@@ -72,15 +72,21 @@ public class TrangChuKyThuatVien extends JPanel {
         buildUI();
     }
 
+    private static TrangChuKyThuatVienController activeController;
+
     public static JPanel createPanel() {
         TrangChuKyThuatVien view = new TrangChuKyThuatVien();
-        new TrangChuKyThuatVienController(view);
+        activeController = new TrangChuKyThuatVienController(view);
         return view;
     }
 
+    public static TrangChuKyThuatVienController getActiveController() {
+        return activeController;
+    }
+
     private void buildUI() {
-        add(buildTopBar(), BorderLayout.NORTH);
-        add(buildLeftSidebar(), BorderLayout.WEST);
+
+
 
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));

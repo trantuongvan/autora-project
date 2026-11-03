@@ -14,6 +14,10 @@ GO
 USE GaraAUTORA;
 GO
 
+-- Chỉ mục có điều kiện của HoaDon cần tùy chọn này; sqlcmd mặc định tắt nó.
+SET QUOTED_IDENTIFIER ON;
+GO
+
 -- ==============================================================
 -- 1. TẠO CÁC BẢNG DANH MỤC ĐỘC LẬP (BÊN 1)
 -- ==============================================================
@@ -190,7 +194,7 @@ CREATE TABLE HoaDon (
     trangThaiThanhToan NVARCHAR(50) DEFAULT N'Đã thanh toán', -- 'Đã thanh toán', 'Công nợ', 'Đã hủy'
     lyDoHuy NVARCHAR(255),
     ngayLap DATETIME DEFAULT GETDATE(),
-    maPhieuTNSC VARCHAR(30) NOT NULL UNIQUE,
+    maPhieuTNSC VARCHAR(30) NOT NULL,
     maNV_Lap VARCHAR(20) NOT NULL,
     maKM VARCHAR(20) NULL,
     maThue VARCHAR(20) NULL,
@@ -199,6 +203,10 @@ CREATE TABLE HoaDon (
     CONSTRAINT FK_HoaDon_KhuyenMai FOREIGN KEY (maKM) REFERENCES KhuyenMai(maKM),
     CONSTRAINT FK_HoaDon_Thue FOREIGN KEY (maThue) REFERENCES Thue(maThue)
 );
+GO
+
+-- Mỗi phiếu chỉ có một hóa đơn còn hiệu lực; hóa đơn đã hủy được giữ lại nên phiếu có thể lập hóa đơn mới.
+CREATE UNIQUE INDEX UX_HoaDon_PhieuConHieuLuc ON HoaDon(maPhieuTNSC) WHERE trangThaiThanhToan <> N'Đã hủy';
 GO
 
 -- 3.5. Bảng Phiếu Bàn Giao Xe (Xuất Xưởng)

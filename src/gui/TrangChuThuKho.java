@@ -91,9 +91,15 @@ public class TrangChuThuKho extends JPanel {
         buildUI();
     }
 
+    private static TrangChuThuKhoController activeController;
+
+    public static TrangChuThuKhoController getActiveController() {
+        return activeController;
+    }
+
     public static JPanel createPanel(NhanVien nv) {
         TrangChuThuKho view = new TrangChuThuKho(nv);
-        new TrangChuThuKhoController(view);
+        activeController = new TrangChuThuKhoController(view);
         return view;
     }
 
@@ -102,8 +108,8 @@ public class TrangChuThuKho extends JPanel {
     }
 
     private void buildUI() {
-        add(taoTopBarThuKho("Trang chủ", lblAvatar, lblTenThuKhoHeader, btnDangXuat), BorderLayout.NORTH);
-        add(taoSidebarThuKho(btnMenuTrangChu, btnMenuPhuTung, btnMenuNhapKho, btnMenuDuyetXuat), BorderLayout.WEST);
+
+
 
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));
@@ -483,6 +489,31 @@ public class TrangChuThuKho extends JPanel {
     }
 
     public static void chuyenManHinhThuKho(JComponent currentView, MenuThuKho dichDen, String thamSoMa) {
+        Window w0 = SwingUtilities.getWindowAncestor(currentView);
+        if (w0 instanceof GiaoDienChinh) {
+            GiaoDienChinh gdc = (GiaoDienChinh) w0;
+            switch (dichDen) {
+                case TRANG_CHU:
+                    gdc.moCard("TRANG_CHU_KHO");
+                    break;
+                case PHU_TUNG:
+                    gdc.moCard("QL_PHU_TUNG");
+                    break;
+                case NHAP_KHO:
+                    gdc.moCard("QL_NHAP_KHO");
+                    if (thamSoMa != null && QLNhapKho.getActiveController() != null) {
+                        SwingUtilities.invokeLater(() -> QLNhapKho.getActiveController().moPopupLapPhieuNhap(thamSoMa));
+                    }
+                    break;
+                case DUYET_XUAT:
+                    gdc.moCard("QL_DUYET_XUAT");
+                    if (thamSoMa != null && QLDuyetXuatKho.getActiveController() != null) {
+                        QLDuyetXuatKho.getActiveController().chonYeuCau(thamSoMa);
+                    }
+                    break;
+            }
+            return;
+        }
         Container parent = currentView.getParent();
         if (parent != null && parent.getLayout() instanceof CardLayout) {
             CardLayout cl = (CardLayout) parent.getLayout();

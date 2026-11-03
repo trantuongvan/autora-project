@@ -141,6 +141,11 @@ public class QLTienDoSuaChuaController {
     }
 
     private void dieuHuongVeTrangChu() {
+        Window w0 = SwingUtilities.getWindowAncestor(view);
+        if (w0 instanceof gui.GiaoDienChinh) {
+            ((gui.GiaoDienChinh) w0).moCard("TRANG_CHU_KTV");
+            return;
+        }
         Container parent = view.getParent();
         if (parent != null && parent.getLayout() instanceof CardLayout) {
             ((CardLayout) parent.getLayout()).show(parent, "TRANG_CHU_KTV");

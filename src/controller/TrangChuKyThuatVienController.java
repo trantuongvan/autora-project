@@ -199,6 +199,15 @@ public class TrangChuKyThuatVienController {
     }
 
     private void dieuHuongSangTienDo(String maPhieuTNSC, boolean moManHinhYeuCauPT) {
+        Window w0 = SwingUtilities.getWindowAncestor(view);
+        if (w0 instanceof gui.GiaoDienChinh) {
+            ((gui.GiaoDienChinh) w0).moCard("QL_TIEN_DO");
+            QLTienDoSuaChuaController ctrl = QLTienDoSuaChua.getActiveController();
+            if (ctrl != null) {
+                ctrl.chonPhieuVaMoManHinh(maPhieuTNSC, moManHinhYeuCauPT);
+            }
+            return;
+        }
         Container parent = view.getParent();
         if (parent != null && parent.getLayout() instanceof CardLayout) {
             ((CardLayout) parent.getLayout()).show(parent, "QL_TIEN_DO");
