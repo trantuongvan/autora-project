@@ -210,6 +210,16 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
                     QLDuyetXuatKho.getActiveController().loadDanhSach(null);
                 }
                 break;
+            case CARD_PHIEU:
+                if (manHinhPhieu != null && manHinhPhieu.getController() != null) {
+                    manHinhPhieu.getController().taiDanhSach();
+                }
+                break;
+            case CARD_HOA_DON:
+                if (manHinhHoaDon != null && manHinhHoaDon.getController() != null) {
+                    manHinhHoaDon.getController().taiDuLieu();
+                }
+                break;
             default:
                 break;
         }
