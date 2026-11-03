@@ -123,8 +123,8 @@ public final class UIComponents {
         }
 
         @Override public Dimension getPreferredScrollableViewportSize() { return getPreferredSize(); }
-        @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 16; }
-        @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return Math.max(r.height - 32, 16); }
+        @Override public int getScrollableUnitIncrement(Rectangle r, int o, int d) { return 20; }
+        @Override public int getScrollableBlockIncrement(Rectangle r, int o, int d) { return Math.max(r.height - 32, 120); }
         @Override public boolean getScrollableTracksViewportWidth() { return true; }
         @Override public boolean getScrollableTracksViewportHeight() { return false; }
     }
@@ -134,7 +134,8 @@ public final class UIComponents {
                 ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         sp.setBorder(null);
         sp.getViewport().setBackground(UIConstants.APP_BG);
-        sp.getVerticalScrollBar().setUnitIncrement(16);
+        sp.getVerticalScrollBar().setUnitIncrement(20);
+        sp.getVerticalScrollBar().setBlockIncrement(120);
         return sp;
     }
 
@@ -440,6 +441,8 @@ public final class UIComponents {
         JScrollPane sp = new JScrollPane(t);
         sp.setBorder(null);
         sp.getViewport().setBackground(UIConstants.CARD_BG);
+        sp.getVerticalScrollBar().setUnitIncrement(20);
+        sp.getVerticalScrollBar().setBlockIncrement(120);
         return sp;
     }
 
