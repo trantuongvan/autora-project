@@ -148,7 +148,7 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
 - **Tên Class Controller:** Luôn có hậu tố `Controller`: `QLKhachHangController`, `QLHoSoXeController`, `DangNhapController`.
 - **Tên Class GUI:** 
   - Màn hình quản lý (JPanel): `QL[TênChứcNăng].java` (ví dụ `QLKhachHang.java`, `QLHoSoXe.java`).
-  - Hộp thoại popup (JDialog): `[TênChứcNăng]Dialog.java` (ví dụ `ChiTietPhieuSuaChuaDialog.java`).
+  - Hộp thoại popup (JDialog): `[TênChứcNăng]Dialog.java` (ví dụ `KhuyenMaiFormDialog.java`).
   - Dashboard: `TrangChuLeTan.java`, `TrangChuQuanLy.java`, `TrangChuKyThuatVien.java`, `TrangChuThuKho.java`.
 - **Tiền tố bắt buộc cho biến UI Components:**
   - `JButton`: `btnThem`, `btnCapNhat`, `btnXoa`, `btnLamMoi`, `btnInPhieu`
@@ -496,6 +496,7 @@ AUTORA/
     │   ├── QLHoSoXeController.java
     │   ├── QLKhachHangController.java
     │   ├── QLTiepNhanSuaChuaController.java
+    │   ├── QLPhieuSuaChuaController.java
     │   ├── ChiTietPhieuSuaChuaController.java
     │   ├── QLTienDoSuaChuaController.java
     │   ├── QLHoaDonController.java
@@ -520,7 +521,9 @@ AUTORA/
     │   ├── QLKhachHang.java                        # JPanel Quản lý Khách hàng
     │   ├── QLHoSoXe.java                           # JPanel Quản lý Hồ sơ xe
     │   ├── QLTiepNhanSuaChua.java                  # JPanel Tiếp nhận & Lập phiếu
-    │   ├── ChiTietPhieuSuaChuaDialog.java          # JDialog Chi tiết & Chỉ định thợ
+    │   ├── QLPhieuSuaChua.java                     # JPanel Danh sách phiếu sửa chữa
+    │   ├── ChiTietPhieuSuaChua.java                # JPanel Chi tiết phiếu & Chỉ định thợ
+    │   ├── KhuyenMaiFormDialog.java                # JDialog Tạo / Sửa khuyến mãi
     │   ├── QLTienDoSuaChua.java                    # JPanel Cập nhật tiến độ & Xin phụ tùng
     │   ├── QLHoaDon.java                           # JPanel Quản lý Hóa đơn
     │   ├── ChiTietHoaDonDialog.java                # JDialog Xem chi tiết hóa đơn
@@ -577,8 +580,10 @@ AUTORA/
   2. `GiaoDienChinh` (JFrame - Khung sườn tổng thể của ứng dụng)
   3. `TrangChuQuanLy` (JPanel)
   4. `QLTiepNhanSuaChua` (JPanel)
-  5. `ChiTietPhieuSuaChuaDialog` (JDialog)
-  6. `QLKhuyenMai` (JPanel)
+  5. `QLPhieuSuaChua` (JPanel)
+  6. `ChiTietPhieuSuaChua` (JPanel)
+  7. `KhuyenMaiFormDialog` (JDialog)
+  8. `QLKhuyenMai` (JPanel)
 - **Controller:** `DangNhapController`, `GiaoDienChinhController`, `TrangChuQuanLyController`, `QLTiepNhanSuaChuaController`, `ChiTietPhieuSuaChuaController`, `QLKhuyenMaiController`.
 - **DAO & Entity:** `PhieuTiepNhanVaSuaChua_Dao`, `DichVu_Dao`, `ChiTietSuaChua_DichVu_Dao`, `KhuyenMai_Dao` / `PhieuTiepNhanVaSuaChua`, `DichVu`, `ChiTietSuaChua_DichVu`, `KhuyenMai`, `PhienDangNhap`.
 - **Màu sắc chủ đạo:** Màu xanh dương (`UIConstants.PRIMARY`: `#1565C0`) cho Đăng nhập & Khung chính; Màu xanh lá (`UIConstants.ROLE_MANAGER`) cho Khuyến mãi.
@@ -600,10 +605,19 @@ AUTORA/
 
 ## 7. CÁC ĐIỂM GIAO THOA DỮ LIỆU GIỮA CÁC THÀNH VIÊN
 
-1. **Tiếp nhận xe (Việt Anh):** Gọi `KhachHang_Dao.findBySdt()` (Tường Vân) để lấy chủ xe, gọi `Xe_Dao.findById()` (Tuấn Vũ) để lấy thông tin xe. Nếu xe chưa có, mở popup thêm nhanh xe của Tuấn Vũ.
+1. **Tiếp nhận xe (Việt Anh):** Tra cứu theo biển số hoặc SĐT. Nếu khách hoặc xe chưa có, `PhieuTiepNhanVaSuaChua_Dao.taoTiepNhan()` tạo mới khách, xe, phiếu và dòng dịch vụ trong cùng một transaction (nhóm đã thống nhất).
 2. **Chỉ định thợ (Việt Anh):** Gọi `NhanVien_Dao.findByViTri("Kỹ thuật viên")` (Tuấn Vũ) để đổ danh sách thợ vào ComboBox.
 3. **Lập hóa đơn (Tường Vân):** Gọi `PhieuTiepNhanVaSuaChua_Dao` (Việt Anh) để lấy tiền công và `ChiTietSuaChua_PhuTung_Dao` (Thái Vy) để lấy tiền phụ tùng xuất dùng.
 4. **Bàn giao xe (Tuấn Vũ):** Kiểm tra trạng thái phiếu sửa chữa đạt `"Hoàn thành"` (Việt Anh) và hóa đơn đạt `"Đã thanh toán"` (Tường Vân) mới kích hoạt nút Bàn giao xe và In phiếu xuất xưởng.
+
+---
+
+## 7A. QUY ĐỊNH CHUNG MỚI (BẮT BUỘC)
+
+1. **Mật khẩu:** luôn lưu bằng `util.MatKhauUtil.bam(matKhau)`, không lưu dạng rõ. Tài khoản lưu dạng rõ sẽ không đăng nhập được. Màn hình `QLTaiKhoan` phải dùng hàm này.
+2. **Nhật ký:** thao tác nhạy cảm (sửa giá, hủy phiếu, hủy hóa đơn) phải gọi `NhatKy_Dao.ghi(connection, ...)` trong cùng transaction với thao tác đó. Xem tại menu Nhật ký hệ thống.
+3. **Hủy phiếu:** phiếu sửa chữa không bị xóa mà chuyển sang `Đã hủy`. Truy vấn thống kê, danh sách bàn giao phải loại trừ `trangThai = N'Đã hủy'`.
+4. **Xuất Excel:** dùng `util.XuatFile.xuatExcel(...)`. **Xuất PDF:** thêm hàm vào `util.PdfExporter`.
 
 ---
 
