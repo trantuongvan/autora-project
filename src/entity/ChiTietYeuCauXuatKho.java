@@ -10,6 +10,7 @@ public class ChiTietYeuCauXuatKho {
     // Thuộc tính phụ hỗ trợ hiển thị JOIN từ bảng PhuTung
     private String tenPhuTung;
     private String hangSanXuat;
+    private String viTriKho;
     private int soLuongTon;
     private int nguongCanhBao;
 
@@ -32,7 +33,9 @@ public class ChiTietYeuCauXuatKho {
         this.maPhieuYC = maPhieuYC;
     }
 
-    public String getMaSKU() { return maSKU; }
+    public String getMaSKU() {
+        return maSKU;
+    }
     public void setMaSKU(String maSKU) {
         if (maSKU == null || maSKU.trim().isEmpty()) {
             throw new IllegalArgumentException("Mã SKU không được để trống.");
@@ -62,6 +65,13 @@ public class ChiTietYeuCauXuatKho {
     }
     public void setHangSanXuat(String hangSanXuat) {
         this.hangSanXuat = hangSanXuat;
+    }
+
+    public String getViTriKho() {
+        return viTriKho;
+    }
+    public void setViTriKho(String viTriKho) {
+        this.viTriKho = viTriKho;
     }
 
     public int getSoLuongTon() {
