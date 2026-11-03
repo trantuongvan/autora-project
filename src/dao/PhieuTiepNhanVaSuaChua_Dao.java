@@ -232,7 +232,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
 
     /** Bước hiện tại của thanh tiến trình: 2 Chỉ định, 3 Xuất kho, 4 Thanh toán. */
     public int buocHienTai(String ma) throws SQLException {
-        String sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ?) THEN 4 "
+        String sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy') THEN 4 "
                 + "WHEN EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ?) THEN 3 ELSE 2 END";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -358,7 +358,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         String sql = "UPDATE p SET trangThai = N'Đã hủy' FROM PhieuTiepNhanVaSuaChua p "
                 + "WHERE p.maPhieuTNSC = ? AND p.trangThai <> N'Đã hủy' "
                 + "AND NOT EXISTS (SELECT 1 FROM HoaDon h "
-                + "WHERE h.maPhieuTNSC = p.maPhieuTNSC) "
+                + "WHERE h.maPhieuTNSC = p.maPhieuTNSC AND h.trangThaiThanhToan <> N'Đã hủy') "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao b "
                 + "WHERE b.maPhieuTNSC = p.maPhieuTNSC) "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho y "
