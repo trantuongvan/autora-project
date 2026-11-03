@@ -14,6 +14,7 @@ import javax.swing.event.DocumentListener;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /** Bàn giao chỉ được xác nhận khi dịch vụ hoàn tất và hóa đơn hợp lệ. */
 public class QLBanGiaoXeController {
@@ -23,6 +24,7 @@ public class QLBanGiaoXeController {
     private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
     private String selected;
     private int loadVersion;
+    private boolean loadErrorShown;
 
     public QLBanGiaoXeController(QLBanGiaoXe view) {
         this.view = view;
@@ -78,6 +80,7 @@ public class QLBanGiaoXeController {
                 try {
                     List<Object[]> rows = get();
                     view.setDanhSach(rows);
+                    loadErrorShown = false;
                     view.anThongBaoThanhCong();
                     view.setCanhBaoDieuKien(null);
                     if (rows.isEmpty()) {
@@ -86,11 +89,26 @@ public class QLBanGiaoXeController {
                     } else {
                         view.getTblDanhSach().setRowSelectionInterval(0, 0);
                     }
-                } catch (Exception ignored) {
-                    // Lỗi truy vấn được xử lý ở lớp DAO hoặc giao diện.
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showLoadError(ex);
+                } catch (ExecutionException ex) {
+                    showLoadError(ex.getCause() == null ? ex : ex.getCause());
                 }
             }
         }.execute();
+    }
+
+    private void showLoadError(Throwable error) {
+        if (loadErrorShown) {
+            return;
+        }
+        loadErrorShown = true;
+        String message = error.getMessage() == null
+                ? error.getClass().getSimpleName() : error.getMessage();
+        JOptionPane.showMessageDialog(view,
+                "Không thể tải danh sách bàn giao: " + message,
+                "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
     }
 
     private void detail(String id) {

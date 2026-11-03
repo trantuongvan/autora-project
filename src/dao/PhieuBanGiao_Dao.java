@@ -21,14 +21,15 @@ public class PhieuBanGiao_Dao {
             + "COALESCE(h.tongThanhToan, 0) AS tong, k.duocGhiNo, COALESCE(h.maHD, '') AS maHD, "
             + "COALESCE(h.tongTienCong, 0) AS tienCong, "
             + "COALESCE(h.tongTienPhuTung, 0) AS tienPhuTung, "
-            + "COALESCE(h.tongTienGiam, 0) AS giam, COALESCE(h.tongThueVAT, 0) AS vat, "
-            + "COALESCE(th.tyLe, 0) AS thueSuat, p.trangThai, "
+            + "COALESCE(h.tongTienGiam, 0) AS giam, COALESCE(h.tongTienVAT, 0) AS vat, "
+            + "COALESCE(th.thueSuat, 0) AS thueSuat, p.trangThai, "
             + "COALESCE(bg.maPhieuBG, '') AS maPhieuBG, bg.ngayBanGiao, "
             + "bg.maNV_BanGiao, nv.hoTen AS tenNVBanGiao "
             + "FROM PhieuTiepNhanVaSuaChua p "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
             + "JOIN KhachHang k ON k.maKH = x.maKH "
             + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
+            + "AND h.trangThaiThanhToan <> N'Đã hủy' "
             + "LEFT JOIN Thue th ON th.maThue = h.maThue "
             + "LEFT JOIN PhieuBanGiao bg ON bg.maPhieuTNSC = p.maPhieuTNSC "
             + "LEFT JOIN NhanVien nv ON nv.maNV = bg.maNV_BanGiao "
@@ -66,7 +67,8 @@ public class PhieuBanGiao_Dao {
 
     public List<Object[]> findDanhSach(String tuKhoa, String loc) throws SQLException {
         String sql = LIST_SQL
-                + " WHERE (? = '' OR p.maPhieuTNSC LIKE ? OR x.bienSo LIKE ? OR k.hoTen LIKE ?)"
+                + " WHERE p.trangThai <> N'Đã hủy' "
+                + "AND (? = '' OR p.maPhieuTNSC LIKE ? OR x.bienSo LIKE ? OR k.hoTen LIKE ?)"
                 + " AND (? = 'Tất cả'"
                 + " OR (? = 'Chờ bàn giao' AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao bg"
                 + " WHERE bg.maPhieuTNSC = p.maPhieuTNSC))"
@@ -133,8 +135,10 @@ public class PhieuBanGiao_Dao {
                         + "JOIN KhachHang k ON k.maKH = x.maKH "
                         + "LEFT JOIN ChiTietSuaChua_DichVu d ON d.maPhieuTNSC = p.maPhieuTNSC "
                         + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
+                        + "AND h.trangThaiThanhToan <> N'Đã hủy' "
                         + "LEFT JOIN PhieuBanGiao bg ON bg.maPhieuTNSC = p.maPhieuTNSC "
-                        + "WHERE p.maPhieuTNSC = ? GROUP BY p.maPhieuTNSC";
+                        + "WHERE p.maPhieuTNSC = ? AND p.trangThai <> N'Đã hủy' "
+                        + "GROUP BY p.maPhieuTNSC";
                 try (PreparedStatement statement = connection.prepareStatement(checkSql)) {
                     statement.setString(1, maPhieu);
                     try (ResultSet result = statement.executeQuery()) {
@@ -214,7 +218,8 @@ public class PhieuBanGiao_Dao {
 
     public List<Object[]> findDashboardJobs() throws SQLException {
         String sql = LIST_SQL.replaceFirst("SELECT ", "SELECT TOP 7 ")
-                + " WHERE bg.maPhieuBG IS NULL ORDER BY p.thoiGianTiepNhan DESC";
+                + " WHERE p.trangThai <> N'Đã hủy' AND bg.maPhieuBG IS NULL "
+                + "ORDER BY p.thoiGianTiepNhan DESC";
         List<Object[]> rows = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -259,7 +264,8 @@ public class PhieuBanGiao_Dao {
                 + "SUM(CASE WHEN trangThai <> N'Chờ kiểm tra' AND tienDo < 100 THEN 1 ELSE 0 END) AS dangSua, "
                 + "SUM(CASE WHEN tienDo = 100 AND (thanhToan = N'Đã thanh toán' "
                 + "OR (thanhToan = N'Công nợ' AND duocGhiNo = 1)) THEN 1 ELSE 0 END) AS choBanGiao "
-                + "FROM (" + LIST_SQL + ") q WHERE maPhieuBG = ''";
+                + "FROM (" + LIST_SQL + ") q WHERE maPhieuBG = '' "
+                + "AND trangThai <> N'Đã hủy'";
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet result = statement.executeQuery()) {

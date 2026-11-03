@@ -3,11 +3,13 @@ package controller;
 import dao.PhieuBanGiao_Dao;
 import gui.TrangChuLeTan;
 
+import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /** Nạp số liệu tổng quan và danh sách công việc của lễ tân. */
 public class TrangChuLeTanController {
@@ -16,6 +18,7 @@ public class TrangChuLeTanController {
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
     private List<Object[]> all = new ArrayList<>();
     private int loadVersion;
+    private boolean loadErrorShown;
 
     public TrangChuLeTanController(TrangChuLeTan view) {
         this.view = view;
@@ -73,11 +76,27 @@ public class TrangChuLeTanController {
                     int[] stats = (int[]) result[1];
                     view.setSoLieu(stats[0], stats[1], stats[2], stats[3]);
                     filter();
-                } catch (Exception ignored) {
-                    // Giữ dữ liệu mockup nếu CSDL chưa sẵn sàng.
+                    loadErrorShown = false;
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showLoadError(ex);
+                } catch (ExecutionException ex) {
+                    showLoadError(ex.getCause() == null ? ex : ex.getCause());
                 }
             }
         }.execute();
+    }
+
+    private void showLoadError(Throwable error) {
+        if (loadErrorShown) {
+            return;
+        }
+        loadErrorShown = true;
+        String message = error.getMessage() == null
+                ? error.getClass().getSimpleName() : error.getMessage();
+        JOptionPane.showMessageDialog(view,
+                "Không thể tải dữ liệu trang chủ lễ tân: " + message,
+                "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
     }
 
     private void filter() {

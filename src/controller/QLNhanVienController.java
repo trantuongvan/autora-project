@@ -2,6 +2,7 @@ package controller;
 
 import dao.NhanVien_Dao;
 import entity.NhanVien;
+import entity.PhienDangNhap;
 import gui.QLNhanVien;
 
 import javax.swing.BorderFactory;
@@ -29,14 +30,26 @@ public class QLNhanVienController {
 
     private final QLNhanVien view;
     private final NhanVien_Dao dao = new NhanVien_Dao();
+    private final String tenDangNhap;
     private String selectedId;
     private int loadVersion;
     private boolean loadErrorShown;
 
     public QLNhanVienController(QLNhanVien view) {
+        this(view, tenDangNhapHienTai());
+    }
+
+    public QLNhanVienController(QLNhanVien view, String tenDangNhap) {
         this.view = view;
+        this.tenDangNhap = tenDangNhap == null || tenDangNhap.trim().isEmpty()
+                ? "system" : tenDangNhap.trim();
         initController();
         load();
+    }
+
+    private static String tenDangNhapHienTai() {
+        PhienDangNhap phien = PhienDangNhap.getHienTai();
+        return phien == null ? "system" : phien.getTenDangNhap();
     }
 
     private void initController() {
@@ -241,7 +254,9 @@ public class QLNhanVienController {
                     phone,
                     view.getTxtDiaChi().getText(),
                     String.valueOf(view.getCboViTri().getSelectedItem()));
-            boolean saved = editing ? dao.update(employee) : dao.insert(employee);
+            boolean saved = editing
+                    ? dao.update(employee, tenDangNhap)
+                    : dao.insert(employee, tenDangNhap);
             if (!saved) {
                 throw new SQLException("Không tìm thấy nhân viên để cập nhật.");
             }
