@@ -113,8 +113,8 @@ public class QLTienDoSuaChua extends JPanel {
         setLayout(new BorderLayout());
         setBackground(UIConstants.APP_BG);
 
-        add(buildTopBar(), BorderLayout.NORTH);
-        add(buildLeftSidebar(), BorderLayout.WEST);
+
+
 
         pnlMainCards.setOpaque(false);
         pnlMainCards.add(buildManHinhTienDo(), CARD_TIEN_DO);

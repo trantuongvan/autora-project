@@ -17,6 +17,12 @@ import gui.QLTaiKhoan;
 import gui.QLTiepNhanSuaChua;
 import gui.TrangChuLeTan;
 import gui.TrangChuQuanLy;
+import gui.TrangChuKyThuatVien;
+import gui.TrangChuThuKho;
+import gui.QLDuyetXuatKho;
+import gui.QLNhapKho;
+import gui.QLPhuTung;
+import gui.QLTienDoSuaChua;
 import util.UIComponents;
 import util.UIComponents.Loai;
 import util.UIConstants;
@@ -115,6 +121,12 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         nhaMay.put("QL_NHAT_KY", QLNhatKy::createPanel);
         nhaMay.put("QL_KHACH_HANG", QLKhachHang::createPanel);
         nhaMay.put("QL_TAI_KHOAN", QLTaiKhoan::createPanel);
+        nhaMay.put("TRANG_CHU_KTV", TrangChuKyThuatVien::createPanel);
+        nhaMay.put("QL_TIEN_DO", QLTienDoSuaChua::createPanel);
+        nhaMay.put("TRANG_CHU_KHO", TrangChuThuKho::createPanel);
+        nhaMay.put("QL_PHU_TUNG", QLPhuTung::createPanel);
+        nhaMay.put("QL_NHAP_KHO", QLNhapKho::createPanel);
+        nhaMay.put("QL_DUYET_XUAT", QLDuyetXuatKho::createPanel);
         nhaMay.put(CARD_HOA_DON, () -> {
             manHinhHoaDon = (QLHoaDon) QLHoaDon.createPanel(this);
             return manHinhHoaDon;
@@ -153,6 +165,8 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
             if (cardDaTao.add(card)) {
                 Supplier<JPanel> taoManHinh = nhaMay.get(card);
                 view.themManHinh(card, taoManHinh == null ? taoManHinhTam(TIEU_DE.get(card)) : taoManHinh.get());
+            } else {
+                lamMoiManHinh(card);
             }
             String tieuDe = "TRANG_CHU_QL".equals(card) ? "Trang chủ Quản lý"
                     : CARD_TIEP_NHAN.equals(card) ? "Tiếp nhận xe & Lập phiếu" : TIEU_DE.get(card);
@@ -161,6 +175,43 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
             cardDaTao.remove(card);
             JOptionPane.showMessageDialog(view, "Không thể mở màn hình " + TIEU_DE.get(card) + ".\n" + ex.getMessage(),
                     "Lỗi mở màn hình", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void lamMoiManHinh(String card) {
+        switch (card) {
+            case "TRANG_CHU_KTV":
+                if (TrangChuKyThuatVien.getActiveController() != null) {
+                    TrangChuKyThuatVien.getActiveController().loadData();
+                }
+                break;
+            case "QL_TIEN_DO":
+                if (QLTienDoSuaChua.getActiveController() != null) {
+                    QLTienDoSuaChua.getActiveController().loadDanhSachPhieu(null);
+                }
+                break;
+            case "TRANG_CHU_KHO":
+                if (TrangChuThuKho.getActiveController() != null) {
+                    TrangChuThuKho.getActiveController().loadData();
+                }
+                break;
+            case "QL_PHU_TUNG":
+                if (QLPhuTung.getActiveController() != null) {
+                    QLPhuTung.getActiveController().loadData();
+                }
+                break;
+            case "QL_NHAP_KHO":
+                if (QLNhapKho.getActiveController() != null) {
+                    QLNhapKho.getActiveController().loadData();
+                }
+                break;
+            case "QL_DUYET_XUAT":
+                if (QLDuyetXuatKho.getActiveController() != null) {
+                    QLDuyetXuatKho.getActiveController().loadDanhSach(null);
+                }
+                break;
+            default:
+                break;
         }
     }
 

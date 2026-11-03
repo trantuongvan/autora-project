@@ -114,8 +114,8 @@ public class QLNhapKho extends JPanel {
 
     private void buildUI() {
         pnlMainBody.setBackground(UIConstants.APP_BG);
-        pnlMainBody.add(TrangChuThuKho.taoTopBarThuKho("Quản lý nhập kho", lblAvatar, lblTenThuKhoHeader, btnDangXuat), BorderLayout.NORTH);
-        pnlMainBody.add(TrangChuThuKho.taoSidebarThuKho(btnMenuTrangChu, btnMenuPhuTung, btnMenuNhapKho, btnMenuDuyetXuat), BorderLayout.WEST);
+
+
         pnlMainBody.add(buildWorkspace(), BorderLayout.CENTER);
 
         buildModalLapPhieu();

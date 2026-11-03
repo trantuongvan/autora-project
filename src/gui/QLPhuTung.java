@@ -110,16 +110,22 @@ public class QLPhuTung extends JPanel {
         buildUI();
     }
 
+    private static QLPhuTungController activeController;
+
+    public static QLPhuTungController getActiveController() {
+        return activeController;
+    }
+
     public static JPanel createPanel() {
         QLPhuTung view = new QLPhuTung();
-        new QLPhuTungController(view);
+        activeController = new QLPhuTungController(view);
         return view;
     }
 
     private void buildUI() {
         pnlMainBody.setBackground(UIConstants.APP_BG);
-        pnlMainBody.add(TrangChuThuKho.taoTopBarThuKho("Quản lý phụ tùng & tồn kho", lblAvatar, lblTenThuKhoHeader, btnDangXuat), BorderLayout.NORTH);
-        pnlMainBody.add(TrangChuThuKho.taoSidebarThuKho(btnMenuTrangChu, btnMenuPhuTung, btnMenuNhapKho, btnMenuDuyetXuat), BorderLayout.WEST);
+
+
         pnlMainBody.add(buildWorkspace(), BorderLayout.CENTER);
 
         buildDrawerOverlay();

@@ -68,7 +68,7 @@ public class PhuTung {
         return giaNhap;
     }
     public void setGiaNhap(double giaNhap) {
-        if (giaNhap <= 0) {
+        if (giaNhap < 0) {
             throw new IllegalArgumentException("Giá nhập phải > 0.");
         }
         this.giaNhap = giaNhap;

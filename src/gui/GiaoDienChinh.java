@@ -194,6 +194,14 @@ public class GiaoDienChinh extends JFrame {
         }
     }
 
+    /** Kích hoạt chuyển sang mục menu tương ứng (tự khởi tạo màn hình nếu mở lần đầu). */
+    public void moCard(String card) {
+        NutMenu nut = menuButtons.get(card);
+        if (nut != null) {
+            nut.doClick();
+        }
+    }
+
     public JButton getBtnDangXuat() {
         return btnDangXuat;
     }
