@@ -79,7 +79,10 @@ CREATE TABLE KhuyenMai (
     giaTri FLOAT NOT NULL DEFAULT 0,
     thoiGianBatDau DATETIME NOT NULL,
     thoiGianKetThuc DATETIME NOT NULL,
-    trangThai BIT DEFAULT 1
+    trangThai BIT DEFAULT 1,
+    phamViApDung NVARCHAR(50) NOT NULL DEFAULT N'Tổng hóa đơn', -- 'Tổng hóa đơn', 'Nhóm dịch vụ', 'Phụ tùng'
+    soLuotToiDa INT NULL, -- NULL: không giới hạn; số lượt đã dùng được đếm từ HoaDon
+    ghiChu NVARCHAR(500)
 );
 GO
 
@@ -129,15 +132,22 @@ CREATE TABLE PhieuTiepNhanVaSuaChua (
     yeuCauBanDau NVARCHAR(500),
     soKm INT DEFAULT 0,
     mucNhienLieu FLOAT DEFAULT 50.0,
-    trayXuoc NVARCHAR(255),
+    trayXuoc NVARCHAR(255), -- Đánh giá ngoại thất
+    danhGiaNoiThat NVARCHAR(255),
     taiSanTrenXe NVARCHAR(255),
+    ghiChu NVARCHAR(500),
+    phuTungDuKien NVARCHAR(500),
+    ghiChuKyThuat NVARCHAR(500),
+    uuTien NVARCHAR(20) NOT NULL DEFAULT N'Thường', -- 'Thường', 'Khẩn'
     thoiGianTiepNhan DATETIME DEFAULT GETDATE(),
     thoiGianDuKien DATETIME,
-    trangThai NVARCHAR(50) DEFAULT N'Chờ kiểm tra', -- 'Chờ kiểm tra', 'Đang sửa', 'Chờ phụ tùng', 'Hoàn thành'
+    trangThai NVARCHAR(50) DEFAULT N'Chờ kiểm tra', -- 'Chờ kiểm tra', 'Đang sửa', 'Chờ phụ tùng', 'Hoàn thành', 'Đã hủy'
     bienSo VARCHAR(20) NOT NULL,
     maNV_LapPhieu VARCHAR(20) NOT NULL,
+    maNV_PhuTrach VARCHAR(20) NULL,
     CONSTRAINT FK_PTNSC_Xe FOREIGN KEY (bienSo) REFERENCES Xe(bienSo),
-    CONSTRAINT FK_PTNSC_NhanVien FOREIGN KEY (maNV_LapPhieu) REFERENCES NhanVien(maNV)
+    CONSTRAINT FK_PTNSC_NhanVien FOREIGN KEY (maNV_LapPhieu) REFERENCES NhanVien(maNV),
+    CONSTRAINT FK_PTNSC_PhuTrach FOREIGN KEY (maNV_PhuTrach) REFERENCES NhanVien(maNV)
 );
 GO
 
@@ -258,6 +268,18 @@ CREATE TABLE ChiTietNhapKho (
 );
 GO
 
+-- 4.5. Nhật ký thao tác nhạy cảm (Audit Trail): không có khóa ngoại để nhật ký còn nguyên khi tài khoản bị xóa
+CREATE TABLE NhatKyHoatDong (
+    maNhatKy INT IDENTITY(1,1) PRIMARY KEY,
+    tenDangNhap VARCHAR(50) NOT NULL,
+    thoiGian DATETIME NOT NULL DEFAULT GETDATE(),
+    hanhDong NVARCHAR(100) NOT NULL,
+    doiTuong NVARCHAR(100) NOT NULL,
+    giaTriCu NVARCHAR(500),
+    giaTriMoi NVARCHAR(500)
+);
+GO
+
 -- ==============================================================
 -- 5. BỘ DỮ LIỆU MẪU ĐẦY ĐỦ ĐỂ TEST CHỨC NĂNG (SAMPLE DATA)
 -- ==============================================================
@@ -272,14 +294,14 @@ INSERT INTO NhanVien (maNV, hoTen, soDienThoai, diaChi, viTriLamViec) VALUES
 ('NV0006', N'Trần Văn Điện Lạnh', '0956789012', N'Phú Nhuận, TP.HCM', N'Kỹ thuật viên');
 GO
 
--- 5.2. Thêm Tài khoản
+-- 5.2. Thêm Tài khoản (mật khẩu băm PBKDF2 bằng util.MatKhauUtil; mật khẩu mẫu: admin123 và 123456)
 INSERT INTO TaiKhoan (tenDangNhap, matKhau, vaiTro, trangThai, maNV) VALUES
-('admin', 'admin123', N'Chủ cửa hàng', 1, 'NV0001'),
-('letan01', '123456', N'Lễ tân', 1, 'NV0002'),
-('letan02', '123456', N'Lễ tân', 1, 'NV0003'),
-('thukho01', '123456', N'Thủ kho', 1, 'NV0004'),
-('ktv01', '123456', N'Kỹ thuật viên', 1, 'NV0005'),
-('ktv02', '123456', N'Kỹ thuật viên', 1, 'NV0006');
+('admin', 'pbkdf2$120000$/U8NK0v4QuGpue+BVOxo1g==$BYMYtLOqmaBq3AMmgM4Y9hxoqjcjtAM9k8x8+Om4TQk=', N'Chủ cửa hàng', 1, 'NV0001'),
+('letan01', 'pbkdf2$120000$RNPQP3YNpVKZCKUCjBeW6w==$VCHw5XedWfc/NXm/7FznYA8dAZIcUE/oqZ91RxuLQho=', N'Lễ tân', 1, 'NV0002'),
+('letan02', 'pbkdf2$120000$iz2NUqzxNiaSilchm39fKg==$fiwnD68y/uQQShN5368DdmQp721LvPzFCYqN6TAKvzA=', N'Lễ tân', 1, 'NV0003'),
+('thukho01', 'pbkdf2$120000$vfsrNufv6UL37qmn6WeP6w==$9pKEeCXRvcakQ62OISH/drL2hRJVxuJgrcBCS5nXH18=', N'Thủ kho', 1, 'NV0004'),
+('ktv01', 'pbkdf2$120000$so3d82lFTmFEgkdcrdharQ==$mqdZ69Pl0vVO9FT96yLO8u3Wo+0s8a+5dVE5128MFAM=', N'Kỹ thuật viên', 1, 'NV0005'),
+('ktv02', 'pbkdf2$120000$Wa1uDXnPJhp37KmXSXoAqA==$JAGLxSmFqG3DRUUAzwwI8iXnafb16u0Q9DriRFqcWCQ=', N'Kỹ thuật viên', 1, 'NV0006');
 GO
 
 -- 5.3. Thêm Khách hàng

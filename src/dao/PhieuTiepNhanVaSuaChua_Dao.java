@@ -1,0 +1,485 @@
+package dao;
+
+import connection.ConnectDB;
+import entity.DichVu;
+import entity.KhachHang;
+import entity.PhieuTiepNhanVaSuaChua;
+import entity.Xe;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.sql.Types;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PhieuTiepNhanVaSuaChua_Dao {
+    private static final String SELECT_JOIN =
+            "SELECT p.maPhieuTNSC, p.yeuCauBanDau, p.soKm, p.mucNhienLieu, "
+            + "p.trayXuoc, p.taiSanTrenXe, p.thoiGianTiepNhan, p.thoiGianDuKien, "
+            + "p.trangThai, p.bienSo, p.maNV_LapPhieu, p.danhGiaNoiThat, p.ghiChu, "
+            + "p.phuTungDuKien, p.ghiChuKyThuat, p.uuTien, p.maNV_PhuTrach, "
+            + "k.soDienThoai AS sdtKhachHang, "
+            + "k.hoTen AS tenKhachHang, "
+            + "x.hangXe + N' ' + COALESCE(x.dongXe, N'') AS thongTinXe, "
+            + "n.hoTen AS tenNVLapPhieu "
+            + "FROM PhieuTiepNhanVaSuaChua p "
+            + "JOIN Xe x ON x.bienSo = p.bienSo "
+            + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN NhanVien n ON n.maNV = p.maNV_LapPhieu ";
+
+    private static final String NOT_LOCKED =
+            "NOT EXISTS (SELECT 1 FROM HoaDon h "
+            + "WHERE h.maPhieuTNSC = p.maPhieuTNSC "
+            + "AND h.trangThaiThanhToan <> N'Đã hủy') AND p.trangThai <> N'Đã hủy'";
+
+    public List<PhieuTiepNhanVaSuaChua> search(String keyword, String trangThai,
+            LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+        String key = keyword == null ? "" : keyword.trim();
+        String status = trangThai == null ? "" : trangThai.trim();
+        String sql = SELECT_JOIN
+                + "WHERE (? = N'' OR p.maPhieuTNSC LIKE ? OR p.bienSo LIKE ? "
+                + "OR k.hoTen LIKE ? OR k.soDienThoai LIKE ?) "
+                + "AND (? = N'' OR p.trangThai = ?) ";
+
+        if (tuNgay != null) {
+            sql += "AND p.thoiGianTiepNhan >= ? ";
+        }
+        if (denNgay != null) {
+            sql += "AND p.thoiGianTiepNhan < ? ";
+        }
+        sql += "ORDER BY p.thoiGianTiepNhan DESC";
+
+        List<PhieuTiepNhanVaSuaChua> result = new ArrayList<>();
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, key);
+            statement.setString(2, "%" + key + "%");
+            statement.setString(3, "%" + key + "%");
+            statement.setString(4, "%" + key + "%");
+            statement.setString(5, "%" + key + "%");
+            statement.setString(6, status);
+            statement.setString(7, status);
+
+            int index = 8;
+            if (tuNgay != null) {
+                statement.setTimestamp(index++, Timestamp.valueOf(tuNgay.atStartOfDay()));
+            }
+            if (denNgay != null) {
+                statement.setTimestamp(index,
+                        Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay()));
+            }
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapPhieu(rs));
+                }
+            }
+        }
+        return result;
+    }
+
+    public PhieuTiepNhanVaSuaChua findById(String ma) throws SQLException {
+        String sql = SELECT_JOIN + "WHERE p.maPhieuTNSC = ?";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, ma);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return mapPhieu(rs);
+                }
+                return null;
+            }
+        }
+    }
+
+    public String nextId() throws SQLException {
+        try (Connection connection = ConnectDB.getConnection()) {
+            return nextId(connection);
+        }
+    }
+
+    private String nextId(Connection connection) throws SQLException {
+        String sql = "SELECT 'PTNSC' + RIGHT('00000' + CAST("
+                + "COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maPhieuTNSC, 6, 25))), 0) + 1 "
+                + "AS VARCHAR(25)), 5) FROM PhieuTiepNhanVaSuaChua";
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet rs = statement.executeQuery()) {
+            rs.next();
+            return rs.getString(1);
+        }
+    }
+
+    public boolean insert(PhieuTiepNhanVaSuaChua phieu) throws SQLException {
+        try (Connection connection = ConnectDB.getConnection()) {
+            return insert(connection, phieu);
+        }
+    }
+
+    /**
+     * Lưu một lần tiếp nhận trong cùng transaction: khách mới (nếu có), xe mới (nếu có), phiếu và các dòng dịch vụ.
+     * Lỗi ở bất kỳ bước nào sẽ hủy toàn bộ để không còn khách hoặc xe mồ côi.
+     */
+    public void taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
+            List<DichVu> dichVu) throws SQLException {
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                phieu.setMaPhieuTNSC(nextId(connection));
+                if (khachMoi != null) {
+                    khachMoi.setMaKH(nextMaKhachHang(connection));
+                    xeMoi.setMaKH(khachMoi.getMaKH());
+                    insertKhachHang(connection, khachMoi);
+                }
+                if (xeMoi != null) {
+                    insertXe(connection, xeMoi);
+                }
+                insert(connection, phieu);
+                insertDichVu(connection, phieu.getMaPhieuTNSC(), dichVu);
+                connection.commit();
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    private void insertKhachHang(Connection connection, KhachHang kh) throws SQLException {
+        String sql = "INSERT INTO KhachHang (maKH, hoTen, soDienThoai, diaChi, email, loaiKhachHang, maSoThue) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, kh.getMaKH());
+            statement.setString(2, kh.getHoTen());
+            statement.setString(3, kh.getSoDienThoai());
+            statement.setString(4, kh.getDiaChi());
+            statement.setString(5, kh.getEmail());
+            statement.setString(6, kh.getLoaiKhachHang());
+            statement.setString(7, kh.getMaSoThue());
+            statement.executeUpdate();
+        }
+    }
+
+    private void insertXe(Connection connection, Xe xe) throws SQLException {
+        String sql = "INSERT INTO Xe (bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, maKH) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, xe.getBienSo());
+            statement.setString(2, xe.getSoVIN());
+            statement.setString(3, xe.getHangXe());
+            statement.setString(4, xe.getDongXe());
+            statement.setObject(5, xe.getDoiXe(), Types.INTEGER);
+            statement.setString(6, xe.getMauSon());
+            statement.setString(7, xe.getMaKH());
+            statement.executeUpdate();
+        }
+    }
+
+    private void insertDichVu(Connection connection, String maPhieu, List<DichVu> dichVu) throws SQLException {
+        String sql = "INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe) VALUES (?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            for (DichVu dv : dichVu) {
+                statement.setString(1, maPhieu);
+                statement.setString(2, dv.getMaDichVu());
+                statement.setDouble(3, dv.getTienCong());
+                statement.executeUpdate();
+            }
+        }
+    }
+
+    private String nextMaKhachHang(Connection connection) throws SQLException {
+        String sql = "SELECT 'KH' + RIGHT('0000' + CAST("
+                + "COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))), 0) + 1 "
+                + "AS VARCHAR(18)), 4) FROM KhachHang";
+        try (PreparedStatement statement = connection.prepareStatement(sql);
+                ResultSet rs = statement.executeQuery()) {
+            rs.next();
+            return rs.getString(1);
+        }
+    }
+
+    /** Trả về {maKH, hoTen, soDienThoai, diaChi, email, loaiKhachHang, maSoThue} hoặc null. */
+    public String[] findKhachTheoSdt(String sdt) throws SQLException {
+        String sql = "SELECT maKH, hoTen, soDienThoai, diaChi, email, loaiKhachHang, maSoThue FROM KhachHang WHERE soDienThoai = ?";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, sdt);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new String[] {rs.getString(1), rs.getString(2), rs.getString(3),
+                    rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)};
+            }
+        }
+    }
+
+    /** Trả về {bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, soDienThoaiChuXe} hoặc null. */
+    public String[] findXeDayDu(String bienSo) throws SQLException {
+        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, k.soDienThoai "
+                + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH WHERE x.bienSo = ?";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, bienSo);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new String[] {rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
+                    rs.getString(5), rs.getString(6), rs.getString(7)};
+            }
+        }
+    }
+
+    /** Bước hiện tại của thanh tiến trình: 2 Chỉ định, 3 Xuất kho, 4 Thanh toán. */
+    public int buocHienTai(String ma) throws SQLException {
+        String sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ?) THEN 4 "
+                + "WHEN EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ?) THEN 3 ELSE 2 END";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, ma);
+            statement.setString(2, ma);
+            try (ResultSet rs = statement.executeQuery()) {
+                rs.next();
+                return rs.getInt(1);
+            }
+        }
+    }
+
+    /** Lưu KTV phụ trách và ghi chú kỹ thuật; trả về false khi phiếu đã bị khóa bởi hóa đơn. */
+    public boolean capNhatPhanCong(String ma, String maNVPhuTrach, String ghiChuKyThuat) throws SQLException {
+        try (Connection connection = ConnectDB.getConnection()) {
+            return capNhatPhanCong(connection, ma, maNVPhuTrach, ghiChuKyThuat);
+        }
+    }
+
+    boolean capNhatPhanCong(Connection connection, String ma, String maNVPhuTrach, String ghiChuKyThuat)
+            throws SQLException {
+        String sql = "UPDATE p SET maNV_PhuTrach = ?, ghiChuKyThuat = ? FROM PhieuTiepNhanVaSuaChua p "
+                + "WHERE p.maPhieuTNSC = ? AND " + NOT_LOCKED;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maNVPhuTrach);
+            statement.setString(2, ghiChuKyThuat);
+            statement.setString(3, ma);
+            return statement.executeUpdate() == 1;
+        }
+    }
+
+    private boolean insert(Connection connection, PhieuTiepNhanVaSuaChua phieu) throws SQLException {
+        phieu.kiemTraHopLe();
+        String sql = "INSERT INTO PhieuTiepNhanVaSuaChua "
+                + "(maPhieuTNSC, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, "
+                + "taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, "
+                + "trangThai, bienSo, maNV_LapPhieu, danhGiaNoiThat, ghiChu, phuTungDuKien, uuTien) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, phieu.getMaPhieuTNSC());
+            statement.setString(2, phieu.getYeuCauBanDau());
+            statement.setInt(3, phieu.getSoKm());
+            statement.setDouble(4, phieu.getMucNhienLieu());
+            statement.setString(5, phieu.getTrayXuoc());
+            statement.setString(6, phieu.getTaiSanTrenXe());
+            if (phieu.getThoiGianTiepNhan() == null) {
+                statement.setNull(7, Types.TIMESTAMP);
+            } else {
+                statement.setTimestamp(7, Timestamp.valueOf(phieu.getThoiGianTiepNhan()));
+            }
+            if (phieu.getThoiGianDuKien() == null) {
+                statement.setNull(8, Types.TIMESTAMP);
+            } else {
+                statement.setTimestamp(8, Timestamp.valueOf(phieu.getThoiGianDuKien()));
+            }
+            statement.setString(9, phieu.getTrangThai());
+            statement.setString(10, phieu.getBienSo());
+            statement.setString(11, phieu.getMaNVLapPhieu());
+            statement.setString(12, phieu.getDanhGiaNoiThat());
+            statement.setString(13, phieu.getGhiChu());
+            statement.setString(14, phieu.getPhuTungDuKien());
+            statement.setString(15, phieu.getUuTien());
+            return statement.executeUpdate() == 1;
+        }
+    }
+
+    public boolean update(PhieuTiepNhanVaSuaChua phieu) throws SQLException {
+        phieu.kiemTraHopLe();
+        String sql = "UPDATE p SET yeuCauBanDau = ?, soKm = ?, mucNhienLieu = ?, "
+                + "trayXuoc = ?, taiSanTrenXe = ?, thoiGianTiepNhan = ?, "
+                + "thoiGianDuKien = ?, danhGiaNoiThat = ?, ghiChu = ?, phuTungDuKien = ?, uuTien = ? "
+                + "FROM PhieuTiepNhanVaSuaChua p "
+                + "WHERE p.maPhieuTNSC = ? AND " + NOT_LOCKED;
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, phieu.getYeuCauBanDau());
+            statement.setInt(2, phieu.getSoKm());
+            statement.setDouble(3, phieu.getMucNhienLieu());
+            statement.setString(4, phieu.getTrayXuoc());
+            statement.setString(5, phieu.getTaiSanTrenXe());
+            if (phieu.getThoiGianTiepNhan() == null) {
+                statement.setNull(6, Types.TIMESTAMP);
+            } else {
+                statement.setTimestamp(6, Timestamp.valueOf(phieu.getThoiGianTiepNhan()));
+            }
+            if (phieu.getThoiGianDuKien() == null) {
+                statement.setNull(7, Types.TIMESTAMP);
+            } else {
+                statement.setTimestamp(7, Timestamp.valueOf(phieu.getThoiGianDuKien()));
+            }
+            statement.setString(8, phieu.getDanhGiaNoiThat());
+            statement.setString(9, phieu.getGhiChu());
+            statement.setString(10, phieu.getPhuTungDuKien());
+            statement.setString(11, phieu.getUuTien());
+            statement.setString(12, phieu.getMaPhieuTNSC());
+            return statement.executeUpdate() == 1;
+        }
+    }
+
+    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ, nên hai máy cùng sửa không vượt luồng được. */
+    public boolean capNhatTrangThai(String ma, String cu, String moi) throws SQLException {
+        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
+            return false;
+        }
+        String sql = "UPDATE p SET trangThai = ? "
+                + "FROM PhieuTiepNhanVaSuaChua p "
+                + "WHERE p.maPhieuTNSC = ? AND p.trangThai = ? AND " + NOT_LOCKED;
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, moi);
+            statement.setString(2, ma);
+            statement.setString(3, cu);
+            return statement.executeUpdate() == 1;
+        }
+    }
+
+    /**
+     * Hủy phiếu: giữ lại dữ liệu để đối soát thay vì xóa, và ghi nhật ký trong cùng transaction.
+     * Trả về false khi phiếu đã hủy hoặc đã có hóa đơn, phiếu bàn giao, yêu cầu xuất kho.
+     */
+    public boolean huy(String ma, String tenDangNhap) throws SQLException {
+        String sqlCu = "SELECT trangThai FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = ?";
+        String sql = "UPDATE p SET trangThai = N'Đã hủy' FROM PhieuTiepNhanVaSuaChua p "
+                + "WHERE p.maPhieuTNSC = ? AND p.trangThai <> N'Đã hủy' "
+                + "AND NOT EXISTS (SELECT 1 FROM HoaDon h "
+                + "WHERE h.maPhieuTNSC = p.maPhieuTNSC) "
+                + "AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao b "
+                + "WHERE b.maPhieuTNSC = p.maPhieuTNSC) "
+                + "AND NOT EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho y "
+                + "WHERE y.maPhieuTNSC = p.maPhieuTNSC)";
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement doc = connection.prepareStatement(sqlCu);
+                    PreparedStatement statement = connection.prepareStatement(sql)) {
+                doc.setString(1, ma);
+                String cu;
+                try (ResultSet rs = doc.executeQuery()) {
+                    if (!rs.next()) {
+                        return false;
+                    }
+                    cu = rs.getString(1);
+                }
+                statement.setString(1, ma);
+                if (statement.executeUpdate() != 1) {
+                    connection.rollback();
+                    return false;
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Hủy phiếu sửa chữa", ma, cu, PhieuTiepNhanVaSuaChua.DA_HUY);
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
+        }
+    }
+
+    public boolean isKhoa(String ma) throws SQLException {
+        String sql = "SELECT 1 FROM PhieuTiepNhanVaSuaChua p WHERE p.maPhieuTNSC = ? AND NOT (" + NOT_LOCKED + ")";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, ma);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public Object[] findXeVaChuXe(String bienSo) throws SQLException {
+        String sql = "SELECT x.bienSo, "
+                + "x.hangXe + N' ' + COALESCE(x.dongXe, N'') AS thongTinXe, "
+                + "x.doiXe, k.maKH, k.hoTen, k.soDienThoai, k.diaChi "
+                + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH "
+                + "WHERE x.bienSo = ?";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, bienSo);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new Object[] {
+                    rs.getString("bienSo"),
+                    rs.getString("thongTinXe"),
+                    rs.getObject("doiXe"),
+                    rs.getString("maKH"),
+                    rs.getString("hoTen"),
+                    rs.getString("soDienThoai"),
+                    rs.getString("diaChi")
+                };
+            }
+        }
+    }
+
+    public boolean coPhieuDangMo(String bienSo) throws SQLException {
+        String sql = "SELECT 1 FROM PhieuTiepNhanVaSuaChua "
+                + "WHERE bienSo = ? AND trangThai NOT IN (N'Hoàn thành', N'Đã hủy')";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, bienSo);
+            try (ResultSet rs = statement.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
+    public String timBienSoTheoSdt(String sdt) throws SQLException {
+        String sql = "SELECT TOP (1) x.bienSo FROM Xe x "
+                + "JOIN KhachHang k ON k.maKH = x.maKH "
+                + "WHERE k.soDienThoai = ? ORDER BY x.bienSo";
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, sdt);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("bienSo");
+                }
+                return null;
+            }
+        }
+    }
+
+    private PhieuTiepNhanVaSuaChua mapPhieu(ResultSet rs) throws SQLException {
+        Timestamp tiepNhan = rs.getTimestamp("thoiGianTiepNhan");
+        Timestamp duKien = rs.getTimestamp("thoiGianDuKien");
+        PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(
+                rs.getString("maPhieuTNSC"),
+                rs.getString("yeuCauBanDau"),
+                rs.getInt("soKm"),
+                rs.getDouble("mucNhienLieu"),
+                rs.getString("trayXuoc"),
+                rs.getString("taiSanTrenXe"),
+                tiepNhan == null ? null : tiepNhan.toLocalDateTime(),
+                duKien == null ? null : duKien.toLocalDateTime(),
+                rs.getString("trangThai"),
+                rs.getString("bienSo"),
+                rs.getString("maNV_LapPhieu"),
+                rs.getString("tenKhachHang"),
+                rs.getString("thongTinXe"),
+                rs.getString("tenNVLapPhieu"));
+        phieu.setDanhGiaNoiThat(rs.getString("danhGiaNoiThat"));
+        phieu.setGhiChu(rs.getString("ghiChu"));
+        phieu.setPhuTungDuKien(rs.getString("phuTungDuKien"));
+        phieu.setGhiChuKyThuat(rs.getString("ghiChuKyThuat"));
+        phieu.setUuTien(rs.getString("uuTien"));
+        phieu.setMaNVPhuTrach(rs.getString("maNV_PhuTrach"));
+        phieu.setSdtKhachHang(rs.getString("sdtKhachHang"));
+        return phieu;
+    }
+}
