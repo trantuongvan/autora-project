@@ -1,0 +1,414 @@
+package controller;
+
+import dao.NhatKy_Dao;
+import dao.TaiKhoan_Dao;
+import entity.NhanVien;
+import entity.PhienDangNhap;
+import entity.TaiKhoan;
+import gui.QLTaiKhoan;
+import util.UIComponents;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/** Điều phối tạo, sửa, khóa và xóa tài khoản; các quy tắc giữ Chủ cửa hàng cuối cùng nằm trong DAO. */
+public class QLTaiKhoanController {
+    private static final String LOI_BAT_BUOC = "Vui lòng nhập đầy đủ các trường thông tin bắt buộc";
+    private static final String KHONG_TU_KHOA = "Không thể khóa hoặc xóa tài khoản đang đăng nhập.";
+    private static final int SO_DONG_NHAT_KY = 8;
+    private static final DateTimeFormatter DINH_DANG_GIO = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
+    private final QLTaiKhoan view;
+    private final TaiKhoan_Dao dao = new TaiKhoan_Dao();
+    private final NhatKy_Dao nhatKyDao = new NhatKy_Dao();
+    /** Cùng thứ tự với cboNhanVien ở chế độ tạo. */
+    private List<NhanVien> dsNhanVien = new ArrayList<>();
+    /** Cùng thứ tự với bảng tài khoản. */
+    private List<TaiKhoan> dsTaiKhoan = new ArrayList<>();
+    private TaiKhoan dangSua;
+    private int phienBanDanhSach;
+    private int phienBanNhanVien;
+
+    public QLTaiKhoanController(QLTaiKhoan view) {
+        this.view = view;
+        initController();
+        moFormTao();
+        taiDanhSach();
+        taiNhatKy();
+    }
+
+    private void initController() {
+        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
+            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
+            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
+        });
+        view.getCboNhanVien().addActionListener(e -> theoViTriNhanVien());
+        view.getBtnDong().addActionListener(e -> moFormTao());
+        view.getBtnLuu().addActionListener(e -> luu());
+        view.getTblDanhSach().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                xuLyClickBang(e);
+            }
+        });
+        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", () -> {
+            taiDanhSach();
+            taiNhatKy();
+            if (dangSua == null) {
+                taiNhanVien();
+            }
+        });
+        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+                () -> view.getTxtTimKiem().requestFocusInWindow());
+    }
+
+    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
+        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
+        view.getActionMap().put(ten, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                viec.run();
+            }
+        });
+    }
+
+    private void xuLyClickBang(MouseEvent e) {
+        JTable bang = view.getTblDanhSach();
+        int dong = bang.rowAtPoint(e.getPoint());
+        if (dong < 0 || dong >= dsTaiKhoan.size()) {
+            return;
+        }
+        TaiKhoan taiKhoan = dsTaiKhoan.get(dong);
+        int icon = UIComponents.viTriBieuTuong(bang, e, QLTaiKhoan.COT_THAO_TAC, 3);
+        if (icon == QLTaiKhoan.ICON_SUA) {
+            moFormSua(taiKhoan);
+        } else if (icon == QLTaiKhoan.ICON_KHOA) {
+            doiTrangThai(taiKhoan);
+        } else if (icon == QLTaiKhoan.ICON_XOA) {
+            xoa(taiKhoan);
+        }
+    }
+
+    // ==========================================================
+    // Tải dữ liệu
+    // ==========================================================
+
+    private void taiDanhSach() {
+        String tuKhoa = view.getTxtTimKiem().getText();
+        int phienBan = ++phienBanDanhSach;
+        new SwingWorker<List<TaiKhoan>, Void>() {
+            @Override
+            protected List<TaiKhoan> doInBackground() throws Exception {
+                return dao.search(tuKhoa);
+            }
+
+            @Override
+            protected void done() {
+                // Bỏ kết quả cũ khi người dùng đã gõ tiếp từ khóa khác.
+                if (phienBan != phienBanDanhSach) {
+                    return;
+                }
+                try {
+                    dsTaiKhoan = get();
+                } catch (Exception ex) {
+                    dsTaiKhoan = new ArrayList<>();
+                    baoLoi("Không thể tải danh sách tài khoản.", ex);
+                }
+                List<Object[]> dong = new ArrayList<>();
+                for (TaiKhoan t : dsTaiKhoan) {
+                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getMaNV() + " — " + t.getHoTen()), xuongDong(t.getVaiTro()),
+                        t.getTrangThaiHienThi(), ""});
+                }
+                view.setDanhSach(dong);
+            }
+        }.execute();
+    }
+
+    private void taiNhatKy() {
+        new SwingWorker<List<Object[]>, Void>() {
+            @Override
+            protected List<Object[]> doInBackground() throws Exception {
+                return nhatKyDao.search("");
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<Object[]> dong = new ArrayList<>();
+                    for (Object[] r : get()) {
+                        if (dong.size() == SO_DONG_NHAT_KY) {
+                            break;
+                        }
+                        dong.add(new Object[] {r[1], xuongDong(((LocalDateTime) r[0]).format(DINH_DANG_GIO)), xuongDong(r[2] + " " + r[3]),
+                            xuongDong(truocSau((String) r[4], (String) r[5]))});
+                    }
+                    view.setNhatKy(dong);
+                } catch (Exception ex) {
+                    view.setNhatKy(new ArrayList<>());
+                    baoLoi("Không thể tải nhật ký hoạt động.", ex);
+                }
+            }
+        }.execute();
+    }
+
+    /** Bọc HTML để ô bảng tự xuống dòng; thoát ký tự vì nội dung là dữ liệu người dùng nhập. */
+    private static String xuongDong(String s) {
+        return "<html>" + s.replace("&", "&amp;").replace("<", "&lt;") + "</html>";
+    }
+
+    private static String truocSau(String cu, String moi) {
+        if (cu == null && moi == null) {
+            return "—";
+        }
+        return (cu == null ? "—" : cu) + " → " + (moi == null ? "—" : moi);
+    }
+
+    private void taiNhanVien() {
+        int phienBan = ++phienBanNhanVien;
+        new SwingWorker<List<NhanVien>, Void>() {
+            @Override
+            protected List<NhanVien> doInBackground() throws Exception {
+                return dao.nhanVienChuaCoTaiKhoan();
+            }
+
+            @Override
+            protected void done() {
+                // Người dùng đã chuyển sang sửa thì combo đang hiện nhân viên của tài khoản đó.
+                if (phienBan != phienBanNhanVien || dangSua != null) {
+                    return;
+                }
+                try {
+                    dsNhanVien = get();
+                } catch (Exception ex) {
+                    dsNhanVien = new ArrayList<>();
+                    baoLoi("Không thể tải danh sách nhân viên.", ex);
+                }
+                JComboBox<String> cbo = view.getCboNhanVien();
+                cbo.removeAllItems();
+                for (NhanVien nv : dsNhanVien) {
+                    cbo.addItem(nv.getMaNV() + " — " + nv.getHoTen() + " — " + nv.getViTriLamViec());
+                }
+                theoViTriNhanVien();
+            }
+        }.execute();
+    }
+
+    private void theoViTriNhanVien() {
+        int chon = view.getCboNhanVien().getSelectedIndex();
+        if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()
+                && Arrays.asList(TaiKhoan.VAI_TRO).contains(dsNhanVien.get(chon).getViTriLamViec())) {
+            view.getCboVaiTro().setSelectedItem(dsNhanVien.get(chon).getViTriLamViec());
+        }
+    }
+
+    // ==========================================================
+    // Form
+    // ==========================================================
+
+    private void moFormTao() {
+        dangSua = null;
+        view.xoaLoi();
+        view.setCheDoSua(false);
+        // Xóa ngay để không lưu nhầm theo danh sách cũ trong lúc danh sách mới đang tải.
+        dsNhanVien = new ArrayList<>();
+        view.getCboNhanVien().removeAllItems();
+        view.getTxtTenDangNhap().setText("");
+        view.getPwdMatKhau().setText("");
+        view.getCboTrangThai().setSelectedItem(TaiKhoan.DANG_HOAT_DONG);
+        taiNhanVien();
+    }
+
+    private void moFormSua(TaiKhoan taiKhoan) {
+        dangSua = taiKhoan;
+        view.xoaLoi();
+        view.setCheDoSua(true);
+        view.getCboNhanVien().removeAllItems();
+        view.getCboNhanVien().addItem(taiKhoan.getMaNV() + " — " + taiKhoan.getHoTen());
+        view.getTxtTenDangNhap().setText(taiKhoan.getTenDangNhap());
+        view.getPwdMatKhau().setText("");
+        view.getCboVaiTro().setSelectedItem(taiKhoan.getVaiTro());
+        view.getCboTrangThai().setSelectedItem(taiKhoan.getTrangThaiHienThi());
+    }
+
+    private void luu() {
+        view.xoaLoi();
+        String vaiTro = String.valueOf(view.getCboVaiTro().getSelectedItem());
+        boolean hoatDong = TaiKhoan.DANG_HOAT_DONG.equals(view.getCboTrangThai().getSelectedItem());
+        String matKhau = new String(view.getPwdMatKhau().getPassword());
+        try {
+            if (!(dangSua == null ? luuMoi(vaiTro, hoatDong, matKhau) : luuSua(vaiTro, hoatDong, matKhau))) {
+                return;
+            }
+        } catch (SQLIntegrityConstraintViolationException ex) {
+            if (TaiKhoan_Dao.TRUNG_TEN_DANG_NHAP.equals(ex.getMessage())) {
+                danhDauLoi(view.getTxtTenDangNhap(), view.getLblLoiTenDangNhap(), ex.getMessage());
+            } else {
+                danhDauLoi(view.getCboNhanVien(), view.getLblLoiNhanVien(), ex.getMessage());
+                taiNhanVien();
+            }
+            return;
+        } catch (IllegalStateException ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể lưu", JOptionPane.WARNING_MESSAGE);
+            return;
+        } catch (SQLException ex) {
+            baoLoi("Không thể lưu tài khoản.", ex);
+            return;
+        }
+        JOptionPane.showMessageDialog(view, "Thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        moFormTao();
+        taiDanhSach();
+        taiNhatKy();
+    }
+
+    /** Trả về false khi dữ liệu nhập sai và đã được đánh dấu trên form. */
+    private boolean luuMoi(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+        String ten = view.getTxtTenDangNhap().getText();
+        int chonNhanVien = view.getCboNhanVien().getSelectedIndex();
+        boolean thieu = false;
+        if (chonNhanVien < 0 || chonNhanVien >= dsNhanVien.size()) {
+            danhDauLoi(view.getCboNhanVien(), view.getLblLoiNhanVien(), "Không còn nhân viên nào chưa có tài khoản");
+            thieu = true;
+        }
+        if (ten.trim().isEmpty()) {
+            danhDauLoi(view.getTxtTenDangNhap(), view.getLblLoiTenDangNhap(), LOI_BAT_BUOC);
+            thieu = true;
+        }
+        if (matKhau.isEmpty()) {
+            danhDauLoi(view.getPwdMatKhau(), view.getLblLoiMatKhau(), LOI_BAT_BUOC);
+            thieu = true;
+        }
+        TaiKhoan taiKhoan = new TaiKhoan();
+        boolean tenHopLe = !ten.trim().isEmpty() && kiemTraTen(taiKhoan, ten);
+        boolean matKhauHopLe = !matKhau.isEmpty() && kiemTraMatKhau(matKhau);
+        if (thieu || !tenHopLe || !matKhauHopLe) {
+            return false;
+        }
+        NhanVien nv = dsNhanVien.get(chonNhanVien);
+        taiKhoan.setVaiTro(vaiTro);
+        taiKhoan.setTrangThai(hoatDong);
+        taiKhoan.setMaNV(nv.getMaNV());
+        taiKhoan.setHoTen(nv.getHoTen());
+        dao.insert(taiKhoan, matKhau, nguoiThucHien());
+        return true;
+    }
+
+    /** Trả về false khi đã báo lý do cho người dùng và không cần báo thành công. */
+    private boolean luuSua(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+        if (!matKhau.isEmpty() && !kiemTraMatKhau(matKhau)) {
+            return false;
+        }
+        if (!hoatDong && laTaiKhoanDangDangNhap(dangSua)) {
+            JOptionPane.showMessageDialog(view, KHONG_TU_KHOA, "Không thể lưu", JOptionPane.WARNING_MESSAGE);
+            return false;
+        }
+        if (!dao.capNhat(dangSua.getTenDangNhap(), vaiTro, matKhau.isEmpty() ? null : matKhau, hoatDong, nguoiThucHien())) {
+            JOptionPane.showMessageDialog(view, "Tài khoản này không còn tồn tại.", "Không thể lưu", JOptionPane.WARNING_MESSAGE);
+            moFormTao();
+            taiDanhSach();
+            return false;
+        }
+        return true;
+    }
+
+    private boolean kiemTraTen(TaiKhoan taiKhoan, String ten) {
+        try {
+            taiKhoan.setTenDangNhap(ten);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            danhDauLoi(view.getTxtTenDangNhap(), view.getLblLoiTenDangNhap(), ex.getMessage());
+            return false;
+        }
+    }
+
+    private boolean kiemTraMatKhau(String matKhau) {
+        try {
+            TaiKhoan.kiemTraMatKhau(matKhau);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            danhDauLoi(view.getPwdMatKhau(), view.getLblLoiMatKhau(), ex.getMessage());
+            return false;
+        }
+    }
+
+    private void danhDauLoi(JComponent o, JLabel lblLoi, String thongBao) {
+        UIComponents.setError(o, true);
+        UIComponents.showError(lblLoi, thongBao);
+    }
+
+    // ==========================================================
+    // Khóa / Xóa
+    // ==========================================================
+
+    private void doiTrangThai(TaiKhoan taiKhoan) {
+        boolean seKhoa = taiKhoan.isTrangThai();
+        if (seKhoa && laTaiKhoanDangDangNhap(taiKhoan)) {
+            JOptionPane.showMessageDialog(view, KHONG_TU_KHOA, "Không thể khóa", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String hanhDong = seKhoa ? "Khóa" : "Mở khóa";
+        if (!xacNhan(hanhDong + " tài khoản " + taiKhoan.getTenDangNhap() + "?")) {
+            return;
+        }
+        thucHien(hanhDong + " tài khoản", () -> dao.datTrangThai(taiKhoan.getTenDangNhap(), !seKhoa, nguoiThucHien()));
+    }
+
+    private void xoa(TaiKhoan taiKhoan) {
+        if (laTaiKhoanDangDangNhap(taiKhoan)) {
+            JOptionPane.showMessageDialog(view, KHONG_TU_KHOA, "Không thể xóa", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        if (!xacNhan("Xóa tài khoản " + taiKhoan.getTenDangNhap() + "? Nhân viên vẫn được giữ lại.")) {
+            return;
+        }
+        thucHien("Xóa tài khoản", () -> dao.delete(taiKhoan.getTenDangNhap(), nguoiThucHien()));
+    }
+
+    private interface ThaoTac {
+        boolean chay() throws SQLException;
+    }
+
+    private void thucHien(String ten, ThaoTac thaoTac) {
+        try {
+            if (!thaoTac.chay()) {
+                JOptionPane.showMessageDialog(view, "Tài khoản này không còn tồn tại.", ten, JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (IllegalStateException ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage(), ten, JOptionPane.WARNING_MESSAGE);
+        } catch (SQLException ex) {
+            baoLoi("Không thể thực hiện: " + ten + ".", ex);
+        }
+        moFormTao();
+        taiDanhSach();
+        taiNhatKy();
+    }
+
+    private boolean xacNhan(String cauHoi) {
+        return JOptionPane.showConfirmDialog(view, cauHoi, "Xác nhận", JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
+    }
+
+    private static boolean laTaiKhoanDangDangNhap(TaiKhoan taiKhoan) {
+        return taiKhoan.getTenDangNhap().equalsIgnoreCase(nguoiThucHien());
+    }
+
+    private static String nguoiThucHien() {
+        return PhienDangNhap.getHienTai().getTenDangNhap();
+    }
+
+    private void baoLoi(String thongBao, Exception ex) {
+        JOptionPane.showMessageDialog(view, thongBao + "\n" + ex.getMessage(), "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+    }
+}
