@@ -4,7 +4,7 @@ import java.util.Objects;
 
 /** POJO khách hàng theo mẫu trong tài liệu kiến trúc, dùng khi tiếp nhận khách mới. */
 public class KhachHang {
-    public static final String[] LOAI_KHACH_HANG = {"Cá nhân", "Doanh nghiệp"};
+    public static final String[] LOAI_KHACH_HANG = {"Khách vãng lai", "Thành viên", "VIP"};
 
     private String maKH;
     private String hoTen;
@@ -119,17 +119,6 @@ public class KhachHang {
 
     public void setDuocGhiNo(boolean duocGhiNo) {
         this.duocGhiNo = duocGhiNo;
-    }
-
-    /** Khách cá nhân bắt buộc có email, khách doanh nghiệp bắt buộc có mã số thuế (FR-04). */
-    public void kiemTraHopLe() {
-        boolean doanhNghiep = LOAI_KHACH_HANG[1].equals(loaiKhachHang);
-        if (doanhNghiep && (maSoThue == null || maSoThue.isEmpty())) {
-            throw new IllegalArgumentException("Khách doanh nghiệp phải có mã số thuế!");
-        }
-        if (!doanhNghiep && (email == null || email.isEmpty())) {
-            throw new IllegalArgumentException("Khách cá nhân phải có email!");
-        }
     }
 
     @Override

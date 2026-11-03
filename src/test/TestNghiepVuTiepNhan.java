@@ -114,16 +114,19 @@ public class TestNghiepVuTiepNhan {
         dung("VIN đúng", QLTiepNhanSuaChuaController.soVinHopLe("1HGCR2F83HA001234"));
         dung("VIN ngắn", !QLTiepNhanSuaChuaController.soVinHopLe("VINTEST"));
         dung("VIN có chữ O", !QLTiepNhanSuaChuaController.soVinHopLe("1HGCR2F83HO001234"));
-        KhachHang dn = khachMau("0911000009");
-        dn.setEmail("");
-        dn.setLoaiKhachHang("Doanh nghiệp");
-        loi("Doanh nghiệp thiếu MST", dn::kiemTraHopLe);
-        dn.setMaSoThue("0312456789");
-        dat("Doanh nghiệp đủ MST, không cần email", dn::kiemTraHopLe);
-        loi("MST sai", () -> dn.setMaSoThue("12"));
-        KhachHang cn = khachMau("0911000008");
-        cn.setEmail("");
-        loi("Cá nhân thiếu email", cn::kiemTraHopLe);
+        KhachHang kh = khachMau("0911000009");
+        dat("Email và mã số thuế được để trống", () -> {
+            kh.setEmail("");
+            kh.setMaSoThue("");
+        });
+        dat("Mã số thuế đúng", () -> kh.setMaSoThue("0312456789"));
+        loi("Mã số thuế sai", () -> kh.setMaSoThue("12"));
+        dat("Ba loại khách hàng hợp lệ", () -> {
+            for (String loai : KhachHang.LOAI_KHACH_HANG) {
+                kh.setLoaiKhachHang(loai);
+            }
+        });
+        dung("Loại mặc định là Khách vãng lai", "Khách vãng lai".equals(new KhachHang().getLoaiKhachHang()));
         kiemTraXuatFile();
 
         dung("Mật khẩu hợp lệ", DangNhapController.kiemTraMatKhauMoi("a", "123456", "123456") == null);
@@ -144,7 +147,7 @@ public class TestNghiepVuTiepNhan {
         loi("Ngày không tồn tại", () -> QLKhuyenMaiController.docNgay("31/02/2026", "Ngày"));
 
         loi("Email sai", () -> new KhachHang().setEmail("abc"));
-        loi("Loại khách cũ", () -> new KhachHang().setLoaiKhachHang("VIP"));
+        loi("Loại khách cũ", () -> new KhachHang().setLoaiKhachHang("Doanh nghiệp"));
         loi("Ưu tiên lạ", () -> new PhieuTiepNhanVaSuaChua().setUuTien("Rất gấp"));
         loi("Phạm vi lạ", () -> new KhuyenMai().setPhamViApDung("Tất cả"));
     }

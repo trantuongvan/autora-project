@@ -36,7 +36,7 @@ CREATE TABLE KhachHang (
     diaChi NVARCHAR(255),
     email VARCHAR(100),
     maSoThue VARCHAR(50),
-    loaiKhachHang NVARCHAR(50) DEFAULT N'Cá nhân', -- 'Cá nhân', 'Doanh nghiệp'
+    loaiKhachHang NVARCHAR(50) DEFAULT N'Khách vãng lai', -- 'Khách vãng lai', 'Thành viên', 'VIP'
     duocGhiNo BIT DEFAULT 0 -- 1: Cho phép ghi nợ, 0: Không
 );
 GO
@@ -306,9 +306,9 @@ GO
 
 -- 5.3. Thêm Khách hàng
 INSERT INTO KhachHang (maKH, hoTen, soDienThoai, diaChi, email, maSoThue, loaiKhachHang, duocGhiNo) VALUES
-('KH0001', N'Phạm Minh Hoàng', '0988111222', N'Quận 1, TP.HCM', 'hoang.pham@gmail.com', NULL, N'Cá nhân', 0),
-('KH0002', N'Công ty CP Vận Tải An Lạc', '0977222333', N'Bình Tân, TP.HCM', 'contact@anlac.vn', '0312456789', N'Doanh nghiệp', 1),
-('KH0003', N'Lê Thị Thu Thảo', '0966333444', N'Quận 3, TP.HCM', 'thao.le@yahoo.com', NULL, N'Cá nhân', 0);
+('KH0001', N'Phạm Minh Hoàng', '0988111222', N'Quận 1, TP.HCM', 'hoang.pham@gmail.com', NULL, N'Thành viên', 0),
+('KH0002', N'Công ty CP Vận Tải An Lạc', '0977222333', N'Bình Tân, TP.HCM', 'contact@anlac.vn', '0312456789', N'VIP', 1),
+('KH0003', N'Lê Thị Thu Thảo', '0966333444', N'Quận 3, TP.HCM', 'thao.le@yahoo.com', NULL, N'Khách vãng lai', 0);
 GO
 
 -- 5.4. Thêm Xe

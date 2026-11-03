@@ -3,6 +3,7 @@ package gui;
 import controller.DieuHuongPhieu;
 import controller.QLTiepNhanSuaChuaController;
 import entity.DichVu;
+import entity.KhachHang;
 import entity.PhieuTiepNhanVaSuaChua;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -27,8 +28,9 @@ public class QLTiepNhanSuaChua extends JPanel {
     private final JTextField txtDiaChi = new JTextField();
     private final JTextField txtEmail = new JTextField();
     private final JTextField txtMaSoThue = new JTextField();
-    private final JRadioButton radCaNhan = new JRadioButton("Cá nhân", true);
-    private final JRadioButton radDoanhNghiep = new JRadioButton("Doanh nghiệp");
+    private final JRadioButton radVangLai = new JRadioButton(KhachHang.LOAI_KHACH_HANG[0], true);
+    private final JRadioButton radThanhVien = new JRadioButton(KhachHang.LOAI_KHACH_HANG[1]);
+    private final JRadioButton radVip = new JRadioButton(KhachHang.LOAI_KHACH_HANG[2]);
 
     // --- Phương tiện ---
     private final JTextField txtBienSo = new JTextField();
@@ -123,14 +125,15 @@ public class QLTiepNhanSuaChua extends JPanel {
 
     private JPanel taoTheKhachHang() {
         ButtonGroup nhom = new ButtonGroup();
-        nhom.add(radCaNhan);
-        nhom.add(radDoanhNghiep);
+        nhom.add(radVangLai);
+        nhom.add(radThanhVien);
+        nhom.add(radVip);
         JPanel than = than();
         than.add(luoi(2, o("Họ và tên", true, txtHoTen), o("Số điện thoại", true, txtSoDienThoai),
-                o("Địa chỉ", true, txtDiaChi), o("Email (bắt buộc với khách cá nhân)", false, txtEmail)));
+                o("Địa chỉ", true, txtDiaChi), o("Email", false, txtEmail)));
         than.add(Box.createVerticalStrut(12));
-        than.add(luoi(2, o("Phân loại khách hàng", true, luoi(2, khungChon(radCaNhan), khungChon(radDoanhNghiep))),
-                o("Mã số thuế (bắt buộc với doanh nghiệp)", false, txtMaSoThue)));
+        than.add(luoi(2, o("Phân loại khách hàng", true, luoi(3, khungChon(radVangLai), khungChon(radThanhVien), khungChon(radVip))),
+                o("Mã số thuế", false, txtMaSoThue)));
         return the("Thông tin khách hàng", Loai.USER, than);
     }
 
@@ -254,8 +257,9 @@ public class QLTiepNhanSuaChua extends JPanel {
         for (JTextField o : new JTextField[] {txtHoTen, txtSoDienThoai, txtDiaChi, txtEmail, txtMaSoThue}) {
             o.setEditable(choSua);
         }
-        radCaNhan.setEnabled(choSua);
-        radDoanhNghiep.setEnabled(choSua);
+        radVangLai.setEnabled(choSua);
+        radThanhVien.setEnabled(choSua);
+        radVip.setEnabled(choSua);
     }
 
     /** Khóa nhóm phương tiện khi xe đã có trong hệ thống. */
@@ -284,7 +288,7 @@ public class QLTiepNhanSuaChua extends JPanel {
         txtYeuCau.setText("");
         lstDichVu.clearSelection();
         sldNhienLieu.setValue(50);
-        radCaNhan.setSelected(true);
+        radVangLai.setSelected(true);
         radThuong.setSelected(true);
         cboTrangThai.setSelectedIndex(0);
         setChoSuaKhachHang(true);
@@ -300,8 +304,17 @@ public class QLTiepNhanSuaChua extends JPanel {
     public JTextField getTxtEmail() { return txtEmail; }
     public JTextField getTxtMaSoThue() { return txtMaSoThue; }
     public JTextField getTxtDuKien() { return txtDuKien; }
-    public JRadioButton getRadCaNhan() { return radCaNhan; }
-    public JRadioButton getRadDoanhNghiep() { return radDoanhNghiep; }
+    public JRadioButton getRadVip() { return radVip; }
+
+    public String getLoaiKhachHang() {
+        return radVip.isSelected() ? radVip.getText() : radThanhVien.isSelected() ? radThanhVien.getText() : radVangLai.getText();
+    }
+
+    public void setLoaiKhachHang(String loai) {
+        radVip.setSelected(radVip.getText().equals(loai));
+        radThanhVien.setSelected(radThanhVien.getText().equals(loai));
+        radVangLai.setSelected(!radVip.isSelected() && !radThanhVien.isSelected());
+    }
     public JTextField getTxtBienSo() { return txtBienSo; }
     public JTextField getTxtSoKhung() { return txtSoKhung; }
     public JTextField getTxtHangXe() { return txtHangXe; }

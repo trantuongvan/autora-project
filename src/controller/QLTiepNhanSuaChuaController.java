@@ -160,8 +160,7 @@ public class QLTiepNhanSuaChuaController {
             view.getTxtDiaChi().setText(khach[3]);
             view.getTxtEmail().setText(khach[4]);
             view.getTxtMaSoThue().setText(khach[6]);
-            view.getRadDoanhNghiep().setSelected("Doanh nghiệp".equals(khach[5]));
-            view.getRadCaNhan().setSelected(!"Doanh nghiệp".equals(khach[5]));
+            view.setLoaiKhachHang(khach[5]);
         }
         view.setChoSuaKhachHang(khach == null);
     }
@@ -270,9 +269,8 @@ public class QLTiepNhanSuaChuaController {
         kh.setSoDienThoai(view.getTxtSoDienThoai().getText());
         kh.setDiaChi(view.getTxtDiaChi().getText());
         kh.setEmail(view.getTxtEmail().getText());
-        kh.setLoaiKhachHang(view.getRadDoanhNghiep().isSelected() ? "Doanh nghiệp" : "Cá nhân");
+        kh.setLoaiKhachHang(view.getLoaiKhachHang());
         kh.setMaSoThue(view.getTxtMaSoThue().getText());
-        kh.kiemTraHopLe();
         return kh;
     }
 
