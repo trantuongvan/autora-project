@@ -33,7 +33,7 @@ public class QLTaiKhoan extends JPanel {
         {"Hồ sơ xe", "QL_HO_SO_XE", true, true, false, false},
         {"Hóa đơn & Thanh toán", "QL_HOA_DON", true, true, false, false},
         {"Bàn giao xe", "QL_BAN_GIAO", true, true, false, false},
-        {"Tiến độ sửa chữa", "QL_TIEN_DO", false, false, true, false},
+        {"Tiến độ sửa chữa", "QL_TIEN_DO", true, false, true, false},
         {"Phụ tùng & Kho", "QL_PHU_TUNG", true, false, false, true},
         {"Nhập kho", "QL_NHAP_KHO", true, false, false, true},
         {"Duyệt xuất kho", "QL_DUYET_XUAT", true, false, false, true},

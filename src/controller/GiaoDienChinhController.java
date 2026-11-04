@@ -83,7 +83,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         muc(CARD_GIOI_THIEU, "Giới thiệu", Loai.INFO);
 
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_CHU_CUA_HANG, Arrays.asList(
-                "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
+                "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_TIEN_DO", "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
                 "QL_NHAP_KHO", "QL_DUYET_XUAT", "QL_HOA_DON", "QL_BAN_GIAO", "QL_KHUYEN_MAI", "QL_THONG_KE",
                 "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_LE_TAN, Arrays.asList(
