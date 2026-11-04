@@ -367,7 +367,7 @@ public class TestNghiepVuTiepNhan {
         // Phiếu mẫu 1 đã có hóa đơn nên phải bị khóa.
         String maKhoa = "PTNSC00001";
         dung("Phiếu có hóa đơn bị khóa", dao.isKhoa(maKhoa));
-        dung("Không đổi trạng thái phiếu khóa", !dao.capNhatTrangThai(maKhoa, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA));
+        dung("Không đổi trạng thái phiếu khóa", !dao.capNhatTrangThai(maKhoa, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA, "admin"));
         dung("Không xóa phiếu có hóa đơn", !dao.huy(maKhoa, "admin"));
         ChiTietSuaChua_DichVu dongKhoa = dong(TrangThaiTienDo.CHO_SUA);
         dongKhoa.setPhieu(new PhieuTiepNhanVaSuaChua(maKhoa));
@@ -408,9 +408,9 @@ public class TestNghiepVuTiepNhan {
         List<ChiTietSuaChua_DichVu> ds = chiTietDao.findByPhieu(ma);
         dung("Đọc dòng dịch vụ", ds.size() == 1 && ds.get(0).getKyThuatVien() == null && ds.get(0).getTienCongThucTe() == 200000
                 && ds.get(0).getDichVu().getTenDichVu() != null);
-        dung("Đổi trạng thái phiếu", dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA));
-        dung("Không bỏ qua luồng trạng thái", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH));
-        dung("Trạng thái cũ phải khớp", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.CHO_PHU_TUNG));
+        dung("Đổi trạng thái phiếu", dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA, "admin"));
+        dung("Không bỏ qua luồng trạng thái", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH, "admin"));
+        dung("Trạng thái cũ phải khớp", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.CHO_PHU_TUNG, "admin"));
         d.setTienCongThucTe(300000);
         dung("Lưu phân công một lần", chiTietDao.luuPhanCong(ma, Arrays.asList(d), "NV0006", "Ghi chú", "letan02"));
         dung("Sửa tiền công có nhật ký", tonTaiNhatKy("Sửa tiền công", ma + " / DV0002", "200000", "300000", "letan02"));

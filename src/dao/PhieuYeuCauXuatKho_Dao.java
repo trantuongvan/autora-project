@@ -13,6 +13,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhieuYeuCauXuatKho_Dao {
+    /** Hết yêu cầu đang chờ thì phiếu trở lại "Đang sửa". Tham số là mã yêu cầu vừa được duyệt hoặc từ chối. */
+    private static final String TRA_PHIEU_VE_DANG_SUA = "UPDATE p SET trangThai = N'Đang sửa' "
+            + "FROM PhieuTiepNhanVaSuaChua p WHERE p.trangThai = N'Chờ phụ tùng' "
+            + "AND p.maPhieuTNSC = (SELECT maPhieuTNSC FROM PhieuYeuCauXuatKho WHERE maPhieuYC = ?) "
+            + "AND NOT EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho y "
+            + "WHERE y.maPhieuTNSC = p.maPhieuTNSC AND y.trangThai = N'Chờ xuất')";
 
     public String nextId() throws SQLException {
         String sql = "SELECT 'PYC' + RIGHT('00000' + CAST(COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maPhieuYC, 4, 20))), 0) + 1 AS VARCHAR(20)), 5) "
@@ -37,7 +43,8 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public int countDaXuatHomNay() throws SQLException {
-        String sql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE trangThai = N'Đã xuất'";
+        String sql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE trangThai = N'Đã xuất' "
+                + "AND CAST(ngayXuat AS DATE) = CAST(GETDATE() AS DATE)";
         try (Connection c = ConnectDB.getConnection();
              Statement s = c.createStatement();
              ResultSet r = s.executeQuery(sql)) {
@@ -177,7 +184,8 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    public boolean insertWithDetails(PhieuYeuCauXuatKho phieu, List<ChiTietYeuCauXuatKho> chiTietList) throws SQLException {
+    public boolean insertWithDetails(PhieuYeuCauXuatKho phieu, List<ChiTietYeuCauXuatKho> chiTietList,
+            String tenDangNhap) throws SQLException {
         if (kiemTraTonTaiHoaDonHopLe(phieu.getPhieu().getMaPhieuTNSC())) {
             throw new SQLException("Phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC() + " đã có hóa đơn còn hiệu lực, không thể tạo thêm yêu cầu phụ tùng!");
         }
@@ -223,9 +231,8 @@ public class PhieuYeuCauXuatKho_Dao {
                 psUpdate.setString(1, phieu.getPhieu().getMaPhieuTNSC());
                 psUpdate.executeUpdate();
 
-                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, phieu.getKyThuatVien().getMaNV(),
-                        "Lập phiếu yêu cầu xuất kho",
-                        "Tạo phiếu yêu cầu " + phieu.getMaPhieuYC() + " cho phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC());
+                new NhatKy_Dao().ghi(c, tenDangNhap, "Lập phiếu yêu cầu xuất kho", phieu.getMaPhieuYC(), null,
+                        "Phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC());
 
                 c.commit();
                 c.setAutoCommit(oldAutoCommit);
@@ -238,7 +245,8 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    public boolean duyetXuatKho(String maPhieuYC, String maPhieuTNSC, String maNVThuKho, List<ChiTietYeuCauXuatKho> chiTietList) throws SQLException {
+    public boolean duyetXuatKho(String maPhieuYC, String maPhieuTNSC, String maNVThuKho,
+            List<ChiTietYeuCauXuatKho> chiTietList, String tenDangNhap) throws SQLException {
         // Chặn ngay ở tầng DAO nếu phiếu sửa chữa đã có hóa đơn hợp lệ (khác 'Đã hủy')
         if (kiemTraTonTaiHoaDonHopLe(maPhieuTNSC)) {
             throw new SQLException("Phiếu sửa chữa " + maPhieuTNSC + " đã có hóa đơn còn hiệu lực. Vui lòng hủy hóa đơn trước khi duyệt xuất kho!");
@@ -249,8 +257,8 @@ public class PhieuYeuCauXuatKho_Dao {
                 + "UPDATE ChiTietSuaChua_PhuTung SET soLuongSuDung = soLuongSuDung + ? WHERE maPhieuTNSC = ? AND maSKU = ? "
                 + "ELSE INSERT INTO ChiTietSuaChua_PhuTung(maPhieuTNSC, maSKU, soLuongSuDung, giaBanThucTe) "
                 + "SELECT ?, maSKU, ?, giaBanLe FROM PhuTung WHERE maSKU = ?";
-        String sqlUpdateYC = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Đã xuất', ngayXuat = GETDATE(), maNV_ThuKho = ? WHERE maPhieuYC = ?";
-        String sqlUpdatePTNSC = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = N'Đang sửa' WHERE maPhieuTNSC = ? AND trangThai = N'Chờ phụ tùng'";
+        String sqlUpdateYC = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Đã xuất', ngayXuat = GETDATE(), maNV_ThuKho = ? "
+                + "WHERE maPhieuYC = ? AND trangThai = N'Chờ xuất'";
 
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAuto = c.getAutoCommit();
@@ -258,7 +266,14 @@ public class PhieuYeuCauXuatKho_Dao {
             try (PreparedStatement psTru = c.prepareStatement(sqlTruTon);
                  PreparedStatement psCTPT = c.prepareStatement(sqlUpsertCTPT);
                  PreparedStatement psYC = c.prepareStatement(sqlUpdateYC);
-                 PreparedStatement psPTNSC = c.prepareStatement(sqlUpdatePTNSC)) {
+                 PreparedStatement psPTNSC = c.prepareStatement(TRA_PHIEU_VE_DANG_SUA)) {
+
+                // Đổi trạng thái trước: hai máy cùng duyệt thì máy sau dừng ở đây, không trừ kho lần nữa.
+                psYC.setString(1, maNVThuKho);
+                psYC.setString(2, maPhieuYC);
+                if (psYC.executeUpdate() != 1) {
+                    throw new SQLException("Yêu cầu " + maPhieuYC + " không còn chờ xuất. Bấm Tải dữ liệu để xem lại.");
+                }
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
                     psTru.setInt(1, ct.getSoLuong());
@@ -280,16 +295,11 @@ public class PhieuYeuCauXuatKho_Dao {
                     psCTPT.executeUpdate();
                 }
 
-                psYC.setString(1, maNVThuKho);
-                psYC.setString(2, maPhieuYC);
-                psYC.executeUpdate();
-
-                psPTNSC.setString(1, maPhieuTNSC);
+                psPTNSC.setString(1, maPhieuYC);
                 psPTNSC.executeUpdate();
 
-                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, maNVThuKho,
-                        "Duyệt xuất kho phụ tùng",
-                        "Duyệt xuất kho phiếu " + maPhieuYC + " cho phiếu sửa chữa " + maPhieuTNSC);
+                new NhatKy_Dao().ghi(c, tenDangNhap, "Duyệt xuất kho phụ tùng", maPhieuYC, null,
+                        "Phiếu sửa chữa " + maPhieuTNSC);
 
                 c.commit();
                 c.setAutoCommit(oldAuto);
@@ -302,19 +312,29 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    public boolean tuChoiYeuCau(String maPhieuYC, String maNVThuKho) throws SQLException {
-        String sql = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Từ chối', maNV_ThuKho = ? WHERE maPhieuYC = ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, maNVThuKho);
-            ps.setString(2, maPhieuYC);
-            boolean ok = ps.executeUpdate() == 1;
-            if (ok) {
-                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, maNVThuKho,
-                        "Từ chối yêu cầu xuất kho",
-                        "Từ chối phiếu yêu cầu xuất kho " + maPhieuYC);
+    /** Trả về false khi yêu cầu không còn chờ xuất, ví dụ máy khác đã duyệt hoặc từ chối trước. */
+    public boolean tuChoiYeuCau(String maPhieuYC, String maNVThuKho, String tenDangNhap) throws SQLException {
+        String sql = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Từ chối', maNV_ThuKho = ? "
+                + "WHERE maPhieuYC = ? AND trangThai = N'Chờ xuất'";
+        try (Connection c = ConnectDB.getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement ps = c.prepareStatement(sql);
+                 PreparedStatement psPhieu = c.prepareStatement(TRA_PHIEU_VE_DANG_SUA)) {
+                ps.setString(1, maNVThuKho);
+                ps.setString(2, maPhieuYC);
+                if (ps.executeUpdate() != 1) {
+                    c.rollback();
+                    return false;
+                }
+                psPhieu.setString(1, maPhieuYC);
+                psPhieu.executeUpdate();
+                new NhatKy_Dao().ghi(c, tenDangNhap, "Từ chối yêu cầu xuất kho", maPhieuYC, null, null);
+                c.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                c.rollback();
+                throw ex;
             }
-            return ok;
         }
     }
 }

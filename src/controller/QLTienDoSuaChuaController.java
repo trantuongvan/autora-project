@@ -1,5 +1,6 @@
 package controller;
 
+import dao.PhieuTiepNhanVaSuaChua_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import dao.TienDoSuaChua_Dao;
@@ -31,11 +32,11 @@ public class QLTienDoSuaChuaController {
 
     private final QLTienDoSuaChua view;
     private final TienDoSuaChua_Dao tienDoDao;
+    private final PhieuTiepNhanVaSuaChua_Dao phieuDao;
     private final PhuTung_Dao phuTungDao;
     private final PhieuYeuCauXuatKho_Dao yeuCauDao;
 
     private NhanVien kyThuatVienHienTai;
-    private static final String NHAN_CHO_SUA = "Chờ sửa"; // nhãn hiển thị của phiếu "Chờ kiểm tra"
     private String tabTrangThaiDangChon = "Tất cả";
     private List<PhieuTiepNhanVaSuaChua> danhSachPhieu = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieuDangChon;
@@ -50,6 +51,7 @@ public class QLTienDoSuaChuaController {
     public QLTienDoSuaChuaController(QLTienDoSuaChua view) {
         this.view = view;
         this.tienDoDao = new TienDoSuaChua_Dao();
+        this.phieuDao = new PhieuTiepNhanVaSuaChua_Dao();
         this.phuTungDao = new PhuTung_Dao();
         this.yeuCauDao = new PhieuYeuCauXuatKho_Dao();
 
@@ -298,25 +300,32 @@ public class QLTienDoSuaChuaController {
 
         String rawSelected = (String) view.getCboTrangThaiMoi().getSelectedItem();
         if (rawSelected == null) return;
-        String trangThaiMoi = rawSelected.replace("Trạng thái mới:", "").trim();
-        String trangThaiHienTai = phieuDangChon.getTrangThaiHienThiKTV();
+        String nhanMoi = rawSelected.replace("Trạng thái mới:", "").trim();
+        TrangThaiPhieu moi = TienDoSuaChua_Dao.chuanHoaTrangThaiDB(nhanMoi);
+        TrangThaiPhieu cu = phieuDangChon.getTrangThai();
+        view.getPnlHopLoiTrangThai().setVisible(false);
+        if (moi == cu) return;
 
-        if (!kiemTraLuongTrangThaiHopLe(trangThaiHienTai, trangThaiMoi)) {
-            view.getLblThongBaoLoiTrangThai().setText(
-                    "Trạng thái không hợp lệ: không thể chuyển từ '" + trangThaiHienTai + "' sang '" + trangThaiMoi + "'. Vui lòng chọn lại."
-            );
-            view.getPnlHopLoiTrangThai().setVisible(true);
-            view.revalidate();
+        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
+            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
+                    + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-
-        view.getPnlHopLoiTrangThai().setVisible(false);
+        if (moi == TrangThaiPhieu.HOAN_THANH && !ChiTietPhieuSuaChuaController.coTheHoanThanh(phieuDangChon.getDanhSachDichVu())) {
+            hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
+            return;
+        }
+        String ma = phieuDangChon.getMaPhieuTNSC();
         try {
-            tienDoDao.capNhatTrangThaiPhieu(phieuDangChon.getMaPhieuTNSC(), trangThaiMoi, "");
-            taiLai(phieuDangChon.getMaPhieuTNSC());
-            JOptionPane.showMessageDialog(view,
-                    "Đã cập nhật trạng thái phiếu " + phieuDangChon.getMaPhieuTNSC() + " sang '" + trangThaiMoi + "'.",
-                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            if (phieuDao.capNhatTrangThai(ma, cu, moi, PhienDangNhap.getHienTai().getTenDangNhap())) {
+                JOptionPane.showMessageDialog(view, "Đã cập nhật trạng thái phiếu " + ma + " sang '" + nhanMoi + "'.",
+                        "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(view, "Không cập nhật được phiếu " + ma
+                        + ": phiếu đã có hóa đơn, đã hủy hoặc vừa được người khác đổi trạng thái.",
+                        "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            }
+            taiLai(ma);
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi cập nhật trạng thái: " + ex.getMessage(),
@@ -324,16 +333,10 @@ public class QLTienDoSuaChuaController {
         }
     }
 
-    private boolean kiemTraLuongTrangThaiHopLe(String hienTai, String moi) {
-        if (hienTai.equalsIgnoreCase(moi)) return true;
-        String hoanThanh = TrangThaiPhieu.HOAN_THANH.getText();
-        if (NHAN_CHO_SUA.equalsIgnoreCase(hienTai) && hoanThanh.equalsIgnoreCase(moi)) {
-            return false;
-        }
-        if (hoanThanh.equalsIgnoreCase(hienTai) && NHAN_CHO_SUA.equalsIgnoreCase(moi)) {
-            return false;
-        }
-        return true;
+    private void hienLoiTrangThai(String thongBao) {
+        view.getLblThongBaoLoiTrangThai().setText(thongBao);
+        view.getPnlHopLoiTrangThai().setVisible(true);
+        view.revalidate();
     }
 
     private void xuLyDoiTrangThaiHangMuc(ChiTietSuaChua_DichVu ct) {
@@ -360,7 +363,11 @@ public class QLTienDoSuaChuaController {
                     view.getPnlHopLoiTrangThai().setVisible(true);
                     return;
                 }
-                tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi);
+                if (!tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi,
+                        PhienDangNhap.getHienTai().getTenDangNhap())) {
+                    JOptionPane.showMessageDialog(view, "Phiếu đã có hóa đơn hoặc đã hủy nên không thể cập nhật hạng mục.",
+                            "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                }
                 taiLai(ct.getPhieu().getMaPhieuTNSC());
             }
         } catch (SQLException ex) {
@@ -667,7 +674,7 @@ public class QLTienDoSuaChuaController {
                     null
             );
 
-            yeuCauDao.insertWithDetails(phieu, danhSachPhuTungYeuCau);
+            yeuCauDao.insertWithDetails(phieu, danhSachPhuTungYeuCau, PhienDangNhap.getHienTai().getTenDangNhap());
             JOptionPane.showMessageDialog(view,
                     "Đã gửi phiếu yêu cầu xuất kho " + maPYC + " thành công!\nPhiếu sửa chữa đã chuyển sang trạng thái 'Chờ phụ tùng'.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);

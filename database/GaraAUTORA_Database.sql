@@ -461,6 +461,15 @@ INSERT INTO LichHen (maLichHen, thoiGianHen, ghiChu, trangThai, maKH, bienSo) VA
 ('LH00003', DATEADD(HOUR, 14, DATEADD(DAY, 7, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Thay lốp', N'Đang hẹn', 'KH0001', NULL);
 GO
 
+-- Tài khoản ứng dụng chỉ đọc/ghi dữ liệu. Login do database/TaoLoginUngDung.sql tạo, nên chạy lại script này vẫn giữ quyền.
+IF SUSER_ID(N'autora_app') IS NOT NULL
+BEGIN
+    CREATE USER autora_app FOR LOGIN autora_app;
+    ALTER ROLE db_datareader ADD MEMBER autora_app;
+    ALTER ROLE db_datawriter ADD MEMBER autora_app;
+END
+GO
+
 PRINT N'==============================================================';
 PRINT N'ĐÃ TẠO DATABASE GaraAUTORA VÀ DỮ LIỆU MẪU THÀNH CÔNG!';
 PRINT N'==============================================================';

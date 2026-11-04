@@ -1,0 +1,5 @@
+# Sao chép tệp này thành database.properties (đã có trong .gitignore) rồi điền mật khẩu thật.
+# Tạo tài khoản autora_app bằng database/TaoLoginUngDung.sql.
+url=jdbc:sqlserver://localhost:1433;databaseName=GaraAUTORA;encrypt=true;trustServerCertificate=true
+user=autora_app
+password=DOI_MAT_KHAU_NAY

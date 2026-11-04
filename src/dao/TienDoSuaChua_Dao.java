@@ -152,56 +152,15 @@ public class TienDoSuaChua_Dao {
     }
 
     /**
-     * Cập nhật trạng thái phiếu sửa chữa (đảm bảo lưu đúng chuỗi "Hoàn thành")
-     * và ghi nhận vào Audit Log (bảng NhatKy nếu có).
-     */
-    public boolean capNhatTrangThaiPhieu(String maPhieuTNSC, String trangThaiMoi, String maNVKyThuat) throws SQLException {
-        // Chuẩn hóa chuỗi trạng thái lưu vào DB để khớp 100% với bên Lập Hóa Đơn
-        TrangThaiPhieu dbTrangThai = chuanHoaTrangThaiDB(trangThaiMoi);
-
-        String sqlPhieu = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = ? WHERE maPhieuTNSC = ?";
-        String sqlDichVu = "UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = ? "
-                + "WHERE maPhieuTNSC = ? AND (? = '' OR maNV_KyThuat = ? OR maNV_KyThuat IS NULL)";
-
-        try (Connection c = ConnectDB.getConnection()) {
-            boolean oldAuto = c.getAutoCommit();
-            c.setAutoCommit(false);
-            try (PreparedStatement psP = c.prepareStatement(sqlPhieu);
-                 PreparedStatement psDV = c.prepareStatement(sqlDichVu)) {
-
-                psP.setString(1, dbTrangThai.getText());
-                psP.setString(2, maPhieuTNSC);
-                psP.executeUpdate();
-
-                if (dbTrangThai == TrangThaiPhieu.DANG_SUA || dbTrangThai == TrangThaiPhieu.HOAN_THANH) {
-                    String maKTV = maNVKyThuat == null ? "" : maNVKyThuat.trim();
-                    psDV.setString(1, dbTrangThai.getText());
-                    psDV.setString(2, maPhieuTNSC);
-                    psDV.setString(3, maKTV);
-                    psDV.setString(4, maKTV);
-                    psDV.executeUpdate();
-                }
-
-                ghiNhatKyAnToan(c, maNVKyThuat, "Cập nhật tiến độ sửa chữa",
-                        "Cập nhật trạng thái phiếu " + maPhieuTNSC + " sang '" + dbTrangThai.getText() + "'");
-
-                c.commit();
-                c.setAutoCommit(oldAuto);
-                return true;
-            } catch (SQLException ex) {
-                c.rollback();
-                c.setAutoCommit(oldAuto);
-                throw ex;
-            }
-        }
-    }
-
-    /**
      * Cập nhật tiến độ cho từng hạng mục dịch vụ; nếu tất cả hạng mục đều Hoàn thành
      * thì tự động cập nhật Phiếu sang đúng chữ "Hoàn thành".
+     * Trả về false khi phiếu đã có hóa đơn hoặc đã hủy (màn hình có thể đang hiện dữ liệu cũ).
      */
-    public boolean capNhatTienDoHangMuc(String maPhieuTNSC, String maDichVu, TrangThaiTienDo trangThaiHangMucMoi) throws SQLException {
-        String sqlUpdateDV = "UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = ? WHERE maPhieuTNSC = ? AND maDichVu = ?";
+    public boolean capNhatTienDoHangMuc(String maPhieuTNSC, String maDichVu, TrangThaiTienDo trangThaiHangMucMoi,
+            String tenDangNhap) throws SQLException {
+        String sqlUpdateDV = "UPDATE d SET trangThaiTienDo = ? FROM ChiTietSuaChua_DichVu d "
+                + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = d.maPhieuTNSC "
+                + "WHERE d.maPhieuTNSC = ? AND d.maDichVu = ? AND " + PhieuTiepNhanVaSuaChua_Dao.NOT_LOCKED;
         String sqlCheckNotDone = "SELECT COUNT(*) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ? AND trangThaiTienDo <> N'Hoàn thành'";
         String sqlUpdatePhieu = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = ? WHERE maPhieuTNSC = ?";
 
@@ -215,7 +174,11 @@ public class TienDoSuaChua_Dao {
                 psDV.setString(1, trangThaiHangMucMoi.getText());
                 psDV.setString(2, maPhieuTNSC);
                 psDV.setString(3, maDichVu);
-                psDV.executeUpdate();
+                if (psDV.executeUpdate() != 1) {
+                    c.rollback();
+                    c.setAutoCommit(oldAuto);
+                    return false;
+                }
 
                 psCheck.setString(1, maPhieuTNSC);
                 int notDoneCount = 0;
@@ -228,9 +191,8 @@ public class TienDoSuaChua_Dao {
                 psPhieu.setString(2, maPhieuTNSC);
                 psPhieu.executeUpdate();
 
-                ghiNhatKyAnToan(c, null, "Cập nhật hạng mục sửa chữa",
-                        "Cập nhật hạng mục " + maDichVu + " của phiếu " + maPhieuTNSC
-                                + " sang '" + trangThaiHangMucMoi + "' (Trạng thái phiếu: " + trangThaiPhieuMoi + ")");
+                new NhatKy_Dao().ghi(c, tenDangNhap, "Cập nhật hạng mục sửa chữa", maPhieuTNSC, null,
+                        maDichVu + ": " + trangThaiHangMucMoi + " (phiếu: " + trangThaiPhieuMoi + ")");
 
                 c.commit();
                 c.setAutoCommit(oldAuto);
@@ -244,7 +206,7 @@ public class TienDoSuaChua_Dao {
     }
 
     /** Nhãn "Chờ sửa" chỉ để hiển thị; trong CSDL phiếu đó là "Chờ kiểm tra". */
-    private TrangThaiPhieu chuanHoaTrangThaiDB(String tt) {
+    public static TrangThaiPhieu chuanHoaTrangThaiDB(String tt) {
         if (tt == null) return TrangThaiPhieu.CHO_KIEM_TRA;
         String s = tt.trim();
         if ("Chờ sửa".equalsIgnoreCase(s)) return TrangThaiPhieu.CHO_KIEM_TRA;
@@ -272,51 +234,6 @@ public class TienDoSuaChua_Dao {
             return pct;
         }
         return tt == TrangThaiPhieu.DANG_SUA ? 50 : 0;
-    }
-
-    /**
-     * Ghi Audit Log vào bảng NhatKy một cách an toàn (không làm hỏng transaction nếu schema bảng NhatKy khác biệt).
-     */
-    /**
-     * Ghi Audit Log vào bảng NhatKy một cách an toàn tuyệt đối.
-     * Tự động kiểm tra kết nối độc lập và không làm gián đoạn giao dịch chính nếu bảng NhatKy bận hoặc khác tên cột.
-     */
-    public static void ghiNhatKyAnToan(Connection c, String maNV, String hanhDong, String chiTiet) {
-        String nv = (maNV == null || maNV.trim().isEmpty()) ? "NV0005" : maNV.trim();
-        // Dùng kết nối riêng biệt hoặc kết nối hiện tại để ghi log, không làm ảnh hưởng transaction nghiệp vụ chính
-        String sql = "INSERT INTO NhatKy (thoiGian, maNV, hanhDong, chiTiet) VALUES (GETDATE(), ?, ?, ?)";
-
-        try {
-            boolean useExistingConn = (c != null && !c.isClosed());
-            Connection conn = useExistingConn ? c : connection.ConnectDB.getConnection();
-
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, nv);
-                ps.setString(2, hanhDong);
-                ps.setString(3, chiTiet);
-                ps.executeUpdate();
-            } finally {
-                if (!useExistingConn && conn != null) {
-                    conn.close();
-                }
-            }
-        } catch (SQLException ignored) {
-            // Dự phòng trường hợp tên cột trong CSDL khác (ví dụ: thoi_gian thay vì thoiGian)
-            try {
-                String sqlAlt = "INSERT INTO NhatKy VALUES (GETDATE(), ?, ?, ?)";
-                Connection connAlt = (c != null && !c.isClosed()) ? c : connection.ConnectDB.getConnection();
-                try (PreparedStatement psAlt = connAlt.prepareStatement(sqlAlt)) {
-                    psAlt.setString(1, nv);
-                    psAlt.setString(2, hanhDong);
-                    psAlt.setString(3, chiTiet);
-                    psAlt.executeUpdate();
-                } finally {
-                    if (c == null && connAlt != null) connAlt.close();
-                }
-            } catch (SQLException ex2) {
-                // Nuốt lỗi log hoàn toàn để không bao giờ làm crash luồng nghiệp vụ chính của người dùng
-            }
-        }
     }
 
     private PhieuTiepNhanVaSuaChua mapPhieu(ResultSet rs) throws SQLException {
