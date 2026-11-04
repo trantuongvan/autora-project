@@ -282,13 +282,16 @@ public class QLPhuTungController {
         return true;
     }
 
+    /** Giá gõ tay: dấu chấm hoặc dấu phẩy đều là ngăn cách hàng nghìn. */
+    public static double docGia(String chuoi) {
+        return FormatUtil.parseCurrency(chuoi.replace(',', '.'));
+    }
+
     private boolean validateGiaRealtime() {
         boolean hopLe = true;
         double giaNhap = -1;
-        String rawNhap = view.getTxtGiaNhap().getText().trim().replace(",", "");
         try {
-            if (rawNhap.isEmpty()) throw new NumberFormatException();
-            giaNhap = Double.parseDouble(rawNhap);
+            giaNhap = docGia(view.getTxtGiaNhap().getText());
             if (giaNhap <= 0) throw new NumberFormatException();
             UIComponents.setError(view.getTxtGiaNhap(), false);
             QLPhuTung.showWrappedError(view.getLblLoiGiaNhap(), null, 175);
@@ -298,10 +301,8 @@ public class QLPhuTungController {
             hopLe = false;
         }
 
-        String rawBan = view.getTxtGiaBanLe().getText().trim().replace(",", "");
         try {
-            if (rawBan.isEmpty()) throw new NumberFormatException();
-            double giaBan = Double.parseDouble(rawBan);
+            double giaBan = docGia(view.getTxtGiaBanLe().getText());
             if (giaBan <= 0) {
                 UIComponents.setError(view.getTxtGiaBanLe(), true);
                 view.getLblGhiChuGia().setForeground(UIConstants.STATUS_DANGER);
@@ -380,8 +381,8 @@ public class QLPhuTungController {
         String tenPT = view.getTxtTenPhuTung().getText().trim();
         String hang = String.valueOf(view.getCboDrawerHang().getEditor().getItem()).trim();
         String viTri = String.valueOf(view.getCboDrawerViTri().getEditor().getItem()).trim();
-        double giaNhap = Double.parseDouble(view.getTxtGiaNhap().getText().trim().replace(",", ""));
-        double giaBan = Double.parseDouble(view.getTxtGiaBanLe().getText().trim().replace(",", ""));
+        double giaNhap = docGia(view.getTxtGiaNhap().getText());
+        double giaBan = docGia(view.getTxtGiaBanLe().getText());
         int soLuongTon = Integer.parseInt(view.getTxtSoLuongTon().getText().trim());
         int nguong = Integer.parseInt(view.getTxtNguongCanhBao().getText().trim());
 

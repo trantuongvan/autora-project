@@ -33,6 +33,17 @@ public class FormatUtil {
     }
 
     /**
+     * Đọc số tiền nguyên (ví dụ 150000, 150.000, 1.500.000đ); dấu chấm chỉ là ngăn cách hàng nghìn.
+     */
+    public static double parseCurrency(String chuoi) {
+        String s = chuoi == null ? "" : chuoi.trim().replaceFirst("đ$", "").trim();
+        if (!s.matches("\\d{1,15}|\\d{1,3}(\\.\\d{3}){1,4}")) {
+            throw new NumberFormatException("Số tiền không hợp lệ: " + chuoi);
+        }
+        return Double.parseDouble(s.replace(".", ""));
+    }
+
+    /**
      * Định dạng LocalDateTime thành chuỗi theo chuẩn "dd/MM/yyyy HH:mm".
      */
     public static String formatDateTime(LocalDateTime dateTime) {
