@@ -129,8 +129,8 @@ public class QLTiepNhanSuaChuaController {
             view.hienLoi(null);
             boolean laSdt = nhap.matches("0[0-9]{9}");
             String bienSo = laSdt ? dao.timBienSoTheoSdt(nhap) : nhap;
-            String[] xe = bienSo == null ? null : dao.findXeDayDu(bienSo);
-            String[] khach = xe != null ? dao.findKhachTheoSdt(xe[6]) : laSdt ? dao.findKhachTheoSdt(nhap) : null;
+            Xe xe = bienSo == null ? null : dao.findXeDayDu(bienSo);
+            KhachHang khach = xe != null ? xe.getKhachHang() : laSdt ? dao.findKhachTheoSdt(nhap) : null;
             if (xe == null && khach == null) {
                 // Chưa có trong hệ thống: nhập mới ngay trên form, giữ lại giá trị vừa tra cứu.
                 view.xoaTrangForm();
@@ -147,36 +147,36 @@ public class QLTiepNhanSuaChuaController {
             }
             dienKhach(khach);
             dienXe(xe);
-            if (xe != null && dao.coPhieuDangMo(xe[0])) {
-                view.hienLoi("Xe " + xe[0] + " đang có phiếu chưa hoàn thành, không thể lập phiếu mới.");
+            if (xe != null && dao.coPhieuDangMo(xe.getBienSo())) {
+                view.hienLoi("Xe " + xe.getBienSo() + " đang có phiếu chưa hoàn thành, không thể lập phiếu mới.");
             }
         } catch (SQLException ex) {
             hienLoiDuLieu("Không thể tra cứu.", ex);
         }
     }
 
-    private void dienKhach(String[] khach) {
-        maKhachDaCo = khach == null ? null : khach[0];
+    private void dienKhach(KhachHang khach) {
+        maKhachDaCo = khach == null ? null : khach.getMaKH();
         if (khach != null) {
-            view.getTxtHoTen().setText(khach[1]);
-            view.getTxtSoDienThoai().setText(khach[2]);
-            view.getTxtDiaChi().setText(khach[3]);
-            view.getTxtEmail().setText(khach[4]);
-            view.getTxtMaSoThue().setText(khach[6]);
-            view.setLoaiKhachHang(LoaiKhachHang.fromDb(khach[5]));
+            view.getTxtHoTen().setText(khach.getHoTen());
+            view.getTxtSoDienThoai().setText(khach.getSoDienThoai());
+            view.getTxtDiaChi().setText(khach.getDiaChi());
+            view.getTxtEmail().setText(khach.getEmail());
+            view.getTxtMaSoThue().setText(khach.getMaSoThue());
+            view.setLoaiKhachHang(khach.getLoaiKhachHang());
         }
         view.setChoSuaKhachHang(khach == null);
     }
 
-    private void dienXe(String[] xe) {
+    private void dienXe(Xe xe) {
         xeDaCo = xe != null;
         if (xe != null) {
-            view.getTxtBienSo().setText(xe[0]);
-            view.getTxtSoKhung().setText(xe[1]);
-            view.getTxtHangXe().setText(xe[2]);
-            view.getTxtDongXe().setText(xe[3]);
-            view.getTxtDoiXe().setText(xe[4]);
-            view.getTxtMauSon().setText(xe[5]);
+            view.getTxtBienSo().setText(xe.getBienSo());
+            view.getTxtSoKhung().setText(xe.getSoVIN());
+            view.getTxtHangXe().setText(xe.getHangXe());
+            view.getTxtDongXe().setText(xe.getDongXe());
+            view.getTxtDoiXe().setText(xe.getDoiXe() == null ? "" : xe.getDoiXe().toString());
+            view.getTxtMauSon().setText(xe.getMauSon());
         }
         view.setChoSuaXe(xe == null);
     }
@@ -245,16 +245,16 @@ public class QLTiepNhanSuaChuaController {
                 view.hienLoi("Biển số " + bienSo + " đã có trong hệ thống. Vui lòng tra cứu trước.");
                 return false;
             }
-            String[] khachCu = dao.findKhachTheoSdt(view.getTxtSoDienThoai().getText().trim());
+            KhachHang khachCu = dao.findKhachTheoSdt(view.getTxtSoDienThoai().getText().trim());
             if (khachCu != null) {
-                maKhachDaCo = khachCu[0];
+                maKhachDaCo = khachCu.getMaKH();
             }
             if (maKhachDaCo == null) {
                 khachMoi = docKhachMoi();
                 // Mã thật được sinh trong transaction; giá trị tạm chỉ để qua kiểm tra của Xe.
-                xeMoi.setMaKH("MOI");
+                xeMoi.setKhachHang(new KhachHang("MOI"));
             } else {
-                xeMoi.setMaKH(maKhachDaCo);
+                xeMoi.setKhachHang(new KhachHang(maKhachDaCo));
             }
         }
 

@@ -124,7 +124,7 @@ public class QLDuyetXuatKhoController {
                 setBorder(new EmptyBorder(0, 12, 0, 12));
 
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && danhSachChiTiet.get(r).getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
+                        && danhSachChiTiet.get(r).getPhuTung().getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
 
                 if (c == 0 || c == 4) {
                     setFont(UIConstants.FONT_FORM_LABEL.deriveFont(13.5f));
@@ -158,7 +158,7 @@ public class QLDuyetXuatKhoController {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && danhSachChiTiet.get(r).getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
+                        && danhSachChiTiet.get(r).getPhuTung().getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
 
                 area.setText(v == null ? "" : v.toString());
                 area.setBackground(sel ? t.getSelectionBackground() : (thieuTon ? bgInsufficient : UIConstants.CARD_BG));
@@ -224,7 +224,7 @@ public class QLDuyetXuatKhoController {
             } else {
                 for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
                     boolean isSel = yeuCauDangChon != null && yc.getMaPhieuYC().equals(yeuCauDangChon.getMaPhieuYC());
-                    String tenKTV = yeuCauDao.getTenKTV(yc.getMaNVKyThuat());
+                    String tenKTV = yeuCauDao.getTenKTV(yc.getKyThuatVien().getMaNV());
                     JPanel item = view.taoTheYeuCau(yc, tenKTV, isSel);
                     item.addMouseListener(new MouseAdapter() {
                         @Override
@@ -269,34 +269,29 @@ public class QLDuyetXuatKhoController {
                     : (yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.DA_XUAT ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
             view.getBadgeTrangThai().set(yeuCauDangChon.getTrangThai().getText(), cTrangThai);
 
-            String thongTinXe = yeuCauDao.getThongTinXe(yeuCauDangChon.getMaPhieuTNSC());
+            String thongTinXe = yeuCauDao.getThongTinXe(yeuCauDangChon.getPhieu().getMaPhieuTNSC());
             view.getLblMaYeuCau().setText(yeuCauDangChon.getMaPhieuYC());
             view.getLblThongTinPhu().setText("<html><div style='width:420px;'>Phiếu sửa chữa "
-                    + yeuCauDangChon.getMaPhieuTNSC() + " • Xe " + thongTinXe + "</div></html>");
+                    + yeuCauDangChon.getPhieu().getMaPhieuTNSC() + " • Xe " + thongTinXe + "</div></html>");
 
-            view.getLblValPhieuSC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getMaPhieuTNSC() + "</div></html>");
+            view.getLblValPhieuSC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getPhieu().getMaPhieuTNSC() + "</div></html>");
             view.getLblValXe().setText("<html><div style='width:320px;'>" + thongTinXe + "</div></html>");
-            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDao.getTenKTV(yeuCauDangChon.getMaNVKyThuat()) + "</div></html>");
+            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDao.getTenKTV(yeuCauDangChon.getKyThuatVien().getMaNV()) + "</div></html>");
             view.getLblValNgayYC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getNgayYeuCau().format(DT_FMT) + "</div></html>");
 
             danhSachChiTiet = yeuCauDao.getChiTietByMaPhieuYC(yeuCauDangChon.getMaPhieuYC());
             for (ChiTietYeuCauXuatKho ct : danhSachChiTiet) {
-                PhuTung pt = phuTungDao.findById(ct.getMaSKU());
-                int tonKho = pt != null ? pt.getSoLuongTon() : 0;
-                ct.setSoLuongTon(tonKho);
-                if (pt != null) {
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    ct.setViTriKho(pt.getViTriLuuKho());
-                }
+                PhuTung pt = ct.getPhuTung();
+                int tonKho = pt.getSoLuongTon();
 
                 if (tonKho < ct.getSoLuong()) {
                     duTonKho = false;
                 }
 
                 view.getTableModel().addRow(new Object[]{
-                        ct.getMaSKU(),
-                        ct.getTenPhuTung(),
-                        ct.getViTriKho(),
+                        pt.getMaSKU(),
+                        pt.getTenPhuTung(),
+                        pt.getViTriLuuKho(),
                         ct.getSoLuong(),
                         tonKho
                 });
@@ -317,10 +312,10 @@ public class QLDuyetXuatKhoController {
         if (yeuCauDangChon == null || !duTonKho) return;
         try {
             // [VÁ LỖI THẤT THOÁT] Kiểm tra phiếu sửa chữa đã bị chốt Hóa đơn chưa
-            boolean daCoHoaDon = yeuCauDao.kiemTraTonTaiHoaDonHopLe(yeuCauDangChon.getMaPhieuTNSC());
+            boolean daCoHoaDon = yeuCauDao.kiemTraTonTaiHoaDonHopLe(yeuCauDangChon.getPhieu().getMaPhieuTNSC());
             if (daCoHoaDon) {
                 JOptionPane.showMessageDialog(view,
-                        "Không thể xuất kho!\nPhiếu sửa chữa " + yeuCauDangChon.getMaPhieuTNSC()
+                        "Không thể xuất kho!\nPhiếu sửa chữa " + yeuCauDangChon.getPhieu().getMaPhieuTNSC()
                                 + " đã được Lễ tân lập Hóa đơn thanh toán.\n"
                                 + "Để xuất thêm phụ tùng, Lễ tân cần Hủy hóa đơn hiện tại trước.",
                         "Chặn xuất kho", JOptionPane.ERROR_MESSAGE);
@@ -331,7 +326,7 @@ public class QLDuyetXuatKhoController {
             String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
             yeuCauDao.duyetXuatKho(
                     yeuCauDangChon.getMaPhieuYC(),
-                    yeuCauDangChon.getMaPhieuTNSC(),
+                    yeuCauDangChon.getPhieu().getMaPhieuTNSC(),
                     maThuKho,
                     danhSachChiTiet
             );

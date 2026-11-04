@@ -3,6 +3,7 @@ package controller;
 import dao.NhatKy_Dao;
 import dao.TaiKhoan_Dao;
 import entity.NhanVien;
+import entity.NhatKyHoatDong;
 import entity.PhienDangNhap;
 import entity.TaiKhoan;
 import entity.VaiTro;
@@ -136,7 +137,7 @@ public class QLTaiKhoanController {
                 }
                 List<Object[]> dong = new ArrayList<>();
                 for (TaiKhoan t : dsTaiKhoan) {
-                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getMaNV() + " — " + t.getHoTen()), xuongDong(t.getVaiTro().getText()),
+                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getNhanVien().getMaNV() + " — " + t.getNhanVien().getHoTen()), xuongDong(t.getVaiTro().getText()),
                         t.getTrangThaiHienThi(), ""});
                 }
                 view.setDanhSach(dong);
@@ -145,9 +146,9 @@ public class QLTaiKhoanController {
     }
 
     private void taiNhatKy() {
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<NhatKyHoatDong>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<NhatKyHoatDong> doInBackground() throws Exception {
                 return nhatKyDao.search("");
             }
 
@@ -155,12 +156,13 @@ public class QLTaiKhoanController {
             protected void done() {
                 try {
                     List<Object[]> dong = new ArrayList<>();
-                    for (Object[] r : get()) {
+                    for (NhatKyHoatDong r : get()) {
                         if (dong.size() == SO_DONG_NHAT_KY) {
                             break;
                         }
-                        dong.add(new Object[] {r[1], xuongDong(((LocalDateTime) r[0]).format(DINH_DANG_GIO)), xuongDong(r[2] + " " + r[3]),
-                            xuongDong(truocSau((String) r[4], (String) r[5]))});
+                        dong.add(new Object[] {r.getTenDangNhap(), xuongDong(r.getThoiGian().format(DINH_DANG_GIO)),
+                            xuongDong(r.getHanhDong() + " " + r.getDoiTuong()),
+                            xuongDong(truocSau(r.getGiaTriCu(), r.getGiaTriMoi()))});
                     }
                     view.setNhatKy(dong);
                 } catch (Exception ex) {
@@ -242,7 +244,7 @@ public class QLTaiKhoanController {
         view.xoaLoi();
         view.setCheDoSua(true);
         view.getCboNhanVien().removeAllItems();
-        view.getCboNhanVien().addItem(taiKhoan.getMaNV() + " — " + taiKhoan.getHoTen());
+        view.getCboNhanVien().addItem(taiKhoan.getNhanVien().getMaNV() + " — " + taiKhoan.getNhanVien().getHoTen());
         view.getTxtTenDangNhap().setText(taiKhoan.getTenDangNhap());
         view.getPwdMatKhau().setText("");
         view.getCboVaiTro().setSelectedItem(taiKhoan.getVaiTro());
@@ -305,8 +307,7 @@ public class QLTaiKhoanController {
         NhanVien nv = dsNhanVien.get(chonNhanVien);
         taiKhoan.setVaiTro(vaiTro);
         taiKhoan.setTrangThai(hoatDong);
-        taiKhoan.setMaNV(nv.getMaNV());
-        taiKhoan.setHoTen(nv.getHoTen());
+        taiKhoan.setNhanVien(nv);
         dao.insert(taiKhoan, matKhau, nguoiThucHien());
         return true;
     }

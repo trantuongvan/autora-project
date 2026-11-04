@@ -18,7 +18,7 @@ public class Thue_Dao {
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
-                ketQua.add(new Thue(rs.getString("maThue"), rs.getString("tenLoaiThue"), rs.getDouble("thueSuat"), 0));
+                ketQua.add(new Thue(rs.getString("maThue"), rs.getString("tenLoaiThue"), rs.getDouble("thueSuat")));
             }
         }
         return ketQua;

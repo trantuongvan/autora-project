@@ -10,7 +10,7 @@ public class Xe {
     private String hangXe;
     private String dongXe;
     private String mauSon;
-    private String maKH;
+    private KhachHang khachHang;
     private Integer doiXe;
 
     public Xe() {
@@ -20,17 +20,17 @@ public class Xe {
         setBienSo(bienSo);
     }
 
-    public Xe(String bienSo, String soVIN, String hangXe, String dongXe, Integer doiXe, String maKH) {
-        this(bienSo, soVIN, hangXe, dongXe, doiXe, "", maKH);
+    public Xe(String bienSo, String soVIN, String hangXe, String dongXe, Integer doiXe, KhachHang khachHang) {
+        this(bienSo, soVIN, hangXe, dongXe, doiXe, "", khachHang);
     }
 
-    public Xe(String bienSo, String soVIN, String hangXe, String dongXe, Integer doiXe, String mauSon, String maKH) {
+    public Xe(String bienSo, String soVIN, String hangXe, String dongXe, Integer doiXe, String mauSon, KhachHang khachHang) {
         setBienSo(bienSo);
         setSoVIN(soVIN);
         setHangXe(hangXe);
         setDongXe(dongXe);
         setDoiXe(doiXe);
-        setMaKH(maKH);
+        setKhachHang(khachHang);
         setMauSon(mauSon);
     }
 
@@ -96,15 +96,15 @@ public class Xe {
         this.mauSon = mauSon == null ? "" : mauSon.trim();
     }
 
-    public String getMaKH() {
-        return maKH;
+    public KhachHang getKhachHang() {
+        return khachHang;
     }
 
-    public void setMaKH(String maKH) {
-        if (maKH == null || maKH.trim().isEmpty()) {
+    public void setKhachHang(KhachHang khachHang) {
+        if (khachHang == null) {
             throw new IllegalArgumentException("Chủ sở hữu không được để trống.");
         }
-        this.maKH = maKH.trim();
+        this.khachHang = khachHang;
     }
 
     @Override

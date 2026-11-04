@@ -10,7 +10,7 @@ public class NhanVien {
     private String soDienThoai;
     private String diaChi;
     private VaiTro viTriLamViec;
-    private String tenDangNhap;
+    private TaiKhoan taiKhoan;
 
     public NhanVien() {
     }
@@ -80,12 +80,13 @@ public class NhanVien {
         this.viTriLamViec = viTriLamViec;
     }
 
-    public String getTenDangNhap() {
-        return tenDangNhap;
+    /** Null khi nhân viên chưa có tài khoản. */
+    public TaiKhoan getTaiKhoan() {
+        return taiKhoan;
     }
 
-    public void setTenDangNhap(String tenDangNhap) {
-        this.tenDangNhap = tenDangNhap;
+    public void setTaiKhoan(TaiKhoan taiKhoan) {
+        this.taiKhoan = taiKhoan;
     }
 
     @Override

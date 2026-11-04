@@ -1,6 +1,7 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.NhatKyHoatDong;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -29,20 +30,20 @@ public class NhatKy_Dao {
         }
     }
 
-    /** Mỗi dòng: {thoiGian, tenDangNhap, hanhDong, doiTuong, giaTriCu, giaTriMoi}, mới nhất trước. */
-    public List<Object[]> search(String tuKhoa) throws SQLException {
+    /** Mới nhất trước. */
+    public List<NhatKyHoatDong> search(String tuKhoa) throws SQLException {
         return search(tuKhoa, null, null);
     }
 
     /** tuNgay, denNgay null nghĩa là không giới hạn phía đó; denNgay tính trọn ngày. */
-    public List<Object[]> search(String tuKhoa, LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+    public List<NhatKyHoatDong> search(String tuKhoa, LocalDate tuNgay, LocalDate denNgay) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
-        String sql = "SELECT TOP (500) thoiGian, tenDangNhap, hanhDong, doiTuong, giaTriCu, giaTriMoi "
+        String sql = "SELECT TOP (500) maNhatKy, thoiGian, tenDangNhap, hanhDong, doiTuong, giaTriCu, giaTriMoi "
                 + "FROM NhatKyHoatDong WHERE (? = N'' OR tenDangNhap LIKE ? OR hanhDong LIKE ? OR doiTuong LIKE ?) "
                 + (tuNgay == null ? "" : "AND thoiGian >= ? ")
                 + (denNgay == null ? "" : "AND thoiGian < ? ")
                 + "ORDER BY thoiGian DESC, maNhatKy DESC";
-        List<Object[]> ketQua = new ArrayList<>();
+        List<NhatKyHoatDong> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, key);
@@ -58,8 +59,8 @@ public class NhatKy_Dao {
             }
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new Object[] {rs.getTimestamp(1).toLocalDateTime(), rs.getString(2), rs.getString(3),
-                        rs.getString(4), rs.getString(5), rs.getString(6)});
+                    ketQua.add(new NhatKyHoatDong(rs.getInt(1), rs.getString(3), rs.getTimestamp(2).toLocalDateTime(),
+                        rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)));
                 }
             }
         }

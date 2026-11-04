@@ -131,7 +131,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 phieu.setMaPhieuTNSC(nextId(connection));
                 if (khachMoi != null) {
                     khachMoi.setMaKH(nextMaKhachHang(connection));
-                    xeMoi.setMaKH(khachMoi.getMaKH());
+                    xeMoi.setKhachHang(khachMoi);
                     insertKhachHang(connection, khachMoi);
                 }
                 if (xeMoi != null) {
@@ -171,7 +171,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             statement.setString(4, xe.getDongXe());
             statement.setObject(5, xe.getDoiXe(), Types.INTEGER);
             statement.setString(6, xe.getMauSon());
-            statement.setString(7, xe.getMaKH());
+            statement.setString(7, xe.getKhachHang().getMaKH());
             statement.executeUpdate();
         }
     }
@@ -199,9 +199,9 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    /** Trả về {maKH, hoTen, soDienThoai, diaChi, email, loaiKhachHang, maSoThue} hoặc null. */
-    public String[] findKhachTheoSdt(String sdt) throws SQLException {
-        String sql = "SELECT maKH, hoTen, soDienThoai, diaChi, email, loaiKhachHang, maSoThue FROM KhachHang WHERE soDienThoai = ?";
+    /** Trả về null khi không có khách này. */
+    public KhachHang findKhachTheoSdt(String sdt) throws SQLException {
+        String sql = "SELECT " + KhachHang_Dao.COT_KHACH_HANG + " FROM KhachHang k WHERE k.soDienThoai = ?";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, sdt);
@@ -209,15 +209,14 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 if (!rs.next()) {
                     return null;
                 }
-                return new String[] {rs.getString(1), rs.getString(2), rs.getString(3),
-                    rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7)};
+                return KhachHang_Dao.docKhachHang(rs);
             }
         }
     }
 
-    /** Trả về {bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, soDienThoaiChuXe} hoặc null. */
-    public String[] findXeDayDu(String bienSo) throws SQLException {
-        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, k.soDienThoai "
+    /** Trả về xe cùng chủ xe, hoặc null khi không có xe này. */
+    public Xe findXeDayDu(String bienSo) throws SQLException {
+        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, " + KhachHang_Dao.COT_KHACH_HANG + " "
                 + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH WHERE x.bienSo = ?";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -226,8 +225,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 if (!rs.next()) {
                     return null;
                 }
-                return new String[] {rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
-                    rs.getString(5), rs.getString(6), rs.getString(7)};
+                return docXe(rs);
             }
         }
     }
@@ -403,10 +401,9 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    public Object[] findXeVaChuXe(String bienSo) throws SQLException {
-        String sql = "SELECT x.bienSo, "
-                + "x.hangXe + N' ' + COALESCE(x.dongXe, N'') AS thongTinXe, "
-                + "x.doiXe, k.maKH, k.hoTen, k.soDienThoai, k.diaChi "
+    public Xe findXeVaChuXe(String bienSo) throws SQLException {
+        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, "
+                + KhachHang_Dao.COT_KHACH_HANG + " "
                 + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH "
                 + "WHERE x.bienSo = ?";
         try (Connection connection = ConnectDB.getConnection();
@@ -416,17 +413,16 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 if (!rs.next()) {
                     return null;
                 }
-                return new Object[] {
-                    rs.getString("bienSo"),
-                    rs.getString("thongTinXe"),
-                    rs.getObject("doiXe"),
-                    rs.getString("maKH"),
-                    rs.getString("hoTen"),
-                    rs.getString("soDienThoai"),
-                    rs.getString("diaChi")
-                };
+                return docXe(rs);
             }
         }
+    }
+
+    private static Xe docXe(ResultSet rs) throws SQLException {
+        int doiXe = rs.getInt("doiXe");
+        Integer nam = rs.wasNull() ? null : doiXe;
+        return new Xe(rs.getString("bienSo"), rs.getString("soVIN"), rs.getString("hangXe"),
+                rs.getString("dongXe"), nam, rs.getString("mauSon"), KhachHang_Dao.docKhachHang(rs));
     }
 
     public boolean coPhieuDangMo(String bienSo) throws SQLException {

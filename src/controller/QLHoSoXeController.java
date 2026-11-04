@@ -1,6 +1,7 @@
 package controller;
 
 import dao.Xe_Dao;
+import entity.KhachHang;
 import entity.TrangThaiHoaDon;
 import entity.Xe;
 import gui.QLHoSoXe;
@@ -88,7 +89,12 @@ public class QLHoSoXeController {
                 if (version != loadVersion) return;
                 try {
                     Object[] result = get();
-                    @SuppressWarnings("unchecked") List<Object[]> rows = (List<Object[]>) result[0];
+                    @SuppressWarnings("unchecked") List<Xe> dsXe = (List<Xe>) result[0];
+                    List<Object[]> rows = new ArrayList<>();
+                    for (Xe x : dsXe) {
+                        rows.add(new Object[]{x.getBienSo(), x.getHangXe() + " / " + x.getDongXe(), x.getDoiXe(),
+                                x.getSoVIN(), x.getKhachHang().getHoTen(), x.getKhachHang().getSoDienThoai(), ""});
+                    }
                     @SuppressWarnings("unchecked") List<String> owners = (List<String>) result[1];
                     view.setDanhSach(rows);
                     view.setThongKeBang(rows.size(), selectedPlate);
@@ -150,7 +156,7 @@ public class QLHoSoXeController {
             String year = view.getTxtNam().getText().trim();
             Integer y = year.isEmpty() ? null : Integer.valueOf(year);
             Xe xe = new Xe(plate, view.getTxtVIN().getText(), String.valueOf(view.getCboHang().getSelectedItem()),
-                    String.valueOf(view.getCboDong().getSelectedItem()), y, view.getTxtMauSon().getText(), selected.split(" - ", 2)[0]);
+                    String.valueOf(view.getCboDong().getSelectedItem()), y, view.getTxtMauSon().getText(), new KhachHang(selected.split(" - ", 2)[0]));
             boolean update = selectedPlate != null && plate.equalsIgnoreCase(selectedPlate);
             if (!update && dao.findById(xe.getBienSo()) != null) {
                 view.hienLoiBienSo("Biển số đã tồn tại trong hồ sơ.");

@@ -1,7 +1,9 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.NhanVien;
 import entity.PhieuBanGiao;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
 
@@ -297,8 +299,8 @@ public class PhieuBanGiao_Dao {
         Timestamp time = result.getTimestamp("ngayBanGiao");
         return new PhieuBanGiao(
                 result.getString("maPhieuBG"),
-                result.getString("maPhieuTNSC"),
-                result.getString("maNV_BanGiao"),
+                new PhieuTiepNhanVaSuaChua(result.getString("maPhieuTNSC")),
+                new NhanVien(result.getString("maNV_BanGiao")),
                 time == null ? null : time.toLocalDateTime(),
                 result.getBoolean("xacNhanHoanTat"),
                 result.getBoolean("xacNhanThanhToan"),

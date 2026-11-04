@@ -398,12 +398,8 @@ public class QLTienDoSuaChuaController {
             int dem = 0;
             for (PhuTung pt : dsKho) {
                 if (pt.getSoLuongTon() > 0 && dem < 2) {
-                    ChiTietYeuCauXuatKho ct = new ChiTietYeuCauXuatKho(view.getTxtMaYeuCau().getText(), pt.getMaSKU(), 1);
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    ct.setHangSanXuat(pt.getHangSanXuat());
-                    ct.setSoLuongTon(pt.getSoLuongTon());
-                    ct.setNguongCanhBao(pt.getNguongCanhBao());
-                    danhSachPhuTungYeuCau.add(ct);
+                    danhSachPhuTungYeuCau.add(new ChiTietYeuCauXuatKho(
+                            new PhieuYeuCauXuatKho(view.getTxtMaYeuCau().getText()), pt, 1));
                     dem++;
                 }
             }
@@ -449,17 +445,17 @@ public class QLTienDoSuaChuaController {
         ));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 58));
 
-        row.add(UIComponents.label(item.getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(item.getPhuTung().getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK),
                 QLTienDoSuaChua.cotGrid(0, 0.16));
-        row.add(UIComponents.label(item.getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13.5f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(item.getPhuTung().getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13.5f), UIConstants.TEXT_DARK),
                 QLTienDoSuaChua.cotGrid(1, 0.34));
-        row.add(UIComponents.label(item.getHangSanXuat(), UIConstants.FONT_BODY.deriveFont(13.5f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(item.getPhuTung().getHangSanXuat(), UIConstants.FONT_BODY.deriveFont(13.5f), UIConstants.TEXT_DARK),
                 QLTienDoSuaChua.cotGrid(2, 0.14));
 
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        JLabel lblTon = UIComponents.label(String.valueOf(item.getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
+        JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getSoLuongTon() <= item.getNguongCanhBao()) {
+        if (item.getPhuTung().getSoLuongTon() <= item.getPhuTung().getNguongCanhBao()) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));
@@ -544,10 +540,10 @@ public class QLTienDoSuaChuaController {
                 if (sl <= 0) {
                     loiDong = true;
                     if (thongBaoLoi == null) thongBaoLoi = "Số lượng phải là số nguyên dương";
-                } else if (sl > ct.getSoLuongTon()) {
+                } else if (sl > ct.getPhuTung().getSoLuongTon()) {
                     loiDong = true;
                     if (thongBaoLoi == null) {
-                        thongBaoLoi = "Mã " + ct.getMaSKU() + ": Tồn kho trên hệ thống không đủ (Tồn hiện tại: " + ct.getSoLuongTon() + ")";
+                        thongBaoLoi = "Mã " + ct.getPhuTung().getMaSKU() + ": Tồn kho trên hệ thống không đủ (Tồn hiện tại: " + ct.getPhuTung().getSoLuongTon() + ")";
                     }
                 } else {
                     ct.setSoLuong(sl);
@@ -625,7 +621,7 @@ public class QLTienDoSuaChuaController {
     private void themHoacTangPhuTung(PhuTung pt) {
         for (int i = 0; i < danhSachPhuTungYeuCau.size(); i++) {
             ChiTietYeuCauXuatKho ct = danhSachPhuTungYeuCau.get(i);
-            if (ct.getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
+            if (ct.getPhuTung().getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
                 int slMoi = ct.getSoLuong() + 1;
                 if (i < danhSachOInputSoLuong.size()) {
                     danhSachOInputSoLuong.get(i).setText(String.valueOf(slMoi));
@@ -635,12 +631,8 @@ public class QLTienDoSuaChuaController {
             }
         }
 
-        ChiTietYeuCauXuatKho ctMoi = new ChiTietYeuCauXuatKho(view.getTxtMaYeuCau().getText(), pt.getMaSKU(), 1);
-        ctMoi.setTenPhuTung(pt.getTenPhuTung());
-        ctMoi.setHangSanXuat(pt.getHangSanXuat());
-        ctMoi.setSoLuongTon(pt.getSoLuongTon());
-        ctMoi.setNguongCanhBao(pt.getNguongCanhBao());
-        danhSachPhuTungYeuCau.add(ctMoi);
+        danhSachPhuTungYeuCau.add(new ChiTietYeuCauXuatKho(
+                new PhieuYeuCauXuatKho(view.getTxtMaYeuCau().getText()), pt, 1));
         veDanhSachPhuTungYeuCau();
         kiemTraHopLeTatCaSoLuong();
     }
@@ -664,8 +656,8 @@ public class QLTienDoSuaChuaController {
                     LocalDateTime.now(),
                     null,
                     TrangThaiYeuCauXuat.CHO_XUAT,
-                    phieuDangChon.getMaPhieuTNSC(),
-                    maKTV,
+                    new PhieuTiepNhanVaSuaChua(phieuDangChon.getMaPhieuTNSC()),
+                    new NhanVien(maKTV),
                     null
             );
 

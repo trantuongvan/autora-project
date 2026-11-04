@@ -1,5 +1,7 @@
 package entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /** POJO khách hàng theo mẫu trong tài liệu kiến trúc, dùng khi tiếp nhận khách mới. */
@@ -12,6 +14,8 @@ public class KhachHang {
     private String maSoThue;
     private LoaiKhachHang loaiKhachHang = LoaiKhachHang.KHACH_VANG_LAI;
     private boolean duocGhiNo;
+    /** Chỉ chứa biển số khi lấy từ KhachHang_Dao.search; không dùng để ghi. */
+    private List<Xe> danhSachXe = new ArrayList<>();
 
     public KhachHang() {
     }
@@ -117,6 +121,14 @@ public class KhachHang {
 
     public void setDuocGhiNo(boolean duocGhiNo) {
         this.duocGhiNo = duocGhiNo;
+    }
+
+    public List<Xe> getDanhSachXe() {
+        return danhSachXe;
+    }
+
+    public void setDanhSachXe(List<Xe> danhSachXe) {
+        this.danhSachXe = danhSachXe == null ? new ArrayList<>() : danhSachXe;
     }
 
     @Override
