@@ -381,8 +381,8 @@ public class TestPhanCong {
     /** Phiếu thử có mã PCT..., một dòng dịch vụ đã giao thợ; xóa bằng xoaDuLieuThu. */
     private static void taoPhieu(String trangThaiPhieu, String maDichVu, String maNV, String trangThaiTienDo) throws SQLException {
         String ma = "PCT" + (++stt);
-        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, trangThai) "
-                + "VALUES ('" + ma + "', '51H-123.45', 'NV0002', N'" + trangThaiPhieu + "')");
+        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, trangThai) "
+                + "VALUES ('" + ma + "', '51H-123.45', 'KH0001', 'NV0002', N'" + trangThaiPhieu + "')");
         thucThi("INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, maNV_KyThuat, trangThaiTienDo) "
                 + "VALUES ('" + ma + "', '" + maDichVu + "', '" + maNV + "', N'" + trangThaiTienDo + "')");
     }

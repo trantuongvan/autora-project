@@ -64,7 +64,7 @@ public class TienDoSuaChua_Dao {
                 + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", " + NhanVien_Dao.cotNhanVien("nl", "lap_") + " "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "JOIN Xe x ON x.bienSo = p.bienSo "
-                + "JOIN KhachHang k ON k.maKH = x.maKH "
+                + "JOIN KhachHang k ON k.maKH = p.maKH "
                 + "JOIN NhanVien nl ON nl.maNV = p.maNV_LapPhieu "
                 + "WHERE p.trangThai <> N'Đã hủy' "
                 + "  AND (? = '' OR EXISTS (SELECT 1 FROM ChiTietSuaChua_DichVu ct WHERE ct.maPhieuTNSC = p.maPhieuTNSC AND (ct.maNV_KyThuat = ? OR ct.maNV_KyThuat IS NULL))) "

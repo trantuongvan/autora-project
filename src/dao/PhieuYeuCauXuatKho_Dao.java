@@ -194,7 +194,7 @@ public class PhieuYeuCauXuatKho_Dao {
                 + "VALUES(?, ?, ?, ?, ?, ?, ?)";
         String sqlChiTiet = "INSERT INTO ChiTietYeuCauXuatKho(maPhieuYC, maSKU, soLuong) VALUES(?, ?, ?)";
         String sqlUpdatePTNSC = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = N'Chờ phụ tùng' "
-                + "WHERE maPhieuTNSC = ? AND trangThai <> N'Hoàn thành'";
+                + "WHERE maPhieuTNSC = ? AND trangThai NOT IN (N'Hoàn thành', N'Đã hủy')";
 
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAutoCommit = c.getAutoCommit();
@@ -229,7 +229,10 @@ public class PhieuYeuCauXuatKho_Dao {
                 psCT.executeBatch();
 
                 psUpdate.setString(1, phieu.getPhieu().getMaPhieuTNSC());
-                psUpdate.executeUpdate();
+                if (psUpdate.executeUpdate() != 1) {
+                    throw new SQLException("Phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC()
+                            + " đã hoàn thành hoặc đã hủy nên không thể yêu cầu phụ tùng.");
+                }
 
                 new NhatKy_Dao().ghi(c, tenDangNhap, "Lập phiếu yêu cầu xuất kho", phieu.getMaPhieuYC(), null,
                         "Phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC());

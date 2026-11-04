@@ -379,7 +379,7 @@ public class ChiTietHoaDonController {
             }
         }
         try {
-            dao.thanhToanCongNo(hoaDon.getMaHD(), hinhThuc, dua);
+            dao.thanhToanCongNo(hoaDon.getMaHD(), hinhThuc, dua, PhienDangNhap.getHienTai().getTenDangNhap());
             dieuHuong.moChiTietHoaDon(hoaDon.getMaHD());
         } catch (IllegalArgumentException | SQLException ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể thanh toán", JOptionPane.WARNING_MESSAGE);

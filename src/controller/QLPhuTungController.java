@@ -223,6 +223,9 @@ public class QLPhuTungController {
         view.getTxtGiaNhap().setText("85000");
         view.getTxtGiaBanLe().setText("120000");
         view.getTxtSoLuongTon().setText("10");
+        view.getTxtSoLuongTon().setEditable(true);
+        view.getTxtSoLuongTon().setBackground(UIConstants.CARD_BG);
+        view.getTxtSoLuongTon().setToolTipText(null);
         view.getTxtNguongCanhBao().setText("5");
         dangNapDuLieuForm = false;
         view.hienThiDrawer(true);
@@ -243,6 +246,9 @@ public class QLPhuTungController {
         view.getTxtGiaNhap().setText(String.valueOf(Math.round(pt.getGiaNhap())));
         view.getTxtGiaBanLe().setText(String.valueOf(Math.round(pt.getGiaBanLe())));
         view.getTxtSoLuongTon().setText(String.valueOf(pt.getSoLuongTon()));
+        view.getTxtSoLuongTon().setEditable(false);
+        view.getTxtSoLuongTon().setBackground(UIComponents.tint(UIConstants.APP_BG, 0.45f));
+        view.getTxtSoLuongTon().setToolTipText("Tồn kho chỉ thay đổi qua nhập kho và duyệt xuất kho.");
         view.getTxtNguongCanhBao().setText(String.valueOf(pt.getNguongCanhBao()));
         dangNapDuLieuForm = false;
         view.hienThiDrawer(true);

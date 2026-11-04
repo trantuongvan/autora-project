@@ -33,7 +33,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             + NhanVien_Dao.cotNhanVien("pt", "pt_") + " "
             + "FROM PhieuTiepNhanVaSuaChua p "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
-            + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN KhachHang k ON k.maKH = p.maKH "
             + "JOIN NhanVien n ON n.maNV = p.maNV_LapPhieu "
             + "LEFT JOIN NhanVien pt ON pt.maNV = p.maNV_PhuTrach ";
 
@@ -294,8 +294,9 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         String sql = "INSERT INTO PhieuTiepNhanVaSuaChua "
                 + "(maPhieuTNSC, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, "
                 + "taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, "
-                + "trangThai, bienSo, maNV_LapPhieu, danhGiaNoiThat, ghiChu, phuTungDuKien, uuTien, maNV_PhuTrach) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "trangThai, bienSo, maNV_LapPhieu, danhGiaNoiThat, ghiChu, phuTungDuKien, uuTien, maNV_PhuTrach, maKH) "
+                // Lưu chủ xe lúc tiếp nhận: xe đổi chủ về sau thì phiếu và hóa đơn cũ vẫn đúng người.
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT maKH FROM Xe WHERE bienSo = ?))";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, phieu.getMaPhieuTNSC());
             statement.setString(2, phieu.getYeuCauBanDau());
@@ -321,6 +322,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             statement.setString(14, phieu.getPhuTungDuKien());
             statement.setString(15, phieu.getUuTien().getText());
             statement.setString(16, phieu.getNhanVienPhuTrach() == null ? null : phieu.getNhanVienPhuTrach().getMaNV());
+            statement.setString(17, phieu.getXe().getBienSo());
             return statement.executeUpdate() == 1;
         }
     }

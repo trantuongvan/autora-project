@@ -31,7 +31,7 @@ public class PhieuBanGiao_Dao {
             + "bg.maNV_BanGiao, nv.hoTen AS tenNVBanGiao "
             + "FROM PhieuTiepNhanVaSuaChua p "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
-            + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN KhachHang k ON k.maKH = p.maKH "
             + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
             + "AND h.trangThaiThanhToan <> N'Đã hủy' "
             + "LEFT JOIN Thue th ON th.maThue = h.maThue "
@@ -73,10 +73,10 @@ public class PhieuBanGiao_Dao {
         String sql = LIST_SQL
                 + " WHERE p.trangThai <> N'Đã hủy' "
                 + "AND (? = '' OR p.maPhieuTNSC LIKE ? OR x.bienSo LIKE ? OR k.hoTen LIKE ?)"
-                + " AND (? = 'Tất cả'"
-                + " OR (? = 'Chờ bàn giao' AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao bg"
+                + " AND (? = N'Tất cả'"
+                + " OR (? = N'Chờ bàn giao' AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao bg"
                 + " WHERE bg.maPhieuTNSC = p.maPhieuTNSC))"
-                + " OR (? = 'Đã bàn giao' AND EXISTS (SELECT 1 FROM PhieuBanGiao bg"
+                + " OR (? = N'Đã bàn giao' AND EXISTS (SELECT 1 FROM PhieuBanGiao bg"
                 + " WHERE bg.maPhieuTNSC = p.maPhieuTNSC)))"
                 + " ORDER BY p.thoiGianTiepNhan DESC";
         String query = tuKhoa == null ? "" : tuKhoa.trim();
@@ -136,7 +136,7 @@ public class PhieuBanGiao_Dao {
                         + "MAX(CASE WHEN bg.maPhieuBG IS NULL THEN 0 ELSE 1 END) AS daBanGiao "
                         + "FROM PhieuTiepNhanVaSuaChua p "
                         + "JOIN Xe x ON x.bienSo = p.bienSo "
-                        + "JOIN KhachHang k ON k.maKH = x.maKH "
+                        + "JOIN KhachHang k ON k.maKH = p.maKH "
                         + "LEFT JOIN ChiTietSuaChua_DichVu d ON d.maPhieuTNSC = p.maPhieuTNSC "
                         + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
                         + "AND h.trangThaiThanhToan <> N'Đã hủy' "
