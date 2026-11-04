@@ -62,6 +62,8 @@ public class QLTienDoSuaChuaController {
             kyThuatVienHienTai = tienDoDao.findDefaultKyThuatVien();
             if (kyThuatVienHienTai != null) {
                 view.capNhatThongTinKTVHeader(kyThuatVienHienTai.getHoTen());
+                NhanVien dayDu = new dao.NhanVien_Dao().findById(kyThuatVienHienTai.getMaNV());
+                view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
             }
         } catch (SQLException ex) {
             ex.printStackTrace();

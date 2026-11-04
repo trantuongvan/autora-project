@@ -1,5 +1,7 @@
 package gui;
 
+import entity.CaLamViec;
+import entity.DichVu;
 import entity.VaiTro;
 import util.UIConstants;
 import util.UIComponents;
@@ -42,6 +44,23 @@ public class QLNhanVien extends JPanel {
     private final JTextField txtSoDienThoai = new JTextField();
     private final JTextField txtDiaChi = new JTextField();
     private final JComboBox<VaiTro> cboViTri = new JComboBox<>(VaiTro.values());
+    private static final String KHONG_CA = "(Chưa xếp ca)";
+    private final JComboBox<Object> cboCa = new JComboBox<>(new Object[] {KHONG_CA});
+    private final JLabel lblLoiCa = UIComponents.errorLabel();
+    private final JLabel lblLoiKyNang = UIComponents.errorLabel();
+    private final DefaultTableModel kyNangModel = new DefaultTableModel(new String[] {"Làm được", "Dịch vụ", "Số phút"}, 0) {
+        @Override
+        public Class<?> getColumnClass(int cot) {
+            return cot == 0 ? Boolean.class : Object.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int dong, int cot) {
+            return cot == 0 || (cot == 2 && Boolean.TRUE.equals(getValueAt(dong, 0)));
+        }
+    };
+    private final JTable tblKyNang = new JTable(kyNangModel);
+    private final JPanel pnlKyNang = UIComponents.trong(new BorderLayout(0, 6));
     private final JLabel lblLoiHoTen = UIComponents.errorLabel();
     private final JLabel lblLoiSoDienThoai = UIComponents.errorLabel();
     private final JButton btnHuy = UIComponents.nutPhu("Hủy");
@@ -155,10 +174,26 @@ public class QLNhanVien extends JPanel {
         than.add(txtDiaChi, UIComponents.gbc(0, 4, 2, 0.56, 6, 12));
         than.add(cboViTri, UIComponents.gbc(2, 4, 1, 0.44, 6, 0));
 
+        than.add(UIComponents.formLabel("Ca làm việc", false), UIComponents.gbc(0, 5, 2, 0.56, 14, 12));
+        than.add(cboCa, UIComponents.gbc(0, 6, 2, 0.56, 6, 12));
+        than.add(lblLoiCa, UIComponents.gbc(0, 7, 2, 0, 4, 12));
+
+        UIComponents.styleTable(tblKyNang);
+        tblKyNang.setRowHeight(34);
+        tblKyNang.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+        UIComponents.datDoRong(tblKyNang, 90, 380, 90);
+        JScrollPane cuonKyNang = UIComponents.cuonBang(tblKyNang);
+        cuonKyNang.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER_COLOR));
+        cuonKyNang.setPreferredSize(new Dimension(100, 44 + 5 * 34 + 2));
+        pnlKyNang.add(UIComponents.formLabel("Kỹ năng (dịch vụ làm được và số phút)", false), BorderLayout.NORTH);
+        pnlKyNang.add(cuonKyNang, BorderLayout.CENTER);
+        pnlKyNang.add(lblLoiKyNang, BorderLayout.SOUTH);
+        than.add(pnlKyNang, UIComponents.gbc(0, 8, 3, 1, 14, 0));
+
         JPanel nut = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         nut.add(btnHuy);
         nut.add(btnLuu);
-        than.add(nut, UIComponents.gbc(0, 6, 3, 1, 16, 0));
+        than.add(nut, UIComponents.gbc(0, 9, 3, 1, 16, 0));
         the.add(than, BorderLayout.CENTER);
         return the;
     }
@@ -214,6 +249,7 @@ public class QLNhanVien extends JPanel {
         UIComponents.styleInput(txtSoDienThoai);
         UIComponents.styleInput(txtDiaChi);
         UIComponents.styleCombo(cboViTri);
+        UIComponents.styleCombo(cboCa);
         fldMaNV.setEditable(false);
     }
 
@@ -262,6 +298,12 @@ public class QLNhanVien extends JPanel {
                 capNhat();
             }
         });
+        // Bảng kỹ năng chỉ có nghĩa với kỹ thuật viên.
+        cboViTri.addActionListener(e -> {
+            pnlKyNang.setVisible(cboViTri.getSelectedItem() == VaiTro.KY_THUAT_VIEN);
+            pnlKyNang.revalidate();
+        });
+        pnlKyNang.setVisible(cboViTri.getSelectedItem() == VaiTro.KY_THUAT_VIEN);
         btnDongXoa.addActionListener(e -> theXoa.setVisible(false));
         btnHuyXoa.addActionListener(e -> theXoa.setVisible(false));
         tblDanhSach.addMouseMotionListener(new MouseAdapter() {
@@ -310,8 +352,40 @@ public class QLNhanVien extends JPanel {
         txtSoDienThoai.setText("");
         txtDiaChi.setText("");
         cboViTri.setSelectedIndex(1);
+        cboCa.setSelectedIndex(0);
+        for (int i = 0; i < kyNangModel.getRowCount(); i++) {
+            kyNangModel.setValueAt("", i, 2);
+            kyNangModel.setValueAt(false, i, 0);
+        }
         hienLoiHoTen(null);
         hienLoiSoDienThoai(null);
+        hienLoiCa(null);
+        hienLoiKyNang(null);
+    }
+
+    public void napDanhSachCa(List<CaLamViec> ca) {
+        cboCa.removeAllItems();
+        cboCa.addItem(KHONG_CA);
+        for (CaLamViec c : ca) {
+            cboCa.addItem(c);
+        }
+    }
+
+    /** Mỗi dịch vụ một dòng, chưa tick; thứ tự dòng trùng thứ tự danh sách truyền vào. */
+    public void napDichVuKyNang(List<DichVu> dichVu) {
+        kyNangModel.setRowCount(0);
+        for (DichVu dv : dichVu) {
+            kyNangModel.addRow(new Object[] {false, dv.getTenDichVu(), ""});
+        }
+    }
+
+    public void hienLoiCa(String msg) {
+        UIComponents.showError(lblLoiCa, msg);
+        UIComponents.setError(cboCa, msg != null);
+    }
+
+    public void hienLoiKyNang(String msg) {
+        UIComponents.showError(lblLoiKyNang, msg);
     }
 
     public void dienForm(entity.NhanVien nv) {
@@ -320,6 +394,7 @@ public class QLNhanVien extends JPanel {
         txtSoDienThoai.setText(nv.getSoDienThoai());
         txtDiaChi.setText(nv.getDiaChi());
         cboViTri.setSelectedItem(nv.getViTriLamViec());
+        cboCa.setSelectedItem(nv.getCaLamViec() == null ? KHONG_CA : nv.getCaLamViec());
     }
 
     public void hienLoiHoTen(String msg) {
@@ -354,6 +429,9 @@ public class QLNhanVien extends JPanel {
     public JTextField getTxtSoDienThoai() { return txtSoDienThoai; }
     public JTextField getTxtDiaChi() { return txtDiaChi; }
     public JComboBox<VaiTro> getCboViTri() { return cboViTri; }
+    public JComboBox<Object> getCboCa() { return cboCa; }
+    public JTable getTblKyNang() { return tblKyNang; }
+    public DefaultTableModel getKyNangModel() { return kyNangModel; }
     public JButton getBtnHuy() { return btnHuy; }
     public JButton getBtnLuu() { return btnLuu; }
     public JButton getBtnHuyXoa() { return btnHuyXoa; }

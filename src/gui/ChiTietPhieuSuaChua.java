@@ -58,6 +58,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
     private final JButton btnQuayVe = UIComponents.nutPhu("Quay về");
     private final JButton btnHuyPhieu = UIComponents.nutPhu("Hủy phiếu");
     private final JButton btnInPhieu = UIComponents.nutPhu("In phiếu");
+    private final JButton btnTuDongPhanCong = UIComponents.nutPhu("Tự động phân công");
     private final JButton btnLuuPhanCong = UIComponents.nutPhu("Lưu phân công");
     private final JButton btnCapNhatTienDo = UIComponents.nutChinh("Cập nhật tiến độ", UIConstants.PRIMARY);
 
@@ -169,6 +170,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
         nut.add(btnQuayVe);
         nut.add(btnHuyPhieu);
         nut.add(btnInPhieu);
+        nut.add(btnTuDongPhanCong);
         nut.add(btnLuuPhanCong);
         nut.add(btnCapNhatTienDo);
         JPanel thanh = new JPanel(new BorderLayout());
@@ -195,7 +197,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
         this.khoa = khoa;
         UIComponents.showError(lblKhoa, khoa ? "Phiếu đã có hóa đơn hoặc đã hủy nên chỉ được xem, không được sửa." : null);
         for (JComponent c : new JComponent[] {cboKtvPhuTrach, cboTrangThai, cboDichVu, btnThemDichVu, btnXoaDichVu,
-                btnHuyPhieu, btnLuuPhanCong, btnCapNhatTienDo}) {
+                btnHuyPhieu, btnTuDongPhanCong, btnLuuPhanCong, btnCapNhatTienDo}) {
             c.setEnabled(!khoa);
         }
         txtGhiChuKyThuat.setEditable(!khoa);
@@ -233,6 +235,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
     public JButton getBtnQuayVe() { return btnQuayVe; }
     public JButton getBtnHuyPhieu() { return btnHuyPhieu; }
     public JButton getBtnInPhieu() { return btnInPhieu; }
+    public JButton getBtnTuDongPhanCong() { return btnTuDongPhanCong; }
     public JButton getBtnLuuPhanCong() { return btnLuuPhanCong; }
     public JButton getBtnCapNhatTienDo() { return btnCapNhatTienDo; }
 }

@@ -92,7 +92,6 @@ public class TrangChuKyThuatVien extends JPanel {
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));
 
-        UIComponents.Badge badgeCa = new UIComponents.Badge("Ca làm việc • 08:00 – 17:00", UIConstants.ROLE_RECEPTION_LIGHT);
         JPanel pnlHeader = UIComponents.tieuDeTrang(
                 "Tổng quan công việc",
                 lblMoTaChao,
@@ -333,6 +332,14 @@ public class TrangChuKyThuatVien extends JPanel {
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return b;
+    }
+
+    private final UIComponents.Badge badgeCa = new UIComponents.Badge("Chưa xếp ca", UIConstants.ROLE_RECEPTION_LIGHT);
+
+    /** Ca thật của kỹ thuật viên đang đăng nhập; null khi chưa xếp ca. */
+    public void setCaLamViec(entity.CaLamViec ca) {
+        badgeCa.setText(ca == null ? "Chưa xếp ca"
+                : "Ca làm việc • " + ca.getGioBatDau() + " – " + ca.getGioKetThuc());
     }
 
     public void capNhatThongTinKTVHeader(String hoTen) {

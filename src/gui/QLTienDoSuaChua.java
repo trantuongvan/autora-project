@@ -143,6 +143,14 @@ public class QLTienDoSuaChua extends JPanel {
         }
     }
 
+    private final UIComponents.Badge badgeCa = new UIComponents.Badge("Chưa xếp ca", UIConstants.ROLE_RECEPTION_LIGHT);
+
+    /** Ca thật của kỹ thuật viên đang đăng nhập; null khi chưa xếp ca. */
+    public void setCaLamViec(entity.CaLamViec ca) {
+        badgeCa.setText(ca == null ? "Chưa xếp ca"
+                : "Ca làm việc • " + ca.getGioBatDau() + " – " + ca.getGioKetThuc());
+    }
+
     public void capNhatThongTinKTVHeader(String hoTen) {
         if (hoTen == null || hoTen.trim().isEmpty()) return;
         lblTenKTVHeader.setText(hoTen.trim());
@@ -271,7 +279,6 @@ public class QLTienDoSuaChua extends JPanel {
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));
 
-        UIComponents.Badge badgeCa = new UIComponents.Badge("Ca làm việc • 08:00 – 17:00", UIConstants.ROLE_RECEPTION_LIGHT);
         JPanel pnlHeader = UIComponents.tieuDeTrang(
                 "Quản lý tiến độ sửa chữa",
                 "Theo dõi và cập nhật trạng thái từng phiếu sửa chữa được giao cho bạn.",

@@ -1,6 +1,9 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.CaLamViec;
+import entity.DichVu;
+import entity.KyNang;
 import entity.NhanVien;
 import entity.TaiKhoan;
 import entity.VaiTro;
@@ -16,9 +19,11 @@ import java.util.List;
 public class NhanVien_Dao {
 
     private static final String SELECT_COLUMNS =
-            "SELECT n.maNV, n.hoTen, n.soDienThoai, n.diaChi, n.viTriLamViec, t.tenDangNhap ";
+            "SELECT n.maNV, n.hoTen, n.soDienThoai, n.diaChi, n.viTriLamViec, t.tenDangNhap, "
+            + "ca.maCa, ca.tenCa, ca.gioBatDau, ca.gioKetThuc ";
     private static final String FROM =
-            "FROM NhanVien n LEFT JOIN TaiKhoan t ON t.maNV = n.maNV ";
+            "FROM NhanVien n LEFT JOIN TaiKhoan t ON t.maNV = n.maNV "
+            + "LEFT JOIN CaLamViec ca ON ca.maCa = n.maCa ";
 
     public List<NhanVien> findAll() throws SQLException {
         return search("", null);
@@ -65,6 +70,39 @@ public class NhanVien_Dao {
         return employees;
     }
 
+    public List<CaLamViec> findAllCa() throws SQLException {
+        String sql = "SELECT maCa, tenCa, gioBatDau, gioKetThuc FROM CaLamViec ORDER BY gioBatDau, maCa";
+        List<CaLamViec> result = new ArrayList<>();
+        try (Connection connection = ConnectDB.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet rs = statement.executeQuery()) {
+            while (rs.next()) {
+                result.add(docCa(rs));
+            }
+        }
+        return result;
+    }
+
+    /** Kỹ năng của một nhân viên; không nạp cùng nhân viên để các màn hình khác khỏi tốn truy vấn. */
+    public List<KyNang> findKyNang(String maNV) throws SQLException {
+        String sql = "SELECT k.maDichVu, d.tenDichVu, d.tienCong, d.thoiGianChuan, k.thoiGianPhut "
+                + "FROM NhanVien_DichVu k JOIN DichVu d ON d.maDichVu = k.maDichVu "
+                + "WHERE k.maNV = ? ORDER BY k.maDichVu";
+        List<KyNang> result = new ArrayList<>();
+        try (Connection connection = ConnectDB.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maNV);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    DichVu dv = new DichVu(rs.getString("maDichVu"), rs.getString("tenDichVu"), rs.getDouble("tienCong"));
+                    dv.setThoiGianChuan(rs.getInt("thoiGianChuan"));
+                    result.add(new KyNang(new NhanVien(maNV), dv, rs.getInt("thoiGianPhut")));
+                }
+            }
+        }
+        return result;
+    }
+
     public boolean existsSoDienThoai(String soDienThoai, String exceptMaNV) throws SQLException {
         String sql = "SELECT 1 FROM NhanVien WHERE soDienThoai = ? AND maNV <> ?";
         try (Connection connection = ConnectDB.getConnection();
@@ -105,8 +143,8 @@ public class NhanVien_Dao {
     }
 
     public boolean insert(NhanVien employee, String tenDangNhap) throws SQLException {
-        String sql = "INSERT INTO NhanVien(maNV, hoTen, soDienThoai, diaChi, viTriLamViec) "
-                + "VALUES(?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO NhanVien(maNV, hoTen, soDienThoai, diaChi, viTriLamViec, maCa) "
+                + "VALUES(?, ?, ?, ?, ?, ?)";
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -115,10 +153,12 @@ public class NhanVien_Dao {
                 statement.setString(3, employee.getSoDienThoai());
                 statement.setString(4, employee.getDiaChi());
                 statement.setString(5, employee.getViTriLamViec().getText());
+                statement.setString(6, maCa(employee));
                 if (statement.executeUpdate() != 1) {
                     connection.rollback();
                     return false;
                 }
+                luuKyNang(connection, employee);
                 new NhatKy_Dao().ghi(connection, tenDangNhap, "Thêm nhân viên",
                         employee.getMaNV(), null, giaTri(employee));
                 connection.commit();
@@ -138,7 +178,7 @@ public class NhanVien_Dao {
         String sqlCu = "SELECT hoTen, soDienThoai, diaChi, viTriLamViec "
                 + "FROM NhanVien WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
         String sql = "UPDATE NhanVien SET hoTen = ?, soDienThoai = ?, diaChi = ?, "
-                + "viTriLamViec = ? WHERE maNV = ?";
+                + "viTriLamViec = ?, maCa = ? WHERE maNV = ?";
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -162,12 +202,14 @@ public class NhanVien_Dao {
                     statement.setString(2, employee.getSoDienThoai());
                     statement.setString(3, employee.getDiaChi());
                     statement.setString(4, employee.getViTriLamViec().getText());
-                    statement.setString(5, employee.getMaNV());
+                    statement.setString(5, maCa(employee));
+                    statement.setString(6, employee.getMaNV());
                     if (statement.executeUpdate() != 1) {
                         connection.rollback();
                         return false;
                     }
                 }
+                luuKyNang(connection, employee);
                 new NhatKy_Dao().ghi(connection, tenDangNhap, "Cập nhật nhân viên",
                         employee.getMaNV(), oldValue, giaTri(employee));
                 connection.commit();
@@ -175,6 +217,26 @@ public class NhanVien_Dao {
             } catch (SQLException | RuntimeException ex) {
                 connection.rollback();
                 throw ex;
+            }
+        }
+    }
+
+    private static String maCa(NhanVien employee) {
+        return employee.getCaLamViec() == null ? null : employee.getCaLamViec().getMaCa();
+    }
+
+    /** Thay toàn bộ kỹ năng của nhân viên bằng danh sách trên entity, trong transaction của lệnh lưu nhân viên. */
+    private void luuKyNang(Connection connection, NhanVien employee) throws SQLException {
+        try (PreparedStatement xoa = connection.prepareStatement("DELETE FROM NhanVien_DichVu WHERE maNV = ?");
+             PreparedStatement them = connection.prepareStatement(
+                     "INSERT INTO NhanVien_DichVu(maNV, maDichVu, thoiGianPhut) VALUES(?, ?, ?)")) {
+            xoa.setString(1, employee.getMaNV());
+            xoa.executeUpdate();
+            for (KyNang kyNang : employee.getDanhSachKyNang()) {
+                them.setString(1, employee.getMaNV());
+                them.setString(2, kyNang.getDichVu().getMaDichVu());
+                them.setInt(3, kyNang.getThoiGianPhut());
+                them.executeUpdate();
             }
         }
     }
@@ -215,6 +277,15 @@ public class NhanVien_Dao {
                 rs.getString(tienTo + "diaChi"), VaiTro.fromDb(rs.getString(tienTo + "viTriLamViec")));
     }
 
+    /** Trả về null khi dòng không có ca (LEFT JOIN không khớp). */
+    static CaLamViec docCa(ResultSet rs) throws SQLException {
+        if (rs.getString("maCa") == null) {
+            return null;
+        }
+        return new CaLamViec(rs.getString("maCa"), rs.getString("tenCa"),
+                rs.getTime("gioBatDau").toLocalTime(), rs.getTime("gioKetThuc").toLocalTime());
+    }
+
     private NhanVien mapNhanVien(ResultSet result) throws SQLException {
         NhanVien employee = new NhanVien(
                 result.getString("maNV"),
@@ -222,6 +293,7 @@ public class NhanVien_Dao {
                 result.getString("soDienThoai"),
                 result.getString("diaChi"),
                 VaiTro.fromDb(result.getString("viTriLamViec")));
+        employee.setCaLamViec(docCa(result));
         String tenDangNhap = result.getString("tenDangNhap");
         if (tenDangNhap != null) {
             TaiKhoan taiKhoan = new TaiKhoan(tenDangNhap);

@@ -1,5 +1,7 @@
 package entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /** Nhân viên và thông tin tài khoản liên kết lấy từ NhanVien/TaiKhoan. */
@@ -11,6 +13,8 @@ public class NhanVien {
     private String diaChi;
     private VaiTro viTriLamViec;
     private TaiKhoan taiKhoan;
+    private CaLamViec caLamViec;
+    private List<KyNang> danhSachKyNang = new ArrayList<>();
 
     public NhanVien() {
     }
@@ -87,6 +91,24 @@ public class NhanVien {
 
     public void setTaiKhoan(TaiKhoan taiKhoan) {
         this.taiKhoan = taiKhoan;
+    }
+
+    /** Null khi nhân viên chưa xếp ca. */
+    public CaLamViec getCaLamViec() {
+        return caLamViec;
+    }
+
+    public void setCaLamViec(CaLamViec caLamViec) {
+        this.caLamViec = caLamViec;
+    }
+
+    /** Chỉ có dữ liệu khi nơi nạp nhân viên nạp kỹ năng; mặc định rỗng. */
+    public List<KyNang> getDanhSachKyNang() {
+        return danhSachKyNang;
+    }
+
+    public void setDanhSachKyNang(List<KyNang> danhSachKyNang) {
+        this.danhSachKyNang = danhSachKyNang == null ? new ArrayList<>() : danhSachKyNang;
     }
 
     @Override
