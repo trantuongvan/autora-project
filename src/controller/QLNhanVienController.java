@@ -119,7 +119,7 @@ public class QLNhanVienController {
                         rows.add(new Object[]{
                                 employee.getMaNV(), employee.getHoTen(), employee.getSoDienThoai(),
                                 employee.getDiaChi(), employee.getViTriLamViec(),
-                                employee.getTenDangNhap() == null ? "—" : employee.getTenDangNhap(), ""
+                                employee.getTaiKhoan() == null ? "—" : employee.getTaiKhoan().getTenDangNhap(), ""
                         });
                     }
                     view.setDanhSach(rows);

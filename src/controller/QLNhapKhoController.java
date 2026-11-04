@@ -170,10 +170,10 @@ public class QLNhapKhoController {
                 view.getTableModel().addRow(new Object[]{
                         pn.getMaPhieuNhap(),
                         pn.getNgayNhap().format(DT_FMT),
-                        pn.getTenNCC(),
+                        pn.getNhaCungCap().getTenNCC(),
                         pn.getSoMatHang(),
                         FormatUtil.formatCurrency(pn.getTongTienNhap()),
-                        pn.getTenThuKho(),
+                        pn.getThuKho().getHoTen(),
                         "Xem chi tiết →"
                 });
             }
@@ -211,9 +211,7 @@ public class QLNhapKhoController {
             if (maSKUMacDinh != null && !maSKUMacDinh.isEmpty()) {
                 PhuTung pt = phuTungDao.findById(maSKUMacDinh);
                 if (pt != null) {
-                    ChiTietNhapKho ct = new ChiTietNhapKho(maPhieu, pt.getMaSKU(), 10, pt.getGiaNhap());
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    dsChiTietModal.add(ct);
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, 10, pt.getGiaNhap()));
                 }
             } else {
                 List<PhuTung> dsCanNhap = phuTungDao.findDuoiNguongCanhBao("");
@@ -221,9 +219,7 @@ public class QLNhapKhoController {
                 int count = 0;
                 for (PhuTung pt : dsCanNhap) {
                     if (count >= 2) break;
-                    ChiTietNhapKho ct = new ChiTietNhapKho(maPhieu, pt.getMaSKU(), 10, pt.getGiaNhap());
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    dsChiTietModal.add(ct);
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, 10, pt.getGiaNhap()));
                     count++;
                 }
             }
@@ -270,9 +266,9 @@ public class QLNhapKhoController {
         ));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        row.add(UIComponents.label(ct.getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(ct.getPhuTung().getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK),
                 QLNhapKho.cotModal(0, 0.16));
-        row.add(UIComponents.label(ct.getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(ct.getPhuTung().getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_DARK),
                 QLNhapKho.cotModal(1, 0.34));
 
         JTextField txtSL = new JTextField(String.valueOf(ct.getSoLuongNhap()), 4);
@@ -451,7 +447,7 @@ public class QLNhapKhoController {
 
                 for (int i = 0; i < dsChiTietModal.size(); i++) {
                     ChiTietNhapKho existing = dsChiTietModal.get(i);
-                    if (existing.getMaSKU().equalsIgnoreCase(ptChon.getMaSKU())) {
+                    if (existing.getPhuTung().getMaSKU().equalsIgnoreCase(ptChon.getMaSKU())) {
                         int slMoi = existing.getSoLuongNhap() + 5;
                         dsInputSoLuong.get(i).setText(String.valueOf(slMoi));
                         tinhVaKiemTraChiTietModal();
@@ -460,14 +456,12 @@ public class QLNhapKhoController {
                     }
                 }
 
-                ChiTietNhapKho ctMoi = new ChiTietNhapKho(
-                        view.getLblMaPhieuNhapModal().getText(),
-                        ptChon.getMaSKU(),
+                dsChiTietModal.add(new ChiTietNhapKho(
+                        new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()),
+                        ptChon,
                         10,
                         ptChon.getGiaNhap()
-                );
-                ctMoi.setTenPhuTung(ptChon.getTenPhuTung());
-                dsChiTietModal.add(ctMoi);
+                ));
                 veBangChiTietModal();
                 tinhVaKiemTraChiTietModal();
                 view.getTxtTimPhuTungModal().setText("");
@@ -559,15 +553,13 @@ public class QLNhapKhoController {
         }
         maTrongFile.add(pt.getMaSKU());
         for (ChiTietNhapKho daCo : dsChiTietModal) {
-            if (daCo.getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
+            if (daCo.getPhuTung().getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
                 daCo.setSoLuongNhap(sl);
                 daCo.setGiaNhapThucTe(gia);
                 return null;
             }
         }
-        ChiTietNhapKho ct = new ChiTietNhapKho(view.getLblMaPhieuNhapModal().getText(), pt.getMaSKU(), sl, gia);
-        ct.setTenPhuTung(pt.getTenPhuTung());
-        dsChiTietModal.add(ct);
+        dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()), pt, sl, gia));
         return null;
     }
 
@@ -588,8 +580,8 @@ public class QLNhapKhoController {
 
         try {
             String maPN = nhapKhoDao.nextId();
-            String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
-            PhieuNhapKho phieu = new PhieuNhapKho(maPN, LocalDateTime.now(), tongTien, ncc.getMaNCC(), maThuKho);
+            NhanVien thuKho = thuKhoHienTai != null ? thuKhoHienTai : new NhanVien("NV0004");
+            PhieuNhapKho phieu = new PhieuNhapKho(maPN, LocalDateTime.now(), tongTien, ncc, thuKho);
 
             nhapKhoDao.insertWithDetails(phieu, dsChiTietModal);
             JOptionPane.showMessageDialog(view,
@@ -613,8 +605,8 @@ public class QLNhapKhoController {
             );
             for (ChiTietNhapKho ct : dsCT) {
                 modelCT.addRow(new Object[]{
-                        ct.getMaSKU(),
-                        ct.getTenPhuTung(),
+                        ct.getPhuTung().getMaSKU(),
+                        ct.getPhuTung().getTenPhuTung(),
                         ct.getSoLuongNhap(),
                         FormatUtil.formatCurrency(ct.getGiaNhapThucTe()),
                         FormatUtil.formatCurrency(thanhTien(ct))
@@ -628,7 +620,7 @@ public class QLNhapKhoController {
 
             JPanel pnl = new JPanel(new BorderLayout(0, 10));
             pnl.add(UIComponents.label(
-                    "Phiếu nhập: " + pn.getMaPhieuNhap() + "  •  NCC: " + pn.getTenNCC()
+                    "Phiếu nhập: " + pn.getMaPhieuNhap() + "  •  NCC: " + pn.getNhaCungCap().getTenNCC()
                             + "  •  Tổng tiền: " + FormatUtil.formatCurrency(pn.getTongTienNhap()),
                     UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK
             ), BorderLayout.NORTH);

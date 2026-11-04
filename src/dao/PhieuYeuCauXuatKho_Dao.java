@@ -2,7 +2,10 @@ package dao;
 
 import connection.ConnectDB;
 import entity.ChiTietYeuCauXuatKho;
+import entity.NhanVien;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhieuYeuCauXuatKho;
+import entity.PhuTung;
 import entity.TrangThaiYeuCauXuat;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -75,9 +78,9 @@ public class PhieuYeuCauXuatKho_Dao {
                             tsYC != null ? tsYC.toLocalDateTime() : LocalDateTime.now(),
                             tsXuat != null ? tsXuat.toLocalDateTime() : null,
                             TrangThaiYeuCauXuat.fromDb(rs.getString("trangThai")),
-                            rs.getString("maPhieuTNSC"),
-                            rs.getString("maNV_KyThuat"),
-                            rs.getString("maNV_ThuKho")
+                            new PhieuTiepNhanVaSuaChua(rs.getString("maPhieuTNSC")),
+                            new NhanVien(rs.getString("maNV_KyThuat")),
+                            rs.getString("maNV_ThuKho") == null ? null : new NhanVien(rs.getString("maNV_ThuKho"))
                     );
                     list.add(yc);
                 }
@@ -146,17 +149,14 @@ public class PhieuYeuCauXuatKho_Dao {
             ps.setString(1, maPhieuYC);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ChiTietYeuCauXuatKho ct = new ChiTietYeuCauXuatKho(
-                            rs.getString("maPhieuYC"),
-                            rs.getString("maSKU"),
-                            rs.getInt("soLuong")
-                    );
-                    ct.setTenPhuTung(rs.getString("tenPhuTung"));
-                    ct.setHangSanXuat(rs.getString("hangSanXuat"));
-                    ct.setViTriKho(rs.getString("viTriLuuKho"));
-                    ct.setSoLuongTon(rs.getInt("soLuongTon"));
-                    ct.setNguongCanhBao(rs.getInt("nguongCanhBao"));
-                    list.add(ct);
+                    PhuTung pt = new PhuTung(rs.getString("maSKU"));
+                    pt.setTenPhuTung(rs.getString("tenPhuTung"));
+                    pt.setHangSanXuat(rs.getString("hangSanXuat"));
+                    pt.setViTriLuuKho(rs.getString("viTriLuuKho"));
+                    pt.setSoLuongTon(rs.getInt("soLuongTon"));
+                    pt.setNguongCanhBao(rs.getInt("nguongCanhBao"));
+                    list.add(new ChiTietYeuCauXuatKho(new PhieuYeuCauXuatKho(rs.getString("maPhieuYC")), pt,
+                            rs.getInt("soLuong")));
                 }
             }
         }
@@ -178,8 +178,8 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public boolean insertWithDetails(PhieuYeuCauXuatKho phieu, List<ChiTietYeuCauXuatKho> chiTietList) throws SQLException {
-        if (kiemTraTonTaiHoaDonHopLe(phieu.getMaPhieuTNSC())) {
-            throw new SQLException("Phiếu sửa chữa " + phieu.getMaPhieuTNSC() + " đã có hóa đơn còn hiệu lực, không thể tạo thêm yêu cầu phụ tùng!");
+        if (kiemTraTonTaiHoaDonHopLe(phieu.getPhieu().getMaPhieuTNSC())) {
+            throw new SQLException("Phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC() + " đã có hóa đơn còn hiệu lực, không thể tạo thêm yêu cầu phụ tùng!");
         }
 
         String sqlPhieu = "INSERT INTO PhieuYeuCauXuatKho(maPhieuYC, ngayYeuCau, ngayXuat, trangThai, maPhieuTNSC, maNV_KyThuat, maNV_ThuKho) "
@@ -203,10 +203,10 @@ public class PhieuYeuCauXuatKho_Dao {
                     psPhieu.setNull(3, Types.TIMESTAMP);
                 }
                 psPhieu.setString(4, phieu.getTrangThai().getText());
-                psPhieu.setString(5, phieu.getMaPhieuTNSC());
-                psPhieu.setString(6, phieu.getMaNVKyThuat());
-                if (phieu.getMaNVThuKho() != null && !phieu.getMaNVThuKho().isEmpty()) {
-                    psPhieu.setString(7, phieu.getMaNVThuKho());
+                psPhieu.setString(5, phieu.getPhieu().getMaPhieuTNSC());
+                psPhieu.setString(6, phieu.getKyThuatVien().getMaNV());
+                if (phieu.getThuKho() != null) {
+                    psPhieu.setString(7, phieu.getThuKho().getMaNV());
                 } else {
                     psPhieu.setNull(7, Types.VARCHAR);
                 }
@@ -214,18 +214,18 @@ public class PhieuYeuCauXuatKho_Dao {
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
                     psCT.setString(1, phieu.getMaPhieuYC());
-                    psCT.setString(2, ct.getMaSKU());
+                    psCT.setString(2, ct.getPhuTung().getMaSKU());
                     psCT.setInt(3, ct.getSoLuong());
                     psCT.addBatch();
                 }
                 psCT.executeBatch();
 
-                psUpdate.setString(1, phieu.getMaPhieuTNSC());
+                psUpdate.setString(1, phieu.getPhieu().getMaPhieuTNSC());
                 psUpdate.executeUpdate();
 
-                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, phieu.getMaNVKyThuat(),
+                TienDoSuaChua_Dao.ghiNhatKyAnToan(c, phieu.getKyThuatVien().getMaNV(),
                         "Lập phiếu yêu cầu xuất kho",
-                        "Tạo phiếu yêu cầu " + phieu.getMaPhieuYC() + " cho phiếu sửa chữa " + phieu.getMaPhieuTNSC());
+                        "Tạo phiếu yêu cầu " + phieu.getMaPhieuYC() + " cho phiếu sửa chữa " + phieu.getPhieu().getMaPhieuTNSC());
 
                 c.commit();
                 c.setAutoCommit(oldAutoCommit);
@@ -262,21 +262,21 @@ public class PhieuYeuCauXuatKho_Dao {
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
                     psTru.setInt(1, ct.getSoLuong());
-                    psTru.setString(2, ct.getMaSKU());
+                    psTru.setString(2, ct.getPhuTung().getMaSKU());
                     psTru.setInt(3, ct.getSoLuong());
                     int affected = psTru.executeUpdate();
                     if (affected == 0) {
-                        throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getMaSKU());
+                        throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
                     }
 
                     psCTPT.setString(1, maPhieuTNSC);
-                    psCTPT.setString(2, ct.getMaSKU());
+                    psCTPT.setString(2, ct.getPhuTung().getMaSKU());
                     psCTPT.setInt(3, ct.getSoLuong());
                     psCTPT.setString(4, maPhieuTNSC);
-                    psCTPT.setString(5, ct.getMaSKU());
+                    psCTPT.setString(5, ct.getPhuTung().getMaSKU());
                     psCTPT.setString(6, maPhieuTNSC);
                     psCTPT.setInt(7, ct.getSoLuong());
-                    psCTPT.setString(8, ct.getMaSKU());
+                    psCTPT.setString(8, ct.getPhuTung().getMaSKU());
                     psCTPT.executeUpdate();
                 }
 

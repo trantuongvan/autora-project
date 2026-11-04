@@ -1,6 +1,7 @@
 package controller;
 
 import dao.NhatKy_Dao;
+import entity.NhatKyHoatDong;
 import gui.QLNhatKy;
 import util.ChonNgay;
 
@@ -51,9 +52,9 @@ public class QLNhatKyController {
         LocalDate tuNgay = docNgay(view.getTxtTuNgay().getText());
         LocalDate denNgay = docNgay(view.getTxtDenNgay().getText());
         int phien = ++phienBan;
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<NhatKyHoatDong>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<NhatKyHoatDong> doInBackground() throws Exception {
                 return dao.search(tuKhoa, tuNgay, denNgay);
             }
 
@@ -64,10 +65,9 @@ public class QLNhatKyController {
                 }
                 try {
                     List<Object[]> dong = new ArrayList<>();
-                    for (Object[] r : get()) {
-                        Object[] hienThi = r.clone();
-                        hienThi[0] = ((LocalDateTime) r[0]).format(DINH_DANG);
-                        dong.add(hienThi);
+                    for (NhatKyHoatDong r : get()) {
+                        dong.add(new Object[] {r.getThoiGian().format(DINH_DANG), r.getTenDangNhap(), r.getHanhDong(),
+                            r.getDoiTuong(), r.getGiaTriCu(), r.getGiaTriMoi()});
                     }
                     view.setDanhSach(dong);
                 } catch (Exception ex) {

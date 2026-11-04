@@ -261,7 +261,7 @@ public class QLDuyetXuatKho extends JPanel {
 
         JPanel left = UIComponents.trong(new GridLayout(2, 1, 0, 4));
         left.add(UIComponents.label(yc.getMaPhieuYC(), UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK));
-        left.add(UIComponents.label(yc.getMaPhieuTNSC(), UIConstants.FONT_BODY.deriveFont(12f), UIConstants.TEXT_MUTED));
+        left.add(UIComponents.label(yc.getPhieu().getMaPhieuTNSC(), UIConstants.FONT_BODY.deriveFont(12f), UIConstants.TEXT_MUTED));
 
         JPanel center = UIComponents.trong(new GridBagLayout());
         center.add(UIComponents.label(tenKTV, UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK));

@@ -334,7 +334,7 @@ public class QLHoSoXe extends JPanel {
         btnHuy.setText("Hủy");
     }
     public void dienForm(entity.Xe xe) {
-        maChuSoHuuCanChon = xe.getMaKH();
+        maChuSoHuuCanChon = xe.getKhachHang().getMaKH();
         txtBienSo.setText(xe.getBienSo());
         txtVIN.setText(xe.getSoVIN());
         cboHang.setSelectedItem(xe.getHangXe());

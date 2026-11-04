@@ -87,8 +87,8 @@ public class TestHoaDon {
         loi("Hình thức lạ", () -> HinhThucThanhToan.fromDb("Séc"));
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
         loi("Tổng âm", () -> new HoaDon().setTongThanhToan(-1));
-        loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5, 0));
-        kiem("Thuế tính tiền", Thue_Dao.tinhTienThue(new Thue("X", "A", 8, 0), 1395000) == 111600);
+        loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
+        kiem("Thuế tính tiền", Thue_Dao.tinhTienThue(new Thue("X", "A", 8), 1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
         kiem("Tiền không dấu", ChiTietHoaDonController.docTien("1500000") == 1500000);
         loi("Tiền có chữ", () -> ChiTietHoaDonController.docTien("15a"));

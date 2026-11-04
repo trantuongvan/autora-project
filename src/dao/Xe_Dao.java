@@ -1,6 +1,7 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.KhachHang;
 import entity.TrangThaiHoaDon;
 import entity.Xe;
 
@@ -11,26 +12,28 @@ import java.util.List;
 /** CRUD hồ sơ xe; truy vấn danh sách ghép thông tin chủ xe. */
 public class Xe_Dao {
 
-    public List<Object[]> findAll() throws SQLException {
+    public List<Xe> findAll() throws SQLException {
         return search("");
     }
 
-    public List<Object[]> search(String keyword) throws SQLException {
+    public List<Xe> search(String keyword) throws SQLException {
         return search(keyword, "");
     }
 
     /** hang rỗng nghĩa là không lọc theo hãng xe. */
-    public List<Object[]> search(String keyword, String hang) throws SQLException {
+    public List<Xe> search(String keyword, String hang) throws SQLException {
         String q = keyword == null ? "" : keyword.trim();
-        List<Object[]> ds = new ArrayList<>();
+        List<Xe> ds = new ArrayList<>();
         try (Connection c = ConnectDB.getConnection()) {
             String vin = column(c, "soVIN", "soKhung", "soKhungXe");
             String brand = column(c, "hangXe", "hang", "thuongHieu");
             String model = column(c, "dongXe", "dong", "tenDongXe", "model");
             String year = column(c, "doiXe", "namSanXuat", "namSX", "nam");
             String owner = column(c, "maKH", "maKhachHang", "maChuXe");
+            String color = optionalColumn(c, "mauSon", "mauSac", "mauXe");
             String sql = "SELECT x.bienSo, x.[" + brand + "] AS hangXe, x.[" + model + "] AS dongXe, "
                     + "x.[" + year + "] AS doiXe, x.[" + vin + "] AS soVIN, "
+                    + (color == null ? "CAST('' AS NVARCHAR(50))" : "x.[" + color + "]") + " AS mauSon, "
                     + "k.maKH, k.hoTen, k.soDienThoai "
                     + "FROM Xe x JOIN KhachHang k ON k.maKH = x.[" + owner + "] "
                     + "WHERE (? = '' OR x.bienSo LIKE ? OR x.[" + vin + "] LIKE ? "
@@ -46,15 +49,10 @@ public class Xe_Dao {
                 p.setString(7, hang);
                 try (ResultSet r = p.executeQuery()) {
                     while (r.next()) {
-                        ds.add(new Object[]{
-                                r.getString("bienSo"),
-                                r.getString("hangXe") + " / " + r.getString("dongXe"),
-                                r.getObject("doiXe"),
-                                r.getString("soVIN"),
-                                r.getString("hoTen"),
-                                r.getString("soDienThoai"),
-                                ""
-                        });
+                        KhachHang chuXe = new KhachHang(r.getString("maKH"));
+                        chuXe.setHoTen(r.getString("hoTen"));
+                        chuXe.setSoDienThoai(r.getString("soDienThoai"));
+                        ds.add(mapXe(r, chuXe));
                     }
                 }
             }
@@ -78,7 +76,7 @@ public class Xe_Dao {
             try (PreparedStatement p = c.prepareStatement(sql)) {
                 p.setString(1, bienSo);
                 try (ResultSet r = p.executeQuery()) {
-                    return r.next() ? mapXe(r) : null;
+                    return r.next() ? mapXe(r, new KhachHang(r.getString("maKH"))) : null;
                 }
             }
         }
@@ -128,7 +126,7 @@ public class Xe_Dao {
                 if (color != null) {
                     p.setString(next++, xe.getMauSon());
                 }
-                p.setString(next++, xe.getMaKH());
+                p.setString(next++, xe.getKhachHang().getMaKH());
                 p.setString(next, xe.getBienSo());
                 return p.executeUpdate() == 1;
             }
@@ -144,7 +142,7 @@ public class Xe_Dao {
         }
     }
 
-    private Xe mapXe(ResultSet r) throws SQLException {
+    private Xe mapXe(ResultSet r, KhachHang chuXe) throws SQLException {
         Object nam = r.getObject("doiXe");
         Integer doiXe = null;
         if (nam != null && !nam.toString().trim().isEmpty()) {
@@ -161,7 +159,7 @@ public class Xe_Dao {
                 r.getString("dongXe"),
                 doiXe,
                 r.getString("mauSon"),
-                r.getString("maKH"));
+                chuXe);
     }
 
     /** Hỗ trợ tên cột từ schema hiện tại và các bản CSDL cũ. */

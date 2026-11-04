@@ -9,12 +9,10 @@ public class PhieuNhapKho {
     private String maPhieuNhap;
     private LocalDateTime ngayNhap;
     private double tongTienNhap;
-    private String maNCC;
-    private String maNVThuKho;
+    private NhaCungCap nhaCungCap;
+    private NhanVien thuKho;
 
     // Thuộc tính phụ phục vụ hiển thị JOIN
-    private String tenNCC;
-    private String tenThuKho;
     private int soMatHang;
     private List<ChiTietNhapKho> danhSachChiTiet = new ArrayList<>();
 
@@ -27,12 +25,12 @@ public class PhieuNhapKho {
         setMaPhieuNhap(maPhieuNhap);
     }
 
-    public PhieuNhapKho(String maPhieuNhap, LocalDateTime ngayNhap, double tongTienNhap, String maNCC, String maNVThuKho) {
+    public PhieuNhapKho(String maPhieuNhap, LocalDateTime ngayNhap, double tongTienNhap, NhaCungCap nhaCungCap, NhanVien thuKho) {
         setMaPhieuNhap(maPhieuNhap);
         setNgayNhap(ngayNhap);
         setTongTienNhap(tongTienNhap);
-        setMaNCC(maNCC);
-        setMaNVThuKho(maNVThuKho);
+        setNhaCungCap(nhaCungCap);
+        setThuKho(thuKho);
     }
 
     public String getMaPhieuNhap() {
@@ -65,38 +63,24 @@ public class PhieuNhapKho {
         this.tongTienNhap = tongTienNhap;
     }
 
-    public String getMaNCC() {
-        return maNCC;
+    public NhaCungCap getNhaCungCap() {
+        return nhaCungCap;
     }
-    public void setMaNCC(String maNCC) {
-        if (maNCC == null || maNCC.trim().isEmpty()) {
+    public void setNhaCungCap(NhaCungCap nhaCungCap) {
+        if (nhaCungCap == null) {
             throw new IllegalArgumentException("Vui lòng chọn nhà cung cấp.");
         }
-        this.maNCC = maNCC.trim();
+        this.nhaCungCap = nhaCungCap;
     }
 
-    public String getMaNVThuKho() {
-        return maNVThuKho;
+    public NhanVien getThuKho() {
+        return thuKho;
     }
-    public void setMaNVThuKho(String maNVThuKho) {
-        if (maNVThuKho == null || maNVThuKho.trim().isEmpty()) {
+    public void setThuKho(NhanVien thuKho) {
+        if (thuKho == null) {
             throw new IllegalArgumentException("Thủ kho lập phiếu không được rỗng.");
         }
-        this.maNVThuKho = maNVThuKho.trim();
-    }
-
-    public String getTenNCC() {
-        return tenNCC;
-    }
-    public void setTenNCC(String tenNCC) {
-        this.tenNCC = tenNCC;
-    }
-
-    public String getTenThuKho() {
-        return tenThuKho;
-    }
-    public void setTenThuKho(String tenThuKho) {
-        this.tenThuKho = tenThuKho;
+        this.thuKho = thuKho;
     }
 
     public int getSoMatHang() {
@@ -128,6 +112,9 @@ public class PhieuNhapKho {
 
     @Override
     public String toString() {
-        return maPhieuNhap + " - " + (tenNCC != null ? tenNCC : maNCC);
+        if (nhaCungCap == null) {
+            return maPhieuNhap + " - " + null;
+        }
+        return maPhieuNhap + " - " + (nhaCungCap.getTenNCC() != null ? nhaCungCap.getTenNCC() : nhaCungCap.getMaNCC());
     }
 }

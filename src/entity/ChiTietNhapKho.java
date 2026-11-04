@@ -3,38 +3,35 @@ package entity;
 import java.util.Objects;
 
 public class ChiTietNhapKho {
-    private String maPhieuNhap;
-    private String maSKU;
+    private PhieuNhapKho phieuNhapKho;
+    private PhuTung phuTung;
     private int soLuongNhap;
     private double giaNhapThucTe;
 
-    // Thuộc tính phụ hiển thị JOIN
-    private String tenPhuTung;
-
     public ChiTietNhapKho() {}
 
-    public ChiTietNhapKho(String maPhieuNhap, String maSKU, int soLuongNhap, double giaNhapThucTe) {
-        this.maPhieuNhap = maPhieuNhap;
-        this.maSKU = maSKU;
+    public ChiTietNhapKho(PhieuNhapKho phieuNhapKho, PhuTung phuTung, int soLuongNhap, double giaNhapThucTe) {
+        this.phieuNhapKho = phieuNhapKho;
+        this.phuTung = phuTung;
         setSoLuongNhap(soLuongNhap);
         setGiaNhapThucTe(giaNhapThucTe);
     }
 
-    public String getMaPhieuNhap() {
-        return maPhieuNhap;
+    public PhieuNhapKho getPhieuNhapKho() {
+        return phieuNhapKho;
     }
-    public void setMaPhieuNhap(String maPhieuNhap) {
-        this.maPhieuNhap = maPhieuNhap;
+    public void setPhieuNhapKho(PhieuNhapKho phieuNhapKho) {
+        this.phieuNhapKho = phieuNhapKho;
     }
 
-    public String getMaSKU() {
-        return maSKU;
+    public PhuTung getPhuTung() {
+        return phuTung;
     }
-    public void setMaSKU(String maSKU) {
-        if (maSKU == null || maSKU.trim().isEmpty()) {
+    public void setPhuTung(PhuTung phuTung) {
+        if (phuTung == null) {
             throw new IllegalArgumentException("Mã SKU không được rỗng.");
         }
-        this.maSKU = maSKU.trim();
+        this.phuTung = phuTung;
     }
 
     public int getSoLuongNhap() {
@@ -57,28 +54,21 @@ public class ChiTietNhapKho {
         this.giaNhapThucTe = giaNhapThucTe;
     }
 
-    public String getTenPhuTung() {
-        return tenPhuTung;
-    }
-    public void setTenPhuTung(String tenPhuTung) {
-        this.tenPhuTung = tenPhuTung;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ChiTietNhapKho)) return false;
         ChiTietNhapKho that = (ChiTietNhapKho) o;
-        return Objects.equals(maPhieuNhap, that.maPhieuNhap) && Objects.equals(maSKU, that.maSKU);
+        return Objects.equals(phieuNhapKho, that.phieuNhapKho) && Objects.equals(phuTung, that.phuTung);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maPhieuNhap, maSKU);
+        return Objects.hash(phieuNhapKho, phuTung);
     }
 
     @Override
     public String toString() {
-        return maSKU + " x" + soLuongNhap;
+        return (phuTung == null ? null : phuTung.getMaSKU()) + " x" + soLuongNhap;
     }
 }

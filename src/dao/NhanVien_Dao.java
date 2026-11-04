@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.NhanVien;
+import entity.TaiKhoan;
 import entity.VaiTro;
 
 import java.sql.Connection;
@@ -204,7 +205,12 @@ public class NhanVien_Dao {
                 result.getString("soDienThoai"),
                 result.getString("diaChi"),
                 VaiTro.fromDb(result.getString("viTriLamViec")));
-        employee.setTenDangNhap(result.getString("tenDangNhap"));
+        String tenDangNhap = result.getString("tenDangNhap");
+        if (tenDangNhap != null) {
+            TaiKhoan taiKhoan = new TaiKhoan(tenDangNhap);
+            taiKhoan.setNhanVien(employee);
+            employee.setTaiKhoan(taiKhoan);
+        }
         return employee;
     }
 }

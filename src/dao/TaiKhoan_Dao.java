@@ -27,7 +27,7 @@ public class TaiKhoan_Dao {
     /** vaiTro null và trangThai null nghĩa là không lọc theo tiêu chí đó. */
     public List<TaiKhoan> search(String tuKhoa, VaiTro vaiTro, Boolean trangThai) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
-        String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen "
+        String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen, n.soDienThoai, n.diaChi, n.viTriLamViec "
                 + "FROM TaiKhoan t JOIN NhanVien n ON n.maNV = t.maNV "
                 + "WHERE (? = N'' OR t.tenDangNhap LIKE ? OR n.hoTen LIKE ? OR t.maNV LIKE ? OR t.vaiTro LIKE ?) "
                 + "AND (? = N'' OR t.vaiTro = ?) "
@@ -45,8 +45,12 @@ public class TaiKhoan_Dao {
             statement.setString(7, chuoiVaiTro);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new TaiKhoan(rs.getString(1), VaiTro.fromDb(rs.getString(2)), rs.getBoolean(3), rs.getString(4),
-                            rs.getString(5)));
+                    NhanVien nhanVien = new NhanVien(rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7),
+                            VaiTro.fromDb(rs.getString(8)));
+                    TaiKhoan taiKhoan = new TaiKhoan(rs.getString(1), VaiTro.fromDb(rs.getString(2)), rs.getBoolean(3),
+                            nhanVien);
+                    nhanVien.setTaiKhoan(taiKhoan);
+                    ketQua.add(taiKhoan);
                 }
             }
         }
@@ -85,7 +89,7 @@ public class TaiKhoan_Dao {
                 if (tonTai(connection, "tenDangNhap", taiKhoan.getTenDangNhap())) {
                     throw new SQLIntegrityConstraintViolationException(TRUNG_TEN_DANG_NHAP);
                 }
-                if (tonTai(connection, "maNV", taiKhoan.getMaNV())) {
+                if (tonTai(connection, "maNV", taiKhoan.getNhanVien().getMaNV())) {
                     throw new SQLIntegrityConstraintViolationException(NHAN_VIEN_DA_CO_TAI_KHOAN);
                 }
                 try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -93,7 +97,7 @@ public class TaiKhoan_Dao {
                     statement.setString(2, giaTriBam);
                     statement.setString(3, taiKhoan.getVaiTro().getText());
                     statement.setBoolean(4, taiKhoan.isTrangThai());
-                    statement.setString(5, taiKhoan.getMaNV());
+                    statement.setString(5, taiKhoan.getNhanVien().getMaNV());
                     statement.executeUpdate();
                 }
                 new NhatKy_Dao().ghi(connection, nguoiThucHien, "Tạo tài khoản", taiKhoan.getTenDangNhap(), null,

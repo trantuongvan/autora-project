@@ -264,9 +264,9 @@ public class TestNghiepVuTiepNhan {
     }
 
     private static boolean tonTaiNhatKy(String hanhDong, String doiTuong, String cu, String moi, String nguoi) throws Exception {
-        for (Object[] r : new dao.NhatKy_Dao().search(doiTuong)) {
-            if (hanhDong.equals(r[2]) && doiTuong.equals(r[3]) && java.util.Objects.equals(cu, r[4])
-                    && java.util.Objects.equals(moi, r[5]) && nguoi.equals(r[1])) {
+        for (entity.NhatKyHoatDong r : new dao.NhatKy_Dao().search(doiTuong)) {
+            if (hanhDong.equals(r.getHanhDong()) && doiTuong.equals(r.getDoiTuong()) && java.util.Objects.equals(cu, r.getGiaTriCu())
+                    && java.util.Objects.equals(moi, r.getGiaTriMoi()) && nguoi.equals(r.getTenDangNhap())) {
                 return true;
             }
         }
@@ -297,7 +297,7 @@ public class TestNghiepVuTiepNhan {
         xe.setDongXe("Vios");
         xe.setDoiXe(2021);
         xe.setMauSon("Bạc");
-        xe.setMaKH("MOI");
+        xe.setKhachHang(new KhachHang("MOI"));
         return xe;
     }
 

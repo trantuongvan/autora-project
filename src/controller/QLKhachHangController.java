@@ -3,6 +3,7 @@ package controller;
 import dao.KhachHang_Dao;
 import entity.KhachHang;
 import entity.LoaiKhachHang;
+import entity.Xe;
 import gui.QLKhachHang;
 import util.UIComponents;
 
@@ -22,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /** Điều phối màn hình khách hàng: tìm kiếm, thêm, sửa, xóa và tải xe, lịch sử của khách đang chọn. */
 public class QLKhachHangController {
@@ -33,7 +35,7 @@ public class QLKhachHangController {
     private final KhachHang_Dao dao = new KhachHang_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     /** Dữ liệu đầy đủ của từng dòng trong bảng, cùng thứ tự với bảng. */
-    private List<Object[]> dongHienTai = new ArrayList<>();
+    private List<KhachHang> dongHienTai = new ArrayList<>();
     private String maDangSua;
     private int phienBanDanhSach;
     private int phienBanLienKet;
@@ -95,7 +97,7 @@ public class QLKhachHangController {
         JTable bang = view.getTblDanhSach();
         int dong = bang.rowAtPoint(e.getPoint());
         if (dong >= 0 && UIComponents.viTriBieuTuong(bang, e, QLKhachHang.COT_THAO_TAC, 2) == QLKhachHang.ICON_XOA) {
-            xoa((String) dongHienTai.get(dong)[0]);
+            xoa(dongHienTai.get(dong).getMaKH());
         }
     }
 
@@ -110,9 +112,9 @@ public class QLKhachHangController {
         LoaiKhachHang locLoai = loai instanceof LoaiKhachHang ? (LoaiKhachHang) loai : null;
         Boolean locGhiNo = QLKhachHang.TAT_CA.equals(ghiNo) ? null : Boolean.valueOf(QLKhachHang.DUOC_PHEP.equals(ghiNo));
         int phienBan = ++phienBanDanhSach;
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<KhachHang>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<KhachHang> doInBackground() throws Exception {
                 return dao.search(tuKhoa, locLoai, locGhiNo);
             }
 
@@ -132,20 +134,27 @@ public class QLKhachHangController {
         }.execute();
     }
 
-    private void hienDanhSach(List<Object[]> danhSach) {
+    private void hienDanhSach(List<KhachHang> danhSach) {
         String maDangChon = maDongChon();
         dongHienTai = danhSach;
         List<Object[]> dong = new ArrayList<>();
-        for (Object[] r : danhSach) {
-            dong.add(new Object[] {r[0], r[1], r[2], r[3], emailVaMaSoThue((String) r[4], (String) r[5]), r[6],
-                (Boolean) r[7] ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG, ((String) r[8]).isEmpty() ? KHONG_CO : r[8], ""});
+        for (KhachHang r : danhSach) {
+            String xe = r.getDanhSachXe().stream().map(Xe::getBienSo).collect(Collectors.joining(", "));
+            dong.add(new Object[] {r.getMaKH(), r.getHoTen(), r.getSoDienThoai(), diaChi(r),
+                emailVaMaSoThue(r.getEmail(), r.getMaSoThue()), r.getLoaiKhachHang(),
+                r.isDuocGhiNo() ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG, xe.isEmpty() ? KHONG_CO : xe, ""});
         }
         view.setDanhSach(dong);
         for (int i = 0; i < danhSach.size(); i++) {
-            if (danhSach.get(i)[0].equals(maDangChon)) {
+            if (danhSach.get(i).getMaKH().equals(maDangChon)) {
                 view.getTblDanhSach().setRowSelectionInterval(i, i);
             }
         }
+    }
+
+    /** Cột diaChi cho phép NULL nên getDiaChi có thể trả về null. */
+    private static String diaChi(KhachHang kh) {
+        return kh.getDiaChi() == null ? "" : kh.getDiaChi();
     }
 
     private static String emailVaMaSoThue(String email, String maSoThue) {
@@ -157,7 +166,7 @@ public class QLKhachHangController {
 
     private String maDongChon() {
         int dong = view.getTblDanhSach().getSelectedRow();
-        return dong < 0 || dong >= dongHienTai.size() ? null : (String) dongHienTai.get(dong)[0];
+        return dong < 0 || dong >= dongHienTai.size() ? null : dongHienTai.get(dong).getMaKH();
     }
 
     private void taiLienKet() {
@@ -172,7 +181,12 @@ public class QLKhachHangController {
             @Override
             protected List<List<Object[]>> doInBackground() throws Exception {
                 List<List<Object[]>> ketQua = new ArrayList<>();
-                ketQua.add(dao.xeLienKet(ma));
+                List<Object[]> dongXe = new ArrayList<>();
+                for (Xe x : dao.xeLienKet(ma)) {
+                    dongXe.add(new Object[] {x.getBienSo(), x.getSoVIN(), x.getHangXe(), x.getDongXe(), x.getDoiXe(),
+                        x.getMauSon()});
+                }
+                ketQua.add(dongXe);
                 ketQua.add(dao.lichSuSuaChua(ma));
                 return ketQua;
             }
@@ -227,18 +241,18 @@ public class QLKhachHangController {
         view.getCboGhiNo().setSelectedItem(QLKhachHang.KHONG);
     }
 
-    private void dienForm(Object[] r) {
-        maDangSua = (String) r[0];
+    private void dienForm(KhachHang r) {
+        maDangSua = r.getMaKH();
         view.xoaLoi();
         view.getLblTieuDeForm().setText("Sửa thông tin khách hàng");
-        view.getTxtMaKH().setText((String) r[0]);
-        view.getTxtHoTen().setText((String) r[1]);
-        view.getTxtSoDienThoai().setText((String) r[2]);
-        view.getTxtDiaChi().setText((String) r[3]);
-        view.getTxtEmail().setText((String) r[4]);
-        view.getTxtMaSoThue().setText((String) r[5]);
-        view.getCboLoai().setSelectedItem(r[6]);
-        view.getCboGhiNo().setSelectedItem((Boolean) r[7] ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG);
+        view.getTxtMaKH().setText(r.getMaKH());
+        view.getTxtHoTen().setText(r.getHoTen());
+        view.getTxtSoDienThoai().setText(r.getSoDienThoai());
+        view.getTxtDiaChi().setText(diaChi(r));
+        view.getTxtEmail().setText(r.getEmail());
+        view.getTxtMaSoThue().setText(r.getMaSoThue());
+        view.getCboLoai().setSelectedItem(r.getLoaiKhachHang());
+        view.getCboGhiNo().setSelectedItem(r.isDuocGhiNo() ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG);
     }
 
     private void luu() {

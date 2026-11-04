@@ -10,8 +10,7 @@ public class TaiKhoan {
     private String tenDangNhap;
     private VaiTro vaiTro;
     private boolean trangThai = true;
-    private String maNV;
-    private String hoTen;
+    private NhanVien nhanVien;
 
     public TaiKhoan() {
     }
@@ -20,12 +19,11 @@ public class TaiKhoan {
         setTenDangNhap(tenDangNhap);
     }
 
-    public TaiKhoan(String tenDangNhap, VaiTro vaiTro, boolean trangThai, String maNV, String hoTen) {
+    public TaiKhoan(String tenDangNhap, VaiTro vaiTro, boolean trangThai, NhanVien nhanVien) {
         setTenDangNhap(tenDangNhap);
         setVaiTro(vaiTro);
         setTrangThai(trangThai);
-        setMaNV(maNV);
-        setHoTen(hoTen);
+        setNhanVien(nhanVien);
     }
 
     /** Ném IllegalArgumentException nếu mật khẩu dạng rõ không đạt quy tắc. */
@@ -71,23 +69,15 @@ public class TaiKhoan {
         return trangThai ? DANG_HOAT_DONG : BI_KHOA;
     }
 
-    public String getMaNV() {
-        return maNV;
+    public NhanVien getNhanVien() {
+        return nhanVien;
     }
 
-    public void setMaNV(String maNV) {
-        if (maNV == null || maNV.trim().isEmpty()) {
+    public void setNhanVien(NhanVien nhanVien) {
+        if (nhanVien == null) {
             throw new IllegalArgumentException("Vui lòng chọn nhân viên");
         }
-        this.maNV = maNV.trim();
-    }
-
-    public String getHoTen() {
-        return hoTen;
-    }
-
-    public void setHoTen(String hoTen) {
-        this.hoTen = hoTen;
+        this.nhanVien = nhanVien;
     }
 
     @Override

@@ -186,7 +186,7 @@ public class TrangChuThuKhoController {
         dsYeuCauHienThi = new ArrayList<>(dsYeuCauTimDuoc.subList(0, limit));
         try {
             for (PhieuYeuCauXuatKho yc : dsYeuCauHienThi) {
-                String tenKTV = yeuCauDao.getTenKTV(yc.getMaNVKyThuat());
+                String tenKTV = yeuCauDao.getTenKTV(yc.getKyThuatVien().getMaNV());
                 String tomTatPT = yeuCauDao.getTomTatPhuTungYeuCau(yc.getMaPhieuYC());
                 String thaoTac;
                 switch (yc.getTrangThai()) {
@@ -196,7 +196,7 @@ public class TrangChuThuKhoController {
                 }
                 view.getModelYeuCau().addRow(new Object[]{
                         yc.getMaPhieuYC(),
-                        yc.getMaPhieuTNSC(),
+                        yc.getPhieu().getMaPhieuTNSC(),
                         tenKTV,
                         tomTatPT,
                         yc.getTrangThai(),
