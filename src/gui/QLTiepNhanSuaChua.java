@@ -3,8 +3,9 @@ package gui;
 import controller.DieuHuongPhieu;
 import controller.QLTiepNhanSuaChuaController;
 import entity.DichVu;
-import entity.KhachHang;
-import entity.PhieuTiepNhanVaSuaChua;
+import entity.LoaiKhachHang;
+import entity.MucUuTien;
+import entity.TrangThaiPhieu;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -28,9 +29,9 @@ public class QLTiepNhanSuaChua extends JPanel {
     private final JTextField txtDiaChi = new JTextField();
     private final JTextField txtEmail = new JTextField();
     private final JTextField txtMaSoThue = new JTextField();
-    private final JRadioButton radVangLai = new JRadioButton(KhachHang.LOAI_KHACH_HANG[0], true);
-    private final JRadioButton radThanhVien = new JRadioButton(KhachHang.LOAI_KHACH_HANG[1]);
-    private final JRadioButton radVip = new JRadioButton(KhachHang.LOAI_KHACH_HANG[2]);
+    private final JRadioButton radVangLai = new JRadioButton(LoaiKhachHang.KHACH_VANG_LAI.getText(), true);
+    private final JRadioButton radThanhVien = new JRadioButton(LoaiKhachHang.THANH_VIEN.getText());
+    private final JRadioButton radVip = new JRadioButton(LoaiKhachHang.VIP.getText());
 
     // --- Phương tiện ---
     private final JTextField txtBienSo = new JTextField();
@@ -55,9 +56,10 @@ public class QLTiepNhanSuaChua extends JPanel {
     private final JTextField txtPhuTungDuKien = new JTextField();
 
     // --- Phân công & trạng thái ---
-    private final JComboBox<String> cboTrangThai = new JComboBox<>(PhieuTiepNhanVaSuaChua.TRANG_THAI);
-    private final JRadioButton radThuong = new JRadioButton("Thường", true);
-    private final JRadioButton radKhan = new JRadioButton("Khẩn");
+    private final JComboBox<TrangThaiPhieu> cboTrangThai = new JComboBox<>(new TrangThaiPhieu[] {
+        TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.CHO_PHU_TUNG, TrangThaiPhieu.HOAN_THANH});
+    private final JRadioButton radThuong = new JRadioButton(MucUuTien.THUONG.getText(), true);
+    private final JRadioButton radKhan = new JRadioButton(MucUuTien.KHAN.getText());
     private final JTextField txtDuKien = new PlaceholderField("Chọn ngày giờ");
 
     // --- Thanh hành động ---
@@ -307,13 +309,13 @@ public class QLTiepNhanSuaChua extends JPanel {
     public JTextField getTxtDuKien() { return txtDuKien; }
     public JRadioButton getRadVip() { return radVip; }
 
-    public String getLoaiKhachHang() {
-        return radVip.isSelected() ? radVip.getText() : radThanhVien.isSelected() ? radThanhVien.getText() : radVangLai.getText();
+    public LoaiKhachHang getLoaiKhachHang() {
+        return radVip.isSelected() ? LoaiKhachHang.VIP : radThanhVien.isSelected() ? LoaiKhachHang.THANH_VIEN : LoaiKhachHang.KHACH_VANG_LAI;
     }
 
-    public void setLoaiKhachHang(String loai) {
-        radVip.setSelected(radVip.getText().equals(loai));
-        radThanhVien.setSelected(radThanhVien.getText().equals(loai));
+    public void setLoaiKhachHang(LoaiKhachHang loai) {
+        radVip.setSelected(loai == LoaiKhachHang.VIP);
+        radThanhVien.setSelected(loai == LoaiKhachHang.THANH_VIEN);
         radVangLai.setSelected(!radVip.isSelected() && !radThanhVien.isSelected());
     }
     public JTextField getTxtBienSo() { return txtBienSo; }
@@ -331,7 +333,7 @@ public class QLTiepNhanSuaChua extends JPanel {
     public JTextArea getTxtYeuCau() { return txtYeuCau; }
     public JList<DichVu> getLstDichVu() { return lstDichVu; }
     public JTextField getTxtPhuTungDuKien() { return txtPhuTungDuKien; }
-    public JComboBox<String> getCboTrangThai() { return cboTrangThai; }
+    public JComboBox<TrangThaiPhieu> getCboTrangThai() { return cboTrangThai; }
     public JRadioButton getRadThuong() { return radThuong; }
     public JRadioButton getRadKhan() { return radKhan; }
     public JButton getBtnHuy() { return btnHuy; }

@@ -1,6 +1,7 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.TrangThaiHoaDon;
 import entity.Xe;
 
 import java.sql.*;
@@ -237,7 +238,7 @@ public class Xe_Dao {
             try (ResultSet r = p.executeQuery()) {
                 while (r.next()) {
                     String paid = r.getString("trangThaiThanhToan");
-                    String status = "Đã thanh toán".equals(paid)
+                    String status = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(paid)
                             ? "Hoàn tất " + r.getInt("hoanTat") + "% • Đã thanh toán"
                             : r.getString("trangThai");
                     ds.add(new Object[]{

@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import util.MatKhauUtil;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,7 +29,7 @@ public class DangNhap_Dao {
                         rs.getString("tenDangNhap"),
                         rs.getString("maNV"),
                         rs.getString("hoTen"),
-                        rs.getString("vaiTro"));
+                        VaiTro.fromDb(rs.getString("vaiTro")));
             }
         }
     }

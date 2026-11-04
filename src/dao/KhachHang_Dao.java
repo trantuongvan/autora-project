@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.KhachHang;
+import entity.LoaiKhachHang;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,9 +22,9 @@ public class KhachHang_Dao {
      * duocGhiNo null là không lọc.
      * Mỗi dòng: {maKH, hoTen, soDienThoai, diaChi, email, maSoThue, loaiKhachHang, Boolean duocGhiNo, danhSachXe}.
      */
-    public List<Object[]> search(String tuKhoa, String loaiKhachHang, Boolean duocGhiNo) throws SQLException {
+    public List<Object[]> search(String tuKhoa, LoaiKhachHang loaiKhachHang, Boolean duocGhiNo) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
-        String loai = loaiKhachHang == null ? "" : loaiKhachHang;
+        String loai = loaiKhachHang == null ? "" : loaiKhachHang.getText();
         String sql = "SELECT k.maKH, k.hoTen, k.soDienThoai, k.diaChi, k.email, k.maSoThue, k.loaiKhachHang, k.duocGhiNo, "
                 + "STUFF((SELECT ', ' + x.bienSo FROM Xe x WHERE x.maKH = k.maKH ORDER BY x.bienSo "
                 + "FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS danhSachXe "
@@ -47,7 +48,7 @@ public class KhachHang_Dao {
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     ketQua.add(new Object[] {rs.getString(1), rs.getString(2), rs.getString(3), rong(rs.getString(4)),
-                        rong(rs.getString(5)), rong(rs.getString(6)), rs.getString(7), rs.getBoolean(8),
+                        rong(rs.getString(5)), rong(rs.getString(6)), LoaiKhachHang.fromDb(rs.getString(7)), rs.getBoolean(8),
                         rong(rs.getString(9))});
                 }
             }
@@ -71,7 +72,7 @@ public class KhachHang_Dao {
                     statement.setString(4, kh.getDiaChi());
                     statement.setString(5, kh.getEmail());
                     statement.setString(6, kh.getMaSoThue());
-                    statement.setString(7, kh.getLoaiKhachHang());
+                    statement.setString(7, kh.getLoaiKhachHang().getText());
                     statement.setBoolean(8, kh.isDuocGhiNo());
                     statement.executeUpdate();
                 }
@@ -99,7 +100,7 @@ public class KhachHang_Dao {
                     statement.setString(3, kh.getDiaChi());
                     statement.setString(4, kh.getEmail());
                     statement.setString(5, kh.getMaSoThue());
-                    statement.setString(6, kh.getLoaiKhachHang());
+                    statement.setString(6, kh.getLoaiKhachHang().getText());
                     statement.setBoolean(7, kh.isDuocGhiNo());
                     statement.setString(8, kh.getMaKH());
                     thanhCong = statement.executeUpdate() == 1;

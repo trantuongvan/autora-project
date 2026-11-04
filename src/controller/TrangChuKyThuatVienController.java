@@ -3,6 +3,7 @@ package controller;
 import dao.TienDoSuaChua_Dao;
 import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import gui.QLTienDoSuaChua;
 import gui.TrangChuKyThuatVien;
 
@@ -107,7 +108,7 @@ public class TrangChuKyThuatVienController {
                 int col = view.getTblCongViec().columnAtPoint(e.getPoint());
                 if (row >= 0 && row < danhSachHienThi.size() && (col == 5 || e.getClickCount() == 2)) {
                     PhieuTiepNhanVaSuaChua phieu = danhSachHienThi.get(row);
-                    boolean moYeuCauPT = "Chờ phụ tùng".equalsIgnoreCase(phieu.getTrangThaiHienThiKTV());
+                    boolean moYeuCauPT = phieu.getTrangThai() == TrangThaiPhieu.CHO_PHU_TUNG;
                     dieuHuongSangTienDo(phieu.getMaPhieuTNSC(), moYeuCauPT);
                 }
             }
@@ -120,12 +121,11 @@ public class TrangChuKyThuatVienController {
 
             int choSua = 0, dangSua = 0, choPhuTung = 0, hoanThanh = 0;
             for (PhieuTiepNhanVaSuaChua p : all) {
-                String tt = p.getTrangThaiHienThiKTV();
-                switch (tt) {
-                    case "Chờ sửa": choSua++; break;
-                    case "Đang sửa": dangSua++; break;
-                    case "Chờ phụ tùng": choPhuTung++; break;
-                    case "Hoàn thành": hoanThanh++; break;
+                switch (p.getTrangThai()) {
+                    case CHO_KIEM_TRA: choSua++; break;
+                    case DANG_SUA: dangSua++; break;
+                    case CHO_PHU_TUNG: choPhuTung++; break;
+                    case HOAN_THANH: hoanThanh++; break;
                     default: break;
                 }
             }
@@ -169,15 +169,15 @@ public class TrangChuKyThuatVienController {
         for (PhieuTiepNhanVaSuaChua p : danhSachHienThi) {
             String tt = p.getTrangThaiHienThiKTV();
             String nhanTrangThai = tt;
-            if ("Đang sửa".equals(tt)) {
-                nhanTrangThai = "Đang sửa • " + p.getPhanTramTienDo() + "%";
+            if (p.getTrangThai() == TrangThaiPhieu.DANG_SUA) {
+                nhanTrangThai = "Đang sửa • " + TienDoSuaChua_Dao.phanTramTienDo(p) + "%";
             }
 
             String thaoTac;
-            switch (tt) {
-                case "Chờ sửa": thaoTac = "Bắt đầu →"; break;
-                case "Đang sửa": thaoTac = "Cập nhật tiến độ"; break;
-                case "Chờ phụ tùng": thaoTac = "Yêu cầu phụ tùng"; break;
+            switch (p.getTrangThai()) {
+                case CHO_KIEM_TRA: thaoTac = "Bắt đầu →"; break;
+                case DANG_SUA: thaoTac = "Cập nhật tiến độ"; break;
+                case CHO_PHU_TUNG: thaoTac = "Yêu cầu phụ tùng"; break;
                 default: thaoTac = "Xem phiếu"; break;
             }
 

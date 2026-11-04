@@ -2,6 +2,7 @@ package gui;
 
 import controller.QLTaiKhoanController;
 import entity.TaiKhoan;
+import entity.VaiTro;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -12,7 +13,9 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /** Tạo tài khoản và phân quyền (UC013). Phụ trách: Trần Thị Tường Vân. */
 public class QLTaiKhoan extends JPanel {
@@ -22,26 +25,31 @@ public class QLTaiKhoan extends JPanel {
     public static final int ICON_KHOA = 1;
     public static final int ICON_XOA = 2;
 
+    private static final Set<VaiTro> CHU_VA_LE_TAN = EnumSet.of(VaiTro.CHU_CUA_HANG, VaiTro.LE_TAN);
+    private static final Set<VaiTro> CHU_VA_KTV = EnumSet.of(VaiTro.CHU_CUA_HANG, VaiTro.KY_THUAT_VIEN);
+    private static final Set<VaiTro> CHU_VA_THU_KHO = EnumSet.of(VaiTro.CHU_CUA_HANG, VaiTro.THU_KHO);
+    private static final Set<VaiTro> CHI_CHU = EnumSet.of(VaiTro.CHU_CUA_HANG);
+
     /**
-     * {chức năng, card trong menu, Chủ cửa hàng, Lễ tân, Kỹ thuật viên, Thủ kho}.
+     * {chức năng, card trong menu, tập vai trò được mở}.
      * Phản ánh đúng GiaoDienChinhController.MENU_THEO_VAI_TRO; test.TestKhachHangTaiKhoan so khớp hai bên.
      */
     public static final Object[][] PHAN_QUYEN = {
-        {"Tiếp nhận xe", "QL_TIEP_NHAN", true, true, false, false},
-        {"Phiếu sửa chữa", "QL_PHIEU", true, true, false, false},
-        {"Khách hàng", "QL_KHACH_HANG", true, true, false, false},
-        {"Hồ sơ xe", "QL_HO_SO_XE", true, true, false, false},
-        {"Hóa đơn & Thanh toán", "QL_HOA_DON", true, true, false, false},
-        {"Bàn giao xe", "QL_BAN_GIAO", true, true, false, false},
-        {"Tiến độ sửa chữa", "QL_TIEN_DO", true, false, true, false},
-        {"Phụ tùng & Kho", "QL_PHU_TUNG", true, false, false, true},
-        {"Nhập kho", "QL_NHAP_KHO", true, false, false, true},
-        {"Duyệt xuất kho", "QL_DUYET_XUAT", true, false, false, true},
-        {"Khuyến mãi", "QL_KHUYEN_MAI", true, false, false, false},
-        {"Báo cáo thống kê", "QL_THONG_KE", true, false, false, false},
-        {"Nhân viên", "QL_NHAN_VIEN", true, false, false, false},
-        {"Tạo tài khoản & phân quyền", "QL_TAI_KHOAN", true, false, false, false},
-        {"Nhật ký hệ thống", "QL_NHAT_KY", true, false, false, false},
+        {"Tiếp nhận xe", "QL_TIEP_NHAN", CHU_VA_LE_TAN},
+        {"Phiếu sửa chữa", "QL_PHIEU", CHU_VA_LE_TAN},
+        {"Khách hàng", "QL_KHACH_HANG", CHU_VA_LE_TAN},
+        {"Hồ sơ xe", "QL_HO_SO_XE", CHU_VA_LE_TAN},
+        {"Hóa đơn & Thanh toán", "QL_HOA_DON", CHU_VA_LE_TAN},
+        {"Bàn giao xe", "QL_BAN_GIAO", CHU_VA_LE_TAN},
+        {"Tiến độ sửa chữa", "QL_TIEN_DO", CHU_VA_KTV},
+        {"Phụ tùng & Kho", "QL_PHU_TUNG", CHU_VA_THU_KHO},
+        {"Nhập kho", "QL_NHAP_KHO", CHU_VA_THU_KHO},
+        {"Duyệt xuất kho", "QL_DUYET_XUAT", CHU_VA_THU_KHO},
+        {"Khuyến mãi", "QL_KHUYEN_MAI", CHI_CHU},
+        {"Báo cáo thống kê", "QL_THONG_KE", CHI_CHU},
+        {"Nhân viên", "QL_NHAN_VIEN", CHI_CHU},
+        {"Tạo tài khoản & phân quyền", "QL_TAI_KHOAN", CHI_CHU},
+        {"Nhật ký hệ thống", "QL_NHAT_KY", CHI_CHU},
     };
 
     private final JLabel lblTieuDeForm = UIComponents.label("", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK);
@@ -49,7 +57,7 @@ public class QLTaiKhoan extends JPanel {
     private final JTextField txtTenDangNhap = new JTextField();
     private final JPasswordField pwdMatKhau = new JPasswordField();
     private final JLabel lblMatKhau = UIComponents.formLabel("Mật khẩu", true);
-    private final JComboBox<String> cboVaiTro = new JComboBox<>(TaiKhoan.VAI_TRO);
+    private final JComboBox<VaiTro> cboVaiTro = new JComboBox<>(VaiTro.values());
     private final JComboBox<String> cboTrangThai = new JComboBox<>(new String[] {TaiKhoan.DANG_HOAT_DONG, TaiKhoan.BI_KHOA});
     private final JLabel lblLoiNhanVien = UIComponents.errorLabel();
     private final JLabel lblLoiTenDangNhap = UIComponents.errorLabel();
@@ -61,7 +69,7 @@ public class QLTaiKhoan extends JPanel {
     public static final String TAT_CA_VAI_TRO = "Tất cả vai trò";
     public static final String TAT_CA_TRANG_THAI = "Tất cả trạng thái";
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocVaiTro = new JComboBox<>();
+    private final JComboBox<Object> cboLocVaiTro = new JComboBox<>();
     private final JComboBox<String> cboLocTrangThai = new JComboBox<>(
             new String[] {TAT_CA_TRANG_THAI, TaiKhoan.DANG_HOAT_DONG, TaiKhoan.BI_KHOA});
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(
@@ -161,7 +169,7 @@ public class QLTaiKhoan extends JPanel {
         dau.add(UIComponents.label("Danh sách tài khoản", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK), BorderLayout.CENTER);
         than.them(dau, 0);
         cboLocVaiTro.addItem(TAT_CA_VAI_TRO);
-        for (String vaiTro : TaiKhoan.VAI_TRO) {
+        for (VaiTro vaiTro : VaiTro.values()) {
             cboLocVaiTro.addItem(vaiTro);
         }
         UIComponents.styleCombo(cboLocVaiTro);
@@ -180,7 +188,14 @@ public class QLTaiKhoan extends JPanel {
         tblPhanQuyen.setRowHeight(36);
         DefaultTableModel model = (DefaultTableModel) tblPhanQuyen.getModel();
         for (Object[] r : PHAN_QUYEN) {
-            model.addRow(new Object[] {r[0], r[2], r[3], r[4], r[5]});
+            @SuppressWarnings("unchecked")
+            Set<VaiTro> duocPhep = (Set<VaiTro>) r[2];
+            Object[] dong = new Object[VaiTro.values().length + 1];
+            dong[0] = r[0];
+            for (VaiTro vt : VaiTro.values()) {
+                dong[vt.ordinal() + 1] = duocPhep.contains(vt);
+            }
+            model.addRow(dong);
         }
         // Vẽ icon thay vì ký tự ✓ vì phông Roboto có thể không có ký tự này.
         Icon dau = new LineIcon(Loai.CHECK, UIConstants.ROLE_MANAGER);
@@ -269,7 +284,7 @@ public class QLTaiKhoan extends JPanel {
     public JComboBox<String> getCboNhanVien() { return cboNhanVien; }
     public JTextField getTxtTenDangNhap() { return txtTenDangNhap; }
     public JPasswordField getPwdMatKhau() { return pwdMatKhau; }
-    public JComboBox<String> getCboVaiTro() { return cboVaiTro; }
+    public JComboBox<VaiTro> getCboVaiTro() { return cboVaiTro; }
     public JComboBox<String> getCboTrangThai() { return cboTrangThai; }
     public JLabel getLblLoiNhanVien() { return lblLoiNhanVien; }
     public JLabel getLblLoiTenDangNhap() { return lblLoiTenDangNhap; }
@@ -278,7 +293,7 @@ public class QLTaiKhoan extends JPanel {
     public JButton getBtnDong() { return btnDong; }
     public JButton getBtnLuu() { return btnLuu; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocVaiTro() { return cboLocVaiTro; }
+    public JComboBox<Object> getCboLocVaiTro() { return cboLocVaiTro; }
     public JComboBox<String> getCboLocTrangThai() { return cboLocTrangThai; }
     public JTable getTblDanhSach() { return tblDanhSach; }
 }

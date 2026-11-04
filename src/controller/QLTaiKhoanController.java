@@ -5,6 +5,7 @@ import dao.TaiKhoan_Dao;
 import entity.NhanVien;
 import entity.PhienDangNhap;
 import entity.TaiKhoan;
+import entity.VaiTro;
 import gui.QLTaiKhoan;
 import util.UIComponents;
 
@@ -20,7 +21,6 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** Điều phối tạo, sửa, khóa và xóa tài khoản; các quy tắc giữ Chủ cửa hàng cuối cùng nằm trong DAO. */
@@ -110,8 +110,8 @@ public class QLTaiKhoanController {
 
     private void taiDanhSach() {
         String tuKhoa = view.getTxtTimKiem().getText();
-        String vaiTro = QLTaiKhoan.TAT_CA_VAI_TRO.equals(view.getCboLocVaiTro().getSelectedItem())
-                ? "" : String.valueOf(view.getCboLocVaiTro().getSelectedItem());
+        Object chonVaiTro = view.getCboLocVaiTro().getSelectedItem();
+        VaiTro vaiTro = chonVaiTro instanceof VaiTro ? (VaiTro) chonVaiTro : null;
         Object chonTrangThai = view.getCboLocTrangThai().getSelectedItem();
         Boolean trangThai = QLTaiKhoan.TAT_CA_TRANG_THAI.equals(chonTrangThai)
                 ? null : Boolean.valueOf(TaiKhoan.DANG_HOAT_DONG.equals(chonTrangThai));
@@ -136,7 +136,7 @@ public class QLTaiKhoanController {
                 }
                 List<Object[]> dong = new ArrayList<>();
                 for (TaiKhoan t : dsTaiKhoan) {
-                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getMaNV() + " — " + t.getHoTen()), xuongDong(t.getVaiTro()),
+                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getMaNV() + " — " + t.getHoTen()), xuongDong(t.getVaiTro().getText()),
                         t.getTrangThaiHienThi(), ""});
                 }
                 view.setDanhSach(dong);
@@ -215,8 +215,7 @@ public class QLTaiKhoanController {
 
     private void theoViTriNhanVien() {
         int chon = view.getCboNhanVien().getSelectedIndex();
-        if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()
-                && Arrays.asList(TaiKhoan.VAI_TRO).contains(dsNhanVien.get(chon).getViTriLamViec())) {
+        if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()) {
             view.getCboVaiTro().setSelectedItem(dsNhanVien.get(chon).getViTriLamViec());
         }
     }
@@ -252,7 +251,7 @@ public class QLTaiKhoanController {
 
     private void luu() {
         view.xoaLoi();
-        String vaiTro = String.valueOf(view.getCboVaiTro().getSelectedItem());
+        VaiTro vaiTro = (VaiTro) view.getCboVaiTro().getSelectedItem();
         boolean hoatDong = TaiKhoan.DANG_HOAT_DONG.equals(view.getCboTrangThai().getSelectedItem());
         String matKhau = new String(view.getPwdMatKhau().getPassword());
         try {
@@ -281,7 +280,7 @@ public class QLTaiKhoanController {
     }
 
     /** Trả về false khi dữ liệu nhập sai và đã được đánh dấu trên form. */
-    private boolean luuMoi(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+    private boolean luuMoi(VaiTro vaiTro, boolean hoatDong, String matKhau) throws SQLException {
         String ten = view.getTxtTenDangNhap().getText();
         int chonNhanVien = view.getCboNhanVien().getSelectedIndex();
         boolean thieu = false;
@@ -313,7 +312,7 @@ public class QLTaiKhoanController {
     }
 
     /** Trả về false khi đã báo lý do cho người dùng và không cần báo thành công. */
-    private boolean luuSua(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+    private boolean luuSua(VaiTro vaiTro, boolean hoatDong, String matKhau) throws SQLException {
         if (!matKhau.isEmpty() && !kiemTraMatKhau(matKhau)) {
             return false;
         }

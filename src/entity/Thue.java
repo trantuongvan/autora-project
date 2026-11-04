@@ -23,10 +23,6 @@ public class Thue {
         setGiaTriThue(giaTriThue);
     }
 
-    public double tinhTienThue(double tongTienCoSo) {
-        return HoaDon.phanTram(tongTienCoSo, thueSuat);
-    }
-
     public String getMaThue() {
         return maThue;
     }

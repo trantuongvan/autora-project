@@ -1,6 +1,7 @@
 package controller;
 
 import dao.KhuyenMai_Dao;
+import entity.HinhThucKhuyenMai;
 import entity.KhuyenMai;
 import gui.KhuyenMaiFormDialog;
 import gui.QLKhuyenMai;
@@ -115,14 +116,14 @@ public class QLKhuyenMaiController {
     private void taiDuLieu() {
         final int phien = ++phienBan;
         final String tuKhoa = view.getTxtTimKiem().getText().trim();
-        final String hinhThuc = view.getCboLocHinhThuc().getSelectedIndex() <= 0
-                ? "" : String.valueOf(view.getCboLocHinhThuc().getSelectedItem());
+        final Object chonHinhThuc = view.getCboLocHinhThuc().getSelectedItem();
+        final HinhThucKhuyenMai hinhThuc = chonHinhThuc instanceof HinhThucKhuyenMai ? (HinhThucKhuyenMai) chonHinhThuc : null;
 
         new SwingWorker<List<KhuyenMai>[], Void>() {
             @Override
             protected List<KhuyenMai>[] doInBackground() throws Exception {
                 List<KhuyenMai> timKiem = dao.search(tuKhoa, hinhThuc);
-                List<KhuyenMai> tatCa = dao.search("", "");
+                List<KhuyenMai> tatCa = dao.search("", null);
                 @SuppressWarnings("unchecked")
                 List<KhuyenMai>[] ketQua = new List[]{timKiem, tatCa};
                 return ketQua;
@@ -432,8 +433,8 @@ public class QLKhuyenMaiController {
         if (ten.isEmpty()) {
             throw new IllegalArgumentException("Tên chương trình không được để trống.");
         }
-        String hinhThuc = hopThoai.getRadTienMat().isSelected()
-                ? KhuyenMai.HINH_THUC_TIEN_MAT : KhuyenMai.HINH_THUC_PHAN_TRAM;
+        HinhThucKhuyenMai hinhThuc = hopThoai.getRadTienMat().isSelected()
+                ? HinhThucKhuyenMai.TIEN_MAT : HinhThucKhuyenMai.PHAN_TRAM;
         double giaTri = docGiaTri(hopThoai.getTxtGiaTri().getText(), hinhThuc);
         LocalDate batDau = docNgay(hopThoai.getTxtBatDau().getText(), "Thời gian bắt đầu");
         LocalDate ketThuc = docNgay(hopThoai.getTxtKetThuc().getText(), "Thời gian kết thúc");
@@ -454,13 +455,13 @@ public class QLKhuyenMaiController {
     // Hàm phân tích dùng chung (public để kiểm thử)
     // ==========================================================
 
-    public static double docGiaTri(String nhap, String hinhThuc) {
+    public static double docGiaTri(String nhap, HinhThucKhuyenMai hinhThuc) {
         String s = nhap == null ? "" : nhap.trim();
         if (s.isEmpty()) {
             throw new IllegalArgumentException("Giá trị giảm không được để trống.");
         }
         try {
-            if (KhuyenMai.HINH_THUC_TIEN_MAT.equals(hinhThuc)) {
+            if (hinhThuc == HinhThucKhuyenMai.TIEN_MAT) {
                 double giaTri = Double.parseDouble(s.replace(".", "").replace(" ", ""));
                 if (giaTri <= 0) {
                     throw new IllegalArgumentException("Giá trị giảm phải lớn hơn 0.");

@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.ChiTietSuaChua_DichVu;
+import entity.TrangThaiTienDo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -39,7 +40,7 @@ public class ChiTietSuaChua_DichVu_Dao {
                             rs.getString("tenDichVu"),
                             rs.getString("maNV_KyThuat"),
                             rs.getString("tenKyThuatVien"),
-                            rs.getString("trangThaiTienDo"),
+                            TrangThaiTienDo.fromDb(rs.getString("trangThaiTienDo")),
                             rs.getDouble("tienCongThucTe")));
                 }
             }
@@ -65,7 +66,7 @@ public class ChiTietSuaChua_DichVu_Dao {
             } else {
                 statement.setString(3, chiTiet.getMaNVKyThuat());
             }
-            statement.setString(4, chiTiet.getTrangThaiTienDo());
+            statement.setString(4, chiTiet.getTrangThaiTienDo().getText());
             statement.setDouble(5, chiTiet.getTienCongThucTe());
             statement.setString(6, chiTiet.getMaPhieuTNSC());
             statement.setString(7, chiTiet.getMaPhieuTNSC());

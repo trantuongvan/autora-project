@@ -7,14 +7,14 @@ public class PhieuYeuCauXuatKho {
     private String maPhieuYC;
     private LocalDateTime ngayYeuCau;
     private LocalDateTime ngayXuat;
-    private String trangThai;
+    private TrangThaiYeuCauXuat trangThai;
     private String maPhieuTNSC;
     private String maNVKyThuat;
     private String maNVThuKho;
 
     public PhieuYeuCauXuatKho() {
         this.ngayYeuCau = LocalDateTime.now();
-        this.trangThai = "Chờ xuất";
+        this.trangThai = TrangThaiYeuCauXuat.CHO_XUAT;
     }
 
     public PhieuYeuCauXuatKho(String maPhieuYC) {
@@ -23,7 +23,7 @@ public class PhieuYeuCauXuatKho {
     }
 
     public PhieuYeuCauXuatKho(String maPhieuYC, LocalDateTime ngayYeuCau, LocalDateTime ngayXuat,
-                              String trangThai, String maPhieuTNSC, String maNVKyThuat, String maNVThuKho) {
+                              TrangThaiYeuCauXuat trangThai, String maPhieuTNSC, String maNVKyThuat, String maNVThuKho) {
         setMaPhieuYC(maPhieuYC);
         setNgayYeuCau(ngayYeuCau);
         setNgayXuat(ngayXuat);
@@ -63,11 +63,11 @@ public class PhieuYeuCauXuatKho {
         this.ngayXuat = ngayXuat;
     }
 
-    public String getTrangThai() {
+    public TrangThaiYeuCauXuat getTrangThai() {
         return trangThai;
     }
-    public void setTrangThai(String trangThai) {
-        if (trangThai == null || (!trangThai.equals("Chờ xuất") && !trangThai.equals("Đã xuất") && !trangThai.equals("Từ chối"))) {
+    public void setTrangThai(TrangThaiYeuCauXuat trangThai) {
+        if (trangThai == null) {
             throw new IllegalArgumentException("Trạng thái phiếu yêu cầu không hợp lệ.");
         }
         this.trangThai = trangThai;

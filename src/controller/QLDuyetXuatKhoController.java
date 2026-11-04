@@ -7,6 +7,7 @@ import entity.ChiTietYeuCauXuatKho;
 import entity.NhanVien;
 import entity.PhieuYeuCauXuatKho;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLDuyetXuatKho;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -35,7 +36,7 @@ public class QLDuyetXuatKhoController {
     private final PhieuNhapKho_Dao nhapKhoDao;
 
     private NhanVien thuKhoHienTai;
-    private String tabDangChon = "Chờ xuất";
+    private TrangThaiYeuCauXuat tabDangChon = TrangThaiYeuCauXuat.CHO_XUAT;
     private List<PhieuYeuCauXuatKho> danhSachHienTai = new ArrayList<>();
     private PhieuYeuCauXuatKho yeuCauDangChon;
     private List<ChiTietYeuCauXuatKho> danhSachChiTiet = new ArrayList<>();
@@ -94,7 +95,7 @@ public class QLDuyetXuatKhoController {
         });
 
         JButton[] tabs = view.getBtnTabs();
-        String[] tenTabs = view.getCacTab();
+        TrangThaiYeuCauXuat[] tenTabs = view.getCacTab();
         for (int i = 0; i < tabs.length; i++) {
             final int idx = i;
             tabs[i].addActionListener(e -> {
@@ -182,7 +183,7 @@ public class QLDuyetXuatKhoController {
     }
 
     public void chonYeuCau(String maPhieuYC) {
-        tabDangChon = "Chờ xuất";
+        tabDangChon = TrangThaiYeuCauXuat.CHO_XUAT;
         JButton[] tabs = view.getBtnTabs();
         for (int i = 0; i < tabs.length; i++) {
             view.capNhatStyleTab(tabs[i], i == 0);
@@ -195,7 +196,7 @@ public class QLDuyetXuatKhoController {
             String kw = view.getTxtTimKiem().getText();
             danhSachHienTai = yeuCauDao.searchYeuCauThongMinh(kw, tabDangChon);
 
-            int countCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int countCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getBadgeSoYeuCauCho().set(countCho + " yêu cầu chờ duyệt", UIConstants.ROLE_RECEPTION_LIGHT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(countCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(countCho > 0);
@@ -264,9 +265,9 @@ public class QLDuyetXuatKhoController {
         }
 
         try {
-            Color cTrangThai = yeuCauDangChon.getTrangThai().equals("Chờ xuất") ? UIConstants.STATUS_WARNING
-                    : (yeuCauDangChon.getTrangThai().equals("Đã xuất") ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
-            view.getBadgeTrangThai().set(yeuCauDangChon.getTrangThai(), cTrangThai);
+            Color cTrangThai = yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.CHO_XUAT ? UIConstants.STATUS_WARNING
+                    : (yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.DA_XUAT ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
+            view.getBadgeTrangThai().set(yeuCauDangChon.getTrangThai().getText(), cTrangThai);
 
             String thongTinXe = yeuCauDao.getThongTinXe(yeuCauDangChon.getMaPhieuTNSC());
             view.getLblMaYeuCau().setText(yeuCauDangChon.getMaPhieuYC());
@@ -301,7 +302,7 @@ public class QLDuyetXuatKhoController {
                 });
             }
 
-            boolean isChoXuat = "Chờ xuất".equals(yeuCauDangChon.getTrangThai());
+            boolean isChoXuat = yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.CHO_XUAT;
             view.getPnlHopLoiTonKho().setVisible(!duTonKho && isChoXuat);
             view.getBtnTuChoi().setEnabled(isChoXuat);
             view.getBtnXacNhanXuat().setEnabled(isChoXuat && duTonKho);

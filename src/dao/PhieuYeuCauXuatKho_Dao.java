@@ -3,6 +3,7 @@ package dao;
 import connection.ConnectDB;
 import entity.ChiTietYeuCauXuatKho;
 import entity.PhieuYeuCauXuatKho;
+import entity.TrangThaiYeuCauXuat;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -21,11 +22,11 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    public int countByTrangThai(String trangThai) throws SQLException {
+    public int countByTrangThai(TrangThaiYeuCauXuat trangThai) throws SQLException {
         String sql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE trangThai = ?";
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, trangThai);
+            p.setString(1, trangThai.getText());
             try (ResultSet r = p.executeQuery()) {
                 return r.next() ? r.getInt(1) : 0;
             }
@@ -41,9 +42,9 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    public List<PhieuYeuCauXuatKho> searchYeuCauThongMinh(String keyword, String trangThai) throws SQLException {
+    public List<PhieuYeuCauXuatKho> searchYeuCauThongMinh(String keyword, TrangThaiYeuCauXuat trangThai) throws SQLException {
         String k = keyword == null ? "" : keyword.trim();
-        String tt = (trangThai == null || "Tất cả".equals(trangThai)) ? "" : trangThai.trim();
+        String tt = trangThai == null ? "" : trangThai.getText();
 
         String sql = "SELECT yc.maPhieuYC, yc.ngayYeuCau, yc.ngayXuat, yc.trangThai, yc.maPhieuTNSC, yc.maNV_KyThuat, yc.maNV_ThuKho "
                 + "FROM PhieuYeuCauXuatKho yc "
@@ -73,7 +74,7 @@ public class PhieuYeuCauXuatKho_Dao {
                             rs.getString("maPhieuYC"),
                             tsYC != null ? tsYC.toLocalDateTime() : LocalDateTime.now(),
                             tsXuat != null ? tsXuat.toLocalDateTime() : null,
-                            rs.getString("trangThai"),
+                            TrangThaiYeuCauXuat.fromDb(rs.getString("trangThai")),
                             rs.getString("maPhieuTNSC"),
                             rs.getString("maNV_KyThuat"),
                             rs.getString("maNV_ThuKho")
@@ -201,7 +202,7 @@ public class PhieuYeuCauXuatKho_Dao {
                 } else {
                     psPhieu.setNull(3, Types.TIMESTAMP);
                 }
-                psPhieu.setString(4, phieu.getTrangThai());
+                psPhieu.setString(4, phieu.getTrangThai().getText());
                 psPhieu.setString(5, phieu.getMaPhieuTNSC());
                 psPhieu.setString(6, phieu.getMaNVKyThuat());
                 if (phieu.getMaNVThuKho() != null && !phieu.getMaNVThuKho().isEmpty()) {

@@ -2,8 +2,8 @@ package dao;
 
 import connection.ConnectDB;
 import entity.NhanVien;
-import entity.PhienDangNhap;
 import entity.TaiKhoan;
+import entity.VaiTro;
 import util.MatKhauUtil;
 
 import java.sql.Connection;
@@ -21,11 +21,11 @@ public class TaiKhoan_Dao {
     private static final String CHU_CUOI = "Không thể thực hiện: đây là tài khoản Chủ cửa hàng đang hoạt động cuối cùng.";
 
     public List<TaiKhoan> search(String tuKhoa) throws SQLException {
-        return search(tuKhoa, "", null);
+        return search(tuKhoa, null, null);
     }
 
-    /** vaiTro rỗng và trangThai null nghĩa là không lọc theo tiêu chí đó. */
-    public List<TaiKhoan> search(String tuKhoa, String vaiTro, Boolean trangThai) throws SQLException {
+    /** vaiTro null và trangThai null nghĩa là không lọc theo tiêu chí đó. */
+    public List<TaiKhoan> search(String tuKhoa, VaiTro vaiTro, Boolean trangThai) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
         String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen "
                 + "FROM TaiKhoan t JOIN NhanVien n ON n.maNV = t.maNV "
@@ -40,11 +40,12 @@ public class TaiKhoan_Dao {
             for (int i = 2; i <= 5; i++) {
                 statement.setString(i, "%" + key + "%");
             }
-            statement.setString(6, vaiTro);
-            statement.setString(7, vaiTro);
+            String chuoiVaiTro = vaiTro == null ? "" : vaiTro.getText();
+            statement.setString(6, chuoiVaiTro);
+            statement.setString(7, chuoiVaiTro);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new TaiKhoan(rs.getString(1), rs.getString(2), rs.getBoolean(3), rs.getString(4),
+                    ketQua.add(new TaiKhoan(rs.getString(1), VaiTro.fromDb(rs.getString(2)), rs.getBoolean(3), rs.getString(4),
                             rs.getString(5)));
                 }
             }
@@ -61,7 +62,7 @@ public class TaiKhoan_Dao {
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 ketQua.add(new NhanVien(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
-                        rs.getString(5)));
+                        VaiTro.fromDb(rs.getString(5))));
             }
         }
         return ketQua;
@@ -90,7 +91,7 @@ public class TaiKhoan_Dao {
                 try (PreparedStatement statement = connection.prepareStatement(sql)) {
                     statement.setString(1, taiKhoan.getTenDangNhap());
                     statement.setString(2, giaTriBam);
-                    statement.setString(3, taiKhoan.getVaiTro());
+                    statement.setString(3, taiKhoan.getVaiTro().getText());
                     statement.setBoolean(4, taiKhoan.isTrangThai());
                     statement.setString(5, taiKhoan.getMaNV());
                     statement.executeUpdate();
@@ -105,7 +106,7 @@ public class TaiKhoan_Dao {
         }
     }
 
-    public boolean doiVaiTro(String tenDangNhap, String vaiTroMoi, String nguoiThucHien) throws SQLException {
+    public boolean doiVaiTro(String tenDangNhap, VaiTro vaiTroMoi, String nguoiThucHien) throws SQLException {
         return capNhat(tenDangNhap, vaiTroMoi, null, null, nguoiThucHien);
     }
 
@@ -122,11 +123,8 @@ public class TaiKhoan_Dao {
      * Trả về false khi không có tài khoản này.
      * Ném IllegalStateException khi việc đổi làm mất Chủ cửa hàng đang hoạt động cuối cùng.
      */
-    public boolean capNhat(String tenDangNhap, String vaiTroMoi, String matKhauMoi, Boolean trangThaiMoi,
+    public boolean capNhat(String tenDangNhap, VaiTro vaiTroMoi, String matKhauMoi, Boolean trangThaiMoi,
             String nguoiThucHien) throws SQLException {
-        if (vaiTroMoi != null) {
-            new TaiKhoan().setVaiTro(vaiTroMoi);
-        }
         String giaTriBam = null;
         if (matKhauMoi != null) {
             TaiKhoan.kiemTraMatKhau(matKhauMoi);
@@ -141,15 +139,15 @@ public class TaiKhoan_Dao {
                     connection.rollback();
                     return false;
                 }
-                boolean doiVaiTro = vaiTroMoi != null && !vaiTroMoi.equals(cu.getVaiTro());
+                boolean doiVaiTro = vaiTroMoi != null && vaiTroMoi != cu.getVaiTro();
                 boolean doiTrangThai = trangThaiMoi != null && trangThaiMoi != cu.isTrangThai();
                 if (doiVaiTro || (doiTrangThai && !trangThaiMoi)) {
                     chanChuCuoi(cu, soChu);
                 }
                 NhatKy_Dao nhatKy = new NhatKy_Dao();
                 if (doiVaiTro) {
-                    capNhatCot(connection, "vaiTro", vaiTroMoi, tenDangNhap);
-                    nhatKy.ghi(connection, nguoiThucHien, "Đổi vai trò", tenDangNhap, cu.getVaiTro(), vaiTroMoi);
+                    capNhatCot(connection, "vaiTro", vaiTroMoi.getText(), tenDangNhap);
+                    nhatKy.ghi(connection, nguoiThucHien, "Đổi vai trò", tenDangNhap, cu.getVaiTro().getText(), vaiTroMoi.getText());
                 }
                 if (giaTriBam != null) {
                     capNhatCot(connection, "matKhau", giaTriBam, tenDangNhap);
@@ -202,7 +200,7 @@ public class TaiKhoan_Dao {
     private int demChuDangHoatDong(Connection connection) throws SQLException {
         String sql = "SELECT COUNT(*) FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE vaiTro = ? AND trangThai = 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, PhienDangNhap.VAI_TRO_CHU_CUA_HANG);
+            statement.setString(1, VaiTro.CHU_CUA_HANG.getText());
             try (ResultSet rs = statement.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);
@@ -211,7 +209,7 @@ public class TaiKhoan_Dao {
     }
 
     private void chanChuCuoi(TaiKhoan taiKhoan, int soChuDangHoatDong) {
-        if (PhienDangNhap.VAI_TRO_CHU_CUA_HANG.equals(taiKhoan.getVaiTro()) && taiKhoan.isTrangThai()
+        if (taiKhoan.getVaiTro() == VaiTro.CHU_CUA_HANG && taiKhoan.isTrangThai()
                 && soChuDangHoatDong <= 1) {
             throw new IllegalStateException(CHU_CUOI);
         }
@@ -226,7 +224,7 @@ public class TaiKhoan_Dao {
                     return null;
                 }
                 TaiKhoan taiKhoan = new TaiKhoan();
-                taiKhoan.setVaiTro(rs.getString(1));
+                taiKhoan.setVaiTro(VaiTro.fromDb(rs.getString(1)));
                 taiKhoan.setTrangThai(rs.getBoolean(2));
                 return taiKhoan;
             }

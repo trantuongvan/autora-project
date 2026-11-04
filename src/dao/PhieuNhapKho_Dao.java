@@ -3,6 +3,7 @@ package dao;
 import connection.ConnectDB;
 import entity.ChiTietNhapKho;
 import entity.NhanVien;
+import entity.VaiTro;
 import entity.PhieuNhapKho;
 import java.sql.*;
 import java.time.LocalDate;
@@ -28,7 +29,7 @@ public class PhieuNhapKho_Dao {
                                 r.getString("hoTen"),
                                 r.getString("soDienThoai"),
                                 r.getString("diaChi"),
-                                r.getString("viTriLamViec")
+                                VaiTro.fromDb(r.getString("viTriLamViec"))
                         );
                     }
                 }
@@ -45,7 +46,7 @@ public class PhieuNhapKho_Dao {
                         r.getString("hoTen"),
                         r.getString("soDienThoai"),
                         r.getString("diaChi"),
-                        r.getString("viTriLamViec")
+                        VaiTro.fromDb(r.getString("viTriLamViec"))
                 );
             }
         }

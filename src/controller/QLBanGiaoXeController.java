@@ -3,6 +3,8 @@ package controller;
 import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
 import entity.NhanVien;
+import entity.TrangThaiHoaDon;
+import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
 
@@ -158,10 +160,10 @@ public class QLBanGiaoXeController {
         if (String.valueOf(data[9]).isEmpty()) {
             return "Phiếu chưa có hóa đơn.";
         }
-        if ("Đã hủy".equals(payment)) {
+        if (TrangThaiHoaDon.DA_HUY.getText().equals(payment)) {
             return "Hóa đơn đã bị hủy.";
         }
-        if ("Công nợ".equals(payment) && !Boolean.TRUE.equals(data[17])) {
+        if (TrangThaiHoaDon.CONG_NO.getText().equals(payment) && !Boolean.TRUE.equals(data[17])) {
             return "Khách hàng không được phép ghi nợ.";
         }
         return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
@@ -178,7 +180,7 @@ public class QLBanGiaoXeController {
             return;
         }
         try {
-            List<NhanVien> receptionists = nhanVienDao.findByViTri("Lễ tân");
+            List<NhanVien> receptionists = nhanVienDao.findByViTri(VaiTro.LE_TAN);
             if (receptionists.isEmpty()) {
                 throw new SQLException("Không có nhân viên lễ tân để ghi nhận bàn giao.");
             }

@@ -4,8 +4,11 @@ import dao.DichVu_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.DichVu;
 import entity.KhachHang;
+import entity.LoaiKhachHang;
+import entity.MucUuTien;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import entity.Xe;
 import gui.QLTiepNhanSuaChua;
 
@@ -90,7 +93,7 @@ public class QLTiepNhanSuaChuaController {
                 JOptionPane.showMessageDialog(view, "Phiếu không còn tồn tại.");
                 return;
             }
-            if (PhieuTiepNhanVaSuaChua.DA_HUY.equals(p.getTrangThai())) {
+            if (p.getTrangThai() == TrangThaiPhieu.DA_HUY) {
                 JOptionPane.showMessageDialog(view, "Phiếu đã hủy nên không thể sửa.");
                 return;
             }
@@ -109,8 +112,8 @@ public class QLTiepNhanSuaChuaController {
             view.getTxtPhuTungDuKien().setText(p.getPhuTungDuKien());
             view.getCboTrangThai().setSelectedItem(p.getTrangThai());
             view.getTxtDuKien().setText(p.getThoiGianDuKien() == null ? "" : p.getThoiGianDuKien().format(DINH_DANG_GIO));
-            view.getRadKhan().setSelected("Khẩn".equals(p.getUuTien()));
-            view.getRadThuong().setSelected(!"Khẩn".equals(p.getUuTien()));
+            view.getRadKhan().setSelected(p.getUuTien() == MucUuTien.KHAN);
+            view.getRadThuong().setSelected(p.getUuTien() != MucUuTien.KHAN);
         } catch (SQLException ex) {
             hienLoiDuLieu("Không thể tải phiếu.", ex);
         }
@@ -160,7 +163,7 @@ public class QLTiepNhanSuaChuaController {
             view.getTxtDiaChi().setText(khach[3]);
             view.getTxtEmail().setText(khach[4]);
             view.getTxtMaSoThue().setText(khach[6]);
-            view.setLoaiKhachHang(khach[5]);
+            view.setLoaiKhachHang(LoaiKhachHang.fromDb(khach[5]));
         }
         view.setChoSuaKhachHang(khach == null);
     }
@@ -216,7 +219,7 @@ public class QLTiepNhanSuaChuaController {
         p.setGhiChu(view.getTxtGhiChu().getText());
         p.setYeuCauBanDau(batBuoc(view.getTxtYeuCau().getText(), "Yêu cầu của khách"));
         p.setPhuTungDuKien(batBuoc(view.getTxtPhuTungDuKien().getText(), "Phụ tùng dự kiến thay thế"));
-        p.setUuTien(view.getRadKhan().isSelected() ? "Khẩn" : "Thường");
+        p.setUuTien(view.getRadKhan().isSelected() ? MucUuTien.KHAN : MucUuTien.THUONG);
         p.setThoiGianDuKien(docDuKien(view.getTxtDuKien().getText()));
         return p;
     }
@@ -258,7 +261,7 @@ public class QLTiepNhanSuaChuaController {
         p.setBienSo(bienSo);
         p.setMaNVLapPhieu(PhienDangNhap.getHienTai().getMaNV());
         p.setThoiGianTiepNhan(LocalDateTime.now());
-        p.setTrangThai(PhieuTiepNhanVaSuaChua.TRANG_THAI[0]);
+        p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
         dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu);
         return true;
     }

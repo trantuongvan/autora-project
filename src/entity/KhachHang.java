@@ -4,15 +4,13 @@ import java.util.Objects;
 
 /** POJO khách hàng theo mẫu trong tài liệu kiến trúc, dùng khi tiếp nhận khách mới. */
 public class KhachHang {
-    public static final String[] LOAI_KHACH_HANG = {"Khách vãng lai", "Thành viên", "VIP"};
-
     private String maKH;
     private String hoTen;
     private String soDienThoai;
     private String diaChi;
     private String email;
     private String maSoThue;
-    private String loaiKhachHang = LOAI_KHACH_HANG[0];
+    private LoaiKhachHang loaiKhachHang = LoaiKhachHang.KHACH_VANG_LAI;
     private boolean duocGhiNo;
 
     public KhachHang() {
@@ -23,7 +21,7 @@ public class KhachHang {
     }
 
     public KhachHang(String maKH, String hoTen, String soDienThoai, String diaChi, String email,
-            String maSoThue, String loaiKhachHang, boolean duocGhiNo) {
+            String maSoThue, LoaiKhachHang loaiKhachHang, boolean duocGhiNo) {
         setMaKH(maKH);
         setHoTen(hoTen);
         setSoDienThoai(soDienThoai);
@@ -102,12 +100,12 @@ public class KhachHang {
         this.maSoThue = giaTri;
     }
 
-    public String getLoaiKhachHang() {
+    public LoaiKhachHang getLoaiKhachHang() {
         return loaiKhachHang;
     }
 
-    public void setLoaiKhachHang(String loaiKhachHang) {
-        if (!java.util.Arrays.asList(LOAI_KHACH_HANG).contains(loaiKhachHang)) {
+    public void setLoaiKhachHang(LoaiKhachHang loaiKhachHang) {
+        if (loaiKhachHang == null) {
             throw new IllegalArgumentException("Phân loại khách hàng không hợp lệ!");
         }
         this.loaiKhachHang = loaiKhachHang;

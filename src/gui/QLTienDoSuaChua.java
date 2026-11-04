@@ -2,6 +2,8 @@ package gui;
 
 import controller.QLTienDoSuaChuaController;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -571,10 +573,10 @@ public class QLTienDoSuaChua extends JPanel {
 
                 int activeDots = 1;
                 Color activeColor = UIConstants.ROLE_RECEPTION;
-                if ("Hoàn thành".equalsIgnoreCase(trangThai)) {
+                if (TrangThaiTienDo.HOAN_THANH.getText().equalsIgnoreCase(trangThai)) {
                     activeDots = 3;
                     activeColor = UIConstants.STATUS_SUCCESS;
-                } else if ("Đang sửa".equalsIgnoreCase(trangThai)) {
+                } else if (TrangThaiTienDo.DANG_SUA.getText().equalsIgnoreCase(trangThai)) {
                     activeDots = 2;
                     activeColor = UIConstants.PRIMARY;
                 }
@@ -596,10 +598,10 @@ public class QLTienDoSuaChua extends JPanel {
 
     public Color mauTrangThai(String s) {
         if (s == null) return UIConstants.TEXT_MUTED;
-        if (s.startsWith("Hoàn thành")) return UIConstants.STATUS_SUCCESS;
-        if (s.startsWith("Đang sửa")) return UIConstants.PRIMARY;
-        if (s.startsWith("Chờ phụ tùng")) return UIConstants.STATUS_WARNING;
-        if (s.startsWith("Chờ sửa") || s.startsWith("Chờ kiểm tra")) return UIConstants.STATUS_DANGER;
+        if (s.startsWith(TrangThaiPhieu.HOAN_THANH.getText())) return UIConstants.STATUS_SUCCESS;
+        if (s.startsWith(TrangThaiPhieu.DANG_SUA.getText())) return UIConstants.PRIMARY;
+        if (s.startsWith(TrangThaiPhieu.CHO_PHU_TUNG.getText())) return UIConstants.STATUS_WARNING;
+        if (s.startsWith("Chờ sửa") || s.startsWith(TrangThaiPhieu.CHO_KIEM_TRA.getText())) return UIConstants.STATUS_DANGER;
         return UIConstants.TEXT_MUTED;
     }
 
@@ -617,9 +619,9 @@ public class QLTienDoSuaChua extends JPanel {
     public void capNhatStyleNutPill(JButton b, boolean active) {
         String text = b.getText();
         Color base = UIConstants.ROLE_RECEPTION;
-        if ("Đang sửa".equals(text)) base = UIConstants.PRIMARY;
-        else if ("Chờ phụ tùng".equals(text)) base = UIConstants.STATUS_WARNING;
-        else if ("Hoàn thành".equals(text)) base = UIConstants.STATUS_SUCCESS;
+        if (TrangThaiPhieu.DANG_SUA.getText().equals(text)) base = UIConstants.PRIMARY;
+        else if (TrangThaiPhieu.CHO_PHU_TUNG.getText().equals(text)) base = UIConstants.STATUS_WARNING;
+        else if (TrangThaiPhieu.HOAN_THANH.getText().equals(text)) base = UIConstants.STATUS_SUCCESS;
 
         if (active) {
             b.setBackground(UIComponents.tint(base, 0.80f));

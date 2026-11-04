@@ -52,7 +52,7 @@ public final class PdfExporter {
                 {"Khách hàng", p.getTenKhachHang()}, {"Số điện thoại", p.getSdtKhachHang()},
                 {"Biển số", p.getBienSo()}, {"Xe", p.getThongTinXe()},
                 {"Số km", String.valueOf(p.getSoKm())}, {"Mức nhiên liệu", p.getMucNhienLieu() + "%"},
-                {"Trạng thái", p.getTrangThai()}, {"Ưu tiên", p.getUuTien()},
+                {"Trạng thái", p.getTrangThai().getText()}, {"Ưu tiên", p.getUuTien().getText()},
                 {"Thời gian tiếp nhận", p.getThoiGianTiepNhan() == null ? "" : p.getThoiGianTiepNhan().format(DINH_DANG_GIO)},
                 {"Dự kiến hoàn thành", p.getThoiGianDuKien() == null ? "" : p.getThoiGianDuKien().format(DINH_DANG_GIO)},
                 {"Yêu cầu của khách", p.getYeuCauBanDau()}, {"Đánh giá ngoại thất", p.getTrayXuoc()},
@@ -77,7 +77,7 @@ public final class PdfExporter {
                 dichVu.addCell(new Phrase(String.valueOf(stt++), thuong));
                 dichVu.addCell(new Phrase(d.getTenDichVu(), thuong));
                 dichVu.addCell(new Phrase(d.getTenKyThuatVien() == null ? "Chờ phân công" : d.getTenKyThuatVien(), thuong));
-                dichVu.addCell(new Phrase(d.getTrangThaiTienDo(), thuong));
+                dichVu.addCell(new Phrase(d.getTrangThaiTienDo().getText(), thuong));
                 dichVu.addCell(new Phrase(tien.format(d.getTienCongThucTe()), thuong));
                 tong += d.getTienCongThucTe();
             }
@@ -112,7 +112,7 @@ public final class PdfExporter {
                 {"Địa chỉ", tt.diaChi}, {"Email", tt.email},
                 {"Biển số", tt.bienSo}, {"Xe", tt.xe}, {"Số VIN", tt.soVIN}, {"Mã phiếu", tt.maPhieu},
                 {"Ngày lập", hd.getNgayLap() == null ? "" : hd.getNgayLap().format(DINH_DANG_GIO)},
-                {"Hình thức thanh toán", hd.getHinhThucThanhToan()}
+                {"Hình thức thanh toán", hd.getHinhThucThanhToan().getText()}
             };
             PdfPTable thongTin = new PdfPTable(new float[] {1, 2});
             thongTin.setWidthPercentage(100);

@@ -3,6 +3,7 @@ package controller;
 import dao.NhanVien_Dao;
 import entity.NhanVien;
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import gui.QLNhanVien;
 
 import javax.swing.JOptionPane;
@@ -98,8 +99,8 @@ public class QLNhanVienController {
     private void load() {
         final int version = ++loadVersion;
         final String keyword = view.getTxtTimKiem().getText();
-        final String position = "Tất cả vị trí".equals(view.getCboLocViTri().getSelectedItem())
-                ? "" : String.valueOf(view.getCboLocViTri().getSelectedItem());
+        final Object chonViTri = view.getCboLocViTri().getSelectedItem();
+        final VaiTro position = chonViTri instanceof VaiTro ? (VaiTro) chonViTri : null;
         new SwingWorker<List<NhanVien>, Void>() {
             @Override
             protected List<NhanVien> doInBackground() throws Exception {
@@ -191,7 +192,7 @@ public class QLNhanVienController {
                     view.getTxtHoTen().getText(),
                     phone,
                     view.getTxtDiaChi().getText(),
-                    String.valueOf(view.getCboViTri().getSelectedItem()));
+                    (VaiTro) view.getCboViTri().getSelectedItem());
             boolean saved = editing
                     ? dao.update(employee, tenDangNhap)
                     : dao.insert(employee, tenDangNhap);

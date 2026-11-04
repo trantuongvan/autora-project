@@ -35,6 +35,7 @@ public class QLTienDoSuaChuaController {
     private final PhieuYeuCauXuatKho_Dao yeuCauDao;
 
     private NhanVien kyThuatVienHienTai;
+    private static final String NHAN_CHO_SUA = "Chờ sửa"; // nhãn hiển thị của phiếu "Chờ kiểm tra"
     private String tabTrangThaiDangChon = "Tất cả";
     private List<PhieuTiepNhanVaSuaChua> danhSachPhieu = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieuDangChon;
@@ -240,8 +241,8 @@ public class QLTienDoSuaChuaController {
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
         String tt = p.getTrangThaiHienThiKTV();
-        int pct = p.getPhanTramTienDo();
-        String badgeText = "Đang sửa".equals(tt) ? (tt + " • " + pct + "%") : tt;
+        int pct = TienDoSuaChua_Dao.phanTramTienDo(p);
+        String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
 
@@ -271,7 +272,7 @@ public class QLTienDoSuaChuaController {
             ex.printStackTrace();
         }
         view.getBtnCapNhatTrangThai().setEnabled(!daThanhToan);
-        view.getBtnMoYeuCauPhuTung().setEnabled(!daThanhToan && !"Hoàn thành".equalsIgnoreCase(tt));
+        view.getBtnMoYeuCauPhuTung().setEnabled(!daThanhToan && p.getTrangThai() != TrangThaiPhieu.HOAN_THANH);
     }
 
     private void xuLyCapNhatTrangThaiPhieu() {
@@ -307,10 +308,11 @@ public class QLTienDoSuaChuaController {
 
     private boolean kiemTraLuongTrangThaiHopLe(String hienTai, String moi) {
         if (hienTai.equalsIgnoreCase(moi)) return true;
-        if ("Chờ sửa".equalsIgnoreCase(hienTai) && "Hoàn thành".equalsIgnoreCase(moi)) {
+        String hoanThanh = TrangThaiPhieu.HOAN_THANH.getText();
+        if (NHAN_CHO_SUA.equalsIgnoreCase(hienTai) && hoanThanh.equalsIgnoreCase(moi)) {
             return false;
         }
-        if ("Hoàn thành".equalsIgnoreCase(hienTai) && "Chờ sửa".equalsIgnoreCase(moi)) {
+        if (hoanThanh.equalsIgnoreCase(hienTai) && NHAN_CHO_SUA.equalsIgnoreCase(moi)) {
             return false;
         }
         return true;
@@ -323,18 +325,17 @@ public class QLTienDoSuaChuaController {
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            String[] luaChon = {"Chờ sửa", "Đang sửa", "Hoàn thành"};
-            String moi = (String) JOptionPane.showInputDialog(
+            TrangThaiTienDo moi = (TrangThaiTienDo) JOptionPane.showInputDialog(
                     view,
                     "Chọn trạng thái tiến độ mới cho hạng mục:\n" + ct.getTenDichVu(),
                     "Cập nhật tiến độ hạng mục",
                     JOptionPane.PLAIN_MESSAGE,
                     null,
-                    luaChon,
+                    TrangThaiTienDo.values(),
                     ct.getTrangThaiTienDo()
             );
-            if (moi != null && !moi.equals(ct.getTrangThaiTienDo())) {
-                if ("Chờ sửa".equals(ct.getTrangThaiTienDo()) && "Hoàn thành".equals(moi)) {
+            if (moi != null && moi != ct.getTrangThaiTienDo()) {
+                if (ct.getTrangThaiTienDo() == TrangThaiTienDo.CHO_SUA && moi == TrangThaiTienDo.HOAN_THANH) {
                     view.getLblThongBaoLoiTrangThai().setText(
                             "Trạng thái không hợp lệ: không thể chuyển từ 'Chờ sửa' sang 'Hoàn thành'. Vui lòng chọn lại."
                     );
@@ -662,7 +663,7 @@ public class QLTienDoSuaChuaController {
                     maPYC,
                     LocalDateTime.now(),
                     null,
-                    "Chờ xuất",
+                    TrangThaiYeuCauXuat.CHO_XUAT,
                     phieuDangChon.getMaPhieuTNSC(),
                     maKTV,
                     null

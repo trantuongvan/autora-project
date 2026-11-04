@@ -2,6 +2,7 @@ package controller;
 
 import dao.KhachHang_Dao;
 import entity.KhachHang;
+import entity.LoaiKhachHang;
 import gui.QLKhachHang;
 import util.UIComponents;
 
@@ -104,9 +105,9 @@ public class QLKhachHangController {
 
     public void taiDanhSach() {
         String tuKhoa = view.getTxtTimKiem().getText();
-        String loai = String.valueOf(view.getCboLocLoai().getSelectedItem());
+        Object loai = view.getCboLocLoai().getSelectedItem();
         String ghiNo = String.valueOf(view.getCboLocGhiNo().getSelectedItem());
-        String locLoai = QLKhachHang.TAT_CA.equals(loai) ? "" : loai;
+        LoaiKhachHang locLoai = loai instanceof LoaiKhachHang ? (LoaiKhachHang) loai : null;
         Boolean locGhiNo = QLKhachHang.TAT_CA.equals(ghiNo) ? null : Boolean.valueOf(QLKhachHang.DUOC_PHEP.equals(ghiNo));
         int phienBan = ++phienBanDanhSach;
         new SwingWorker<List<Object[]>, Void>() {
@@ -255,7 +256,7 @@ public class QLKhachHangController {
         if (!batBuocHopLe || !tuyChonHopLe) {
             return;
         }
-        kh.setLoaiKhachHang(String.valueOf(view.getCboLoai().getSelectedItem()));
+        kh.setLoaiKhachHang((LoaiKhachHang) view.getCboLoai().getSelectedItem());
         kh.setDuocGhiNo(QLKhachHang.DUOC_PHEP.equals(view.getCboGhiNo().getSelectedItem()));
         try {
             if (maDangSua == null) {

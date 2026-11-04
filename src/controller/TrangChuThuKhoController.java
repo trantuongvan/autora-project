@@ -6,6 +6,7 @@ import dao.PhuTung_Dao;
 import entity.NhanVien;
 import entity.PhieuYeuCauXuatKho;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
 
@@ -132,7 +133,7 @@ public class TrangChuThuKhoController {
     public void loadData() {
         try {
             int soCanhBao = phuTungDao.countDuoiNguongCanhBao();
-            int soChoXuat = yeuCauDao.countByTrangThai("Chờ xuất");
+            int soChoXuat = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             int soPhieuNhap = nhapKhoDao.countPhieuNhapHomNay();
             int soDaXuat = yeuCauDao.countDaXuatHomNay();
 
@@ -156,7 +157,7 @@ public class TrangChuThuKhoController {
     private void locDuLieuTheoTuKhoa() {
         try {
             String kw = view.getTxtTimKiem().getText();
-            dsYeuCauTimDuoc = yeuCauDao.searchYeuCauThongMinh(kw, "Tất cả");
+            dsYeuCauTimDuoc = yeuCauDao.searchYeuCauThongMinh(kw, null);
             doBangYeuCau();
 
             dsCanhBaoHienThi = phuTungDao.findDuoiNguongCanhBao(kw);
@@ -189,8 +190,8 @@ public class TrangChuThuKhoController {
                 String tomTatPT = yeuCauDao.getTomTatPhuTungYeuCau(yc.getMaPhieuYC());
                 String thaoTac;
                 switch (yc.getTrangThai()) {
-                    case "Chờ xuất": thaoTac = "Duyệt xuất →"; break;
-                    case "Từ chối": thaoTac = "Xem lý do"; break;
+                    case CHO_XUAT: thaoTac = "Duyệt xuất →"; break;
+                    case TU_CHOI: thaoTac = "Xem lý do"; break;
                     default: thaoTac = "Xem phiếu"; break;
                 }
                 view.getModelYeuCau().addRow(new Object[]{

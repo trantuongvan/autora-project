@@ -1,20 +1,9 @@
 package entity;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Objects;
 
 public class HoaDon {
-    public static final String TIEN_MAT = "Tiền mặt";
-    public static final String CHUYEN_KHOAN = "Chuyển khoản";
-    public static final String CONG_NO = "Công nợ";
-    public static final String[] HINH_THUC = {TIEN_MAT, CHUYEN_KHOAN, CONG_NO};
-    public static final String DA_THANH_TOAN = "Đã thanh toán";
-    public static final String DA_HUY = "Đã hủy";
-    public static final String[] TRANG_THAI = {DA_THANH_TOAN, CONG_NO, DA_HUY};
-
     private String maHD;
     private String maPhieuTNSC;
     private LocalDateTime ngayLap;
@@ -23,8 +12,8 @@ public class HoaDon {
     private double tongTienGiam;
     private double tongTienVAT;
     private double tongThanhToan;
-    private String hinhThucThanhToan = TIEN_MAT;
-    private String trangThaiThanhToan = DA_THANH_TOAN;
+    private HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.TIEN_MAT;
+    private TrangThaiHoaDon trangThaiThanhToan = TrangThaiHoaDon.DA_THANH_TOAN;
     private String lyDoHuy;
     private String maNVLap;
     private String maKM;
@@ -42,8 +31,8 @@ public class HoaDon {
     }
 
     public HoaDon(String maHD, String maPhieuTNSC, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
-            double tongTienGiam, double tongTienVAT, double tongThanhToan, String hinhThucThanhToan,
-            String trangThaiThanhToan, String lyDoHuy, String maNVLap, String maKM, String maThue) {
+            double tongTienGiam, double tongTienVAT, double tongThanhToan, HinhThucThanhToan hinhThucThanhToan,
+            TrangThaiHoaDon trangThaiThanhToan, String lyDoHuy, String maNVLap, String maKM, String maThue) {
         setMaHD(maHD);
         setMaPhieuTNSC(maPhieuTNSC);
         setNgayLap(ngayLap);
@@ -60,30 +49,13 @@ public class HoaDon {
         this.maThue = maThue;
     }
 
-    /** Các khoản tiền đã làm tròn tới đồng. */
-    public static final class TienHoaDon {
-        public final double cong;
-        public final double phuTung;
-        public final double giam;
-        public final double vat;
-        public final double tong;
-
-        private TienHoaDon(double cong, double phuTung, double giam, double vat, double tong) {
-            this.cong = cong;
-            this.phuTung = phuTung;
-            this.giam = giam;
-            this.vat = vat;
-            this.tong = tong;
-        }
-    }
-
     /** Thông tin khách và xe của phiếu để hiển thị và in hóa đơn. */
     public static final class ThongTinPhieu {
         public final String maPhieu;
-        public final String trangThaiPhieu;
+        public final TrangThaiPhieu trangThaiPhieu;
         public final String maKH;
         public final String hoTen;
-        public final String loaiKhachHang;
+        public final LoaiKhachHang loaiKhachHang;
         public final String soDienThoai;
         public final String diaChi;
         public final String email;
@@ -92,7 +64,7 @@ public class HoaDon {
         public final String xe;
         public final String soVIN;
 
-        public ThongTinPhieu(String maPhieu, String trangThaiPhieu, String maKH, String hoTen, String loaiKhachHang,
+        public ThongTinPhieu(String maPhieu, TrangThaiPhieu trangThaiPhieu, String maKH, String hoTen, LoaiKhachHang loaiKhachHang,
                 String soDienThoai, String diaChi, String email, boolean duocGhiNo, String bienSo, String xe, String soVIN) {
             this.maPhieu = maPhieu;
             this.trangThaiPhieu = trangThaiPhieu;
@@ -107,46 +79,6 @@ public class HoaDon {
             this.xe = xe;
             this.soVIN = soVIN;
         }
-    }
-
-    /** Hàm thuần để màn hình xem trước và lúc lưu dùng cùng một công thức. hinhThucKM null là không có khuyến mãi. */
-    public static TienHoaDon tinhTien(double tienCong, double tienPhuTung, String hinhThucKM, double giaTriKM,
-            String phamViKM, double thueSuat) {
-        if (tienCong < 0 || tienPhuTung < 0 || giaTriKM < 0 || thueSuat < 0) {
-            throw new IllegalArgumentException("Số tiền và thuế suất không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = hinhThucKM == null ? 0 : tinhGiam(cong, phuTung, hinhThucKM, giaTriKM, phamViKM);
-        double sauGiam = cong + phuTung - giam;
-        double vat = phanTram(sauGiam, thueSuat);
-        return new TienHoaDon(cong, phuTung, giam, vat, sauGiam + vat);
-    }
-
-    private static double tinhGiam(double cong, double phuTung, String hinhThucKM, double giaTriKM, String phamViKM) {
-        double coSo;
-        if (KhuyenMai.PHAM_VI[0].equals(phamViKM)) {
-            coSo = cong + phuTung;
-        } else if (KhuyenMai.PHAM_VI[1].equals(phamViKM)) {
-            coSo = cong;
-        } else if (KhuyenMai.PHAM_VI[2].equals(phamViKM)) {
-            coSo = phuTung;
-        } else {
-            throw new IllegalArgumentException("Phạm vi khuyến mãi không hợp lệ.");
-        }
-        if (KhuyenMai.HINH_THUC_PHAN_TRAM.equals(hinhThucKM)) {
-            return Math.min(coSo, phanTram(coSo, giaTriKM));
-        }
-        if (KhuyenMai.HINH_THUC_TIEN_MAT.equals(hinhThucKM)) {
-            return Math.min(coSo, Math.round(giaTriKM));
-        }
-        throw new IllegalArgumentException("Hình thức khuyến mãi không hợp lệ.");
-    }
-
-    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
-    public static double phanTram(double coSo, double tyLe) {
-        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     public String getMaHD() {
@@ -227,23 +159,23 @@ public class HoaDon {
         return giaTri;
     }
 
-    public String getHinhThucThanhToan() {
+    public HinhThucThanhToan getHinhThucThanhToan() {
         return hinhThucThanhToan;
     }
 
-    public void setHinhThucThanhToan(String hinhThucThanhToan) {
-        if (!Arrays.asList(HINH_THUC).contains(hinhThucThanhToan)) {
+    public void setHinhThucThanhToan(HinhThucThanhToan hinhThucThanhToan) {
+        if (hinhThucThanhToan == null) {
             throw new IllegalArgumentException("Hình thức thanh toán không hợp lệ");
         }
         this.hinhThucThanhToan = hinhThucThanhToan;
     }
 
-    public String getTrangThaiThanhToan() {
+    public TrangThaiHoaDon getTrangThaiThanhToan() {
         return trangThaiThanhToan;
     }
 
-    public void setTrangThaiThanhToan(String trangThaiThanhToan) {
-        if (!Arrays.asList(TRANG_THAI).contains(trangThaiThanhToan)) {
+    public void setTrangThaiThanhToan(TrangThaiHoaDon trangThaiThanhToan) {
+        if (trangThaiThanhToan == null) {
             throw new IllegalArgumentException("Trạng thái thanh toán không hợp lệ");
         }
         this.trangThaiThanhToan = trangThaiThanhToan;

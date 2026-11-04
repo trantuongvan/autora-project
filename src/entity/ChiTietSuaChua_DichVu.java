@@ -1,19 +1,14 @@
 package entity;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 public class ChiTietSuaChua_DichVu {
-    public static final String[] TIEN_DO = {
-        "Chờ sửa", "Đang sửa", "Hoàn thành"
-    };
-
     private String maPhieuTNSC;
     private String maDichVu;
     private String tenDichVu;
     private String maNVKyThuat;
     private String tenKyThuatVien;
-    private String trangThaiTienDo;
+    private TrangThaiTienDo trangThaiTienDo;
     private double tienCongThucTe;
 
     public ChiTietSuaChua_DichVu() {
@@ -25,14 +20,14 @@ public class ChiTietSuaChua_DichVu {
     }
 
     public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
-            String maNVKyThuat, String trangThaiTienDo, double tienCongThucTe) {
+            String maNVKyThuat, TrangThaiTienDo trangThaiTienDo, double tienCongThucTe) {
         this(maPhieuTNSC, maDichVu, null, maNVKyThuat, null,
                 trangThaiTienDo, tienCongThucTe);
     }
 
     public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
             String tenDichVu, String maNVKyThuat, String tenKyThuatVien,
-            String trangThaiTienDo, double tienCongThucTe) {
+            TrangThaiTienDo trangThaiTienDo, double tienCongThucTe) {
         setMaPhieuTNSC(maPhieuTNSC);
         setMaDichVu(maDichVu);
         setTenDichVu(tenDichVu);
@@ -91,12 +86,12 @@ public class ChiTietSuaChua_DichVu {
         this.tenKyThuatVien = tenKyThuatVien;
     }
 
-    public String getTrangThaiTienDo() {
+    public TrangThaiTienDo getTrangThaiTienDo() {
         return trangThaiTienDo;
     }
 
-    public void setTrangThaiTienDo(String trangThaiTienDo) {
-        if (!Arrays.asList(TIEN_DO).contains(trangThaiTienDo)) {
+    public void setTrangThaiTienDo(TrangThaiTienDo trangThaiTienDo) {
+        if (trangThaiTienDo == null) {
             throw new IllegalArgumentException("Trạng thái tiến độ dịch vụ không hợp lệ.");
         }
         this.trangThaiTienDo = trangThaiTienDo;

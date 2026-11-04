@@ -2,18 +2,10 @@ package entity;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 public class PhieuTiepNhanVaSuaChua {
-    public static final String[] UU_TIEN = {"Thường", "Khẩn"};
-    public static final String[] TRANG_THAI = {
-            "Chờ kiểm tra", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"
-    };
-    /** Không nằm trong TRANG_THAI vì chỉ đạt được qua thao tác Hủy phiếu. */
-    public static final String DA_HUY = "Đã hủy";
-
     private String maPhieuTNSC;
     private String yeuCauBanDau;
     private int soKm;
@@ -22,7 +14,7 @@ public class PhieuTiepNhanVaSuaChua {
     private String taiSanTrenXe;
     private LocalDateTime thoiGianTiepNhan;
     private LocalDateTime thoiGianDuKien;
-    private String trangThai;
+    private TrangThaiPhieu trangThai;
     private String bienSo;
     private String maNVLapPhieu;
     private String tenKhachHang;
@@ -32,7 +24,7 @@ public class PhieuTiepNhanVaSuaChua {
     private String ghiChu = "";
     private String phuTungDuKien = "";
     private String ghiChuKyThuat = "";
-    private String uuTien = UU_TIEN[0];
+    private MucUuTien uuTien = MucUuTien.THUONG;
     private String maNVPhuTrach;
     private String sdtKhachHang;
 
@@ -56,7 +48,7 @@ public class PhieuTiepNhanVaSuaChua {
     public PhieuTiepNhanVaSuaChua(String maPhieuTNSC, String yeuCauBanDau,
                                   int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
                                   LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
-                                  String trangThai, String bienSo, String maNVLapPhieu) {
+                                  TrangThaiPhieu trangThai, String bienSo, String maNVLapPhieu) {
         this(maPhieuTNSC, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc,
                 taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien,
                 trangThai, bienSo, maNVLapPhieu, null, null, null);
@@ -65,7 +57,7 @@ public class PhieuTiepNhanVaSuaChua {
     public PhieuTiepNhanVaSuaChua(String maPhieuTNSC, String yeuCauBanDau,
                                   int soKm, double mucNhienLieu, String trayXuoc, String taiSanTrenXe,
                                   LocalDateTime thoiGianTiepNhan, LocalDateTime thoiGianDuKien,
-                                  String trangThai, String bienSo, String maNVLapPhieu,
+                                  TrangThaiPhieu trangThai, String bienSo, String maNVLapPhieu,
                                   String tenKhachHang, String thongTinXe, String tenNVLapPhieu) {
         setMaPhieuTNSC(maPhieuTNSC);
         setYeuCauBanDau(yeuCauBanDau);
@@ -162,12 +154,12 @@ public class PhieuTiepNhanVaSuaChua {
         this.thoiGianDuKien = thoiGianDuKien;
     }
 
-    public String getTrangThai() {
+    public TrangThaiPhieu getTrangThai() {
         return trangThai;
     }
 
-    public void setTrangThai(String trangThai) {
-        if (!DA_HUY.equals(trangThai) && !Arrays.asList(TRANG_THAI).contains(trangThai)) {
+    public void setTrangThai(TrangThaiPhieu trangThai) {
+        if (trangThai == null) {
             throw new IllegalArgumentException("Trạng thái phiếu tiếp nhận không hợp lệ.");
         }
         this.trangThai = trangThai;
@@ -219,15 +211,17 @@ public class PhieuTiepNhanVaSuaChua {
         this.tenNVLapPhieu = tenNVLapPhieu;
     }
 
-    public static boolean coTheChuyen(String cu, String moi) {
-        switch (String.valueOf(cu)) {
-            case "Chờ kiểm tra":
-            case "Chờ sửa":
-                return "Đang sửa".equals(moi) || "Chờ phụ tùng".equals(moi);
-            case "Đang sửa":
-                return "Chờ phụ tùng".equals(moi) || "Hoàn thành".equals(moi);
-            case "Chờ phụ tùng":
-                return "Đang sửa".equals(moi);
+    public static boolean coTheChuyen(TrangThaiPhieu cu, TrangThaiPhieu moi) {
+        if (cu == null) {
+            return false;
+        }
+        switch (cu) {
+            case CHO_KIEM_TRA:
+                return moi == TrangThaiPhieu.DANG_SUA || moi == TrangThaiPhieu.CHO_PHU_TUNG;
+            case DANG_SUA:
+                return moi == TrangThaiPhieu.CHO_PHU_TUNG || moi == TrangThaiPhieu.HOAN_THANH;
+            case CHO_PHU_TUNG:
+                return moi == TrangThaiPhieu.DANG_SUA;
             default:
                 return false;
         }
@@ -265,12 +259,12 @@ public class PhieuTiepNhanVaSuaChua {
         this.ghiChuKyThuat = ghiChuKyThuat == null ? "" : ghiChuKyThuat.trim();
     }
 
-    public String getUuTien() {
+    public MucUuTien getUuTien() {
         return uuTien;
     }
 
-    public void setUuTien(String uuTien) {
-        if (!Arrays.asList(UU_TIEN).contains(uuTien)) {
+    public void setUuTien(MucUuTien uuTien) {
+        if (uuTien == null) {
             throw new IllegalArgumentException("Mức ưu tiên không hợp lệ.");
         }
         this.uuTien = uuTien;
@@ -379,26 +373,9 @@ public class PhieuTiepNhanVaSuaChua {
         return getThongTinXeNgan() + " • " + (bienSo == null ? "" : bienSo);
     }
 
-    public int getPhanTramTienDo() {
-        if ("Hoàn thành".equalsIgnoreCase(trangThai)) return 100;
-        if ("Chờ kiểm tra".equalsIgnoreCase(trangThai) || "Chờ sửa".equalsIgnoreCase(trangThai)) {
-            if (tongSoHangMuc > 0 && soHangMucHoanThanh > 0) {
-                return Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
-            }
-            return 0;
-        }
-        if (tongSoHangMuc > 0) {
-            int pct = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
-            if ("Đang sửa".equalsIgnoreCase(trangThai) && pct == 0) return 50;
-            return pct;
-        }
-        return "Đang sửa".equalsIgnoreCase(trangThai) ? 50 : 0;
-    }
-
     /** Hiển thị nhãn trạng thái đồng nhất cho riêng phân hệ Kỹ thuật viên */
     public String getTrangThaiHienThiKTV() {
-        if ("Chờ kiểm tra".equalsIgnoreCase(trangThai)) return "Chờ sửa";
-        return trangThai == null ? "Chờ sửa" : trangThai;
+        return trangThai == null || trangThai == TrangThaiPhieu.CHO_KIEM_TRA ? "Chờ sửa" : trangThai.getText();
     }
 
     @Override

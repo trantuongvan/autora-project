@@ -4,18 +4,14 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 public class KhuyenMai {
-    public static final String HINH_THUC_PHAN_TRAM = "Giảm %";
-    public static final String HINH_THUC_TIEN_MAT = "Giảm tiền mặt";
-    public static final String[] PHAM_VI = {"Tổng hóa đơn", "Nhóm dịch vụ", "Phụ tùng"};
-
     private String maKM;
     private String tenChuongTrinh;
-    private String hinhThuc;
+    private HinhThucKhuyenMai hinhThuc;
     private double giaTri;
     private LocalDate thoiGianBatDau;
     private LocalDate thoiGianKetThuc;
     private boolean trangThai;
-    private String phamViApDung = PHAM_VI[0];
+    private PhamViKhuyenMai phamViApDung = PhamViKhuyenMai.TONG_HOA_DON;
     private Integer soLuotToiDa;
     private int soLuotDaDung;
     private String ghiChu = "";
@@ -27,7 +23,7 @@ public class KhuyenMai {
         setMaKM(maKM);
     }
 
-    public KhuyenMai(String maKM, String tenChuongTrinh, String hinhThuc,
+    public KhuyenMai(String maKM, String tenChuongTrinh, HinhThucKhuyenMai hinhThuc,
             double giaTri, LocalDate thoiGianBatDau,
             LocalDate thoiGianKetThuc, boolean trangThai) {
         setMaKM(maKM);
@@ -62,13 +58,12 @@ public class KhuyenMai {
         this.tenChuongTrinh = tenChuongTrinh.trim();
     }
 
-    public String getHinhThuc() {
+    public HinhThucKhuyenMai getHinhThuc() {
         return hinhThuc;
     }
 
-    public void setHinhThuc(String hinhThuc) {
-        if (!HINH_THUC_PHAN_TRAM.equals(hinhThuc)
-                && !HINH_THUC_TIEN_MAT.equals(hinhThuc)) {
+    public void setHinhThuc(HinhThucKhuyenMai hinhThuc) {
+        if (hinhThuc == null) {
             throw new IllegalArgumentException("Hình thức khuyến mãi không hợp lệ.");
         }
         this.hinhThuc = hinhThuc;
@@ -115,12 +110,12 @@ public class KhuyenMai {
         this.trangThai = trangThai;
     }
 
-    public String getPhamViApDung() {
+    public PhamViKhuyenMai getPhamViApDung() {
         return phamViApDung;
     }
 
-    public void setPhamViApDung(String phamViApDung) {
-        if (!java.util.Arrays.asList(PHAM_VI).contains(phamViApDung)) {
+    public void setPhamViApDung(PhamViKhuyenMai phamViApDung) {
+        if (phamViApDung == null) {
             throw new IllegalArgumentException("Phạm vi áp dụng không hợp lệ.");
         }
         this.phamViApDung = phamViApDung;
@@ -156,14 +151,13 @@ public class KhuyenMai {
     }
 
     public void kiemTraHopLe() throws IllegalArgumentException {
-        if (!HINH_THUC_PHAN_TRAM.equals(hinhThuc)
-                && !HINH_THUC_TIEN_MAT.equals(hinhThuc)) {
+        if (hinhThuc == null) {
             throw new IllegalArgumentException("Hình thức khuyến mãi không hợp lệ.");
         }
         if (!Double.isFinite(giaTri) || giaTri <= 0) {
             throw new IllegalArgumentException("Giá trị khuyến mãi phải là số hữu hạn lớn hơn 0.");
         }
-        if (HINH_THUC_PHAN_TRAM.equals(hinhThuc) && giaTri > 100) {
+        if (hinhThuc == HinhThucKhuyenMai.PHAN_TRAM && giaTri > 100) {
             throw new IllegalArgumentException("Phần trăm giảm giá không được vượt quá 100.");
         }
         if (thoiGianBatDau == null || thoiGianKetThuc == null) {
