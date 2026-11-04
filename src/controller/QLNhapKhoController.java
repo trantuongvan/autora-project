@@ -50,6 +50,7 @@ public class QLNhapKhoController {
 
     private NhanVien thuKhoHienTai;
     private List<PhieuNhapKho> danhSachPhieuNhap = new ArrayList<>();
+    private boolean daTai;
 
     private final List<ChiTietNhapKho> dsChiTietModal = new ArrayList<>();
     private final List<JTextField> dsInputSoLuong = new ArrayList<>();
@@ -102,7 +103,7 @@ public class QLNhapKhoController {
 
         initHeaderAndNCC();
         initController();
-        loadData();
+        UIComponents.goiYChuaTai(view.getTblPhieuNhap(), true);
     }
 
     private void initHeaderAndNCC() {
@@ -150,22 +151,9 @@ public class QLNhapKhoController {
             }
         });
 
-        DocumentListener docFilter = new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadData();
-            }
-        };
-        view.getTxtTimPhieu().getDocument().addDocumentListener(docFilter);
-        view.getTxtTuNgay().getDocument().addDocumentListener(docFilter);
-        view.getTxtDenNgay().getDocument().addDocumentListener(docFilter);
-        view.getCboLocNCC().addActionListener(e -> loadData());
-        view.getBtnLamMoi().addActionListener(e -> loadData());
+        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
+        view.getTxtTimPhieu().addActionListener(e -> loadData());
+        view.getBtnTaiDuLieu().addActionListener(e -> loadData());
 
         view.getBtnTaoPhieuMoi().addActionListener(e -> moPopupLapPhieuNhap(null));
         view.getBtnNhapExcel().addActionListener(e -> nhapTuExcel());
@@ -187,7 +175,16 @@ public class QLNhapKhoController {
         });
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadData();
+        }
+    }
+
     public void loadData() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblPhieuNhap(), false);
         try {
             List<PhieuNhapKho> all = nhapKhoDao.search("", "Tất cả", null, null);
             String kw = view.getTxtTimPhieu().getText();
@@ -625,7 +622,7 @@ public class QLNhapKhoController {
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             view.hienThiModalLapPhieu(false);
-            loadData();
+            taiLai();
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu nhập kho: " + ex.getMessage(),

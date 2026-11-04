@@ -28,6 +28,7 @@ public class TroGiup extends JPanel {
                 "4. Khi phiếu Hoàn thành, lễ tân lập hóa đơn và thu tiền tại Hóa đơn & Thanh toán.",
                 "5. Lễ tân bàn giao xe cho khách tại Bàn giao xe."), 0);
         noiDung.them(the("Thao tác trên danh sách", Loai.CLIPBOARD, UIConstants.PRIMARY,
+                "Danh sách chỉ hiện dữ liệu khi bấm Tải dữ liệu, kể cả sau khi đổi ô tìm kiếm hoặc bộ lọc (nhấn Enter ở ô tìm kiếm cũng tải). Sau khi lưu hoặc xóa, danh sách đã tải sẽ tự cập nhật.",
                 "Khách hàng, Hồ sơ xe, Nhân viên: bấm vào dòng để hiện dữ liệu lên biểu mẫu, sửa rồi bấm lưu.",
                 "Hóa đơn, Phiếu sửa chữa: bấm đúp vào dòng để mở chi tiết.",
                 "Biểu tượng thùng rác dùng để xóa. Xe đã có phiếu sửa chữa không thể xóa."), 16);
@@ -40,7 +41,7 @@ public class TroGiup extends JPanel {
                 "Dòng hợp lệ được đưa lên phiếu để kiểm tra trước khi lưu; mã đã có trên phiếu sẽ lấy số lượng và đơn giá theo file. Dòng sai được liệt kê và không được thêm."), 16);
         noiDung.them(the("Phím tắt", Loai.KEY, UIConstants.PRIMARY,
                 "F1: mở trang Trợ giúp.",
-                "F5: làm mới, Ctrl+F: tới ô tìm kiếm (trên các màn hình có ghi chú ở tiêu đề).",
+                "F5: tải dữ liệu (giống nút Tải dữ liệu), Ctrl+F: tới ô tìm kiếm (trên các màn hình có ghi chú ở tiêu đề).",
                 "Ctrl+1 đến Ctrl+9: mở mục menu theo thứ tự.",
                 "Delete: xóa hồ sơ xe hoặc hủy phiếu đang chọn."), 16);
         noiDung.them(the("Tự động phân công", Loai.WRENCH, UIConstants.PRIMARY,

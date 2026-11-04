@@ -39,6 +39,7 @@ public class QLTienDoSuaChuaController {
     private String tabTrangThaiDangChon = "Tất cả";
     private List<PhieuTiepNhanVaSuaChua> danhSachPhieu = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieuDangChon;
+    private boolean daTai;
 
     private final List<ChiTietYeuCauXuatKho> danhSachPhuTungYeuCau = new ArrayList<>();
     private final List<JTextField> danhSachOInputSoLuong = new ArrayList<>();
@@ -54,7 +55,7 @@ public class QLTienDoSuaChuaController {
 
         initKyThuatVien();
         initController();
-        loadDanhSachPhieu(null);
+        hienChuaTai();
     }
 
     private void initKyThuatVien() {
@@ -74,7 +75,7 @@ public class QLTienDoSuaChuaController {
         view.getBtnMenuTrangChu().addActionListener(e -> dieuHuongVeTrangChu());
         view.getBtnMenuTienDo().addActionListener(e -> {
             view.hienThiManHinh(QLTienDoSuaChua.CARD_TIEN_DO);
-            loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null);
+            taiLai(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null);
         });
 
         view.getBtnDangXuat().addActionListener(e -> {
@@ -86,12 +87,9 @@ public class QLTienDoSuaChuaController {
             }
         });
 
-        // 1. Tìm kiếm phiếu sửa chữa realtime
-        view.getTxtTimPhieu().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null); }
-            @Override public void removeUpdate(DocumentEvent e) { loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null); }
-            @Override public void changedUpdate(DocumentEvent e) { loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null); }
-        });
+        // 1. Tìm kiếm phiếu sửa chữa: chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter
+        view.getBtnTaiDuLieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
+        view.getTxtTimPhieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
 
         // 2. Các nút pill lọc trạng thái
         JButton[] pills = view.getBtnLocTrangThai();
@@ -103,7 +101,6 @@ public class QLTienDoSuaChuaController {
                 for (int j = 0; j < pills.length; j++) {
                     view.capNhatStyleNutPill(pills[j], j == idx);
                 }
-                loadDanhSachPhieu(null);
             });
         }
 
@@ -132,7 +129,7 @@ public class QLTienDoSuaChuaController {
         // 7. Nút "← Quay lại" từ màn hình Lập phiếu yêu cầu phụ tùng về Quản lý tiến độ
         view.getBtnQuayLai().addActionListener(e -> {
             view.hienThiManHinh(QLTienDoSuaChua.CARD_TIEN_DO);
-            loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null);
+            taiLai(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null);
         });
 
         // 8. Nút "+ Thêm phụ tùng" & nhấn Enter trên ô tìm kiếm phụ tùng
@@ -163,7 +160,26 @@ public class QLTienDoSuaChuaController {
         }
     }
 
+    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
+    private void hienChuaTai() {
+        JPanel container = view.getPnlDanhSachPhieu();
+        container.removeAll();
+        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
+        container.add(lblGoiY);
+        phieuDangChon = null;
+        hienThiChiTietPhieu(null);
+    }
+
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai(String maPhieuCanChon) {
+        if (daTai) {
+            loadDanhSachPhieu(maPhieuCanChon);
+        }
+    }
+
     public void loadDanhSachPhieu(String maPhieuCanChon) {
+        daTai = true;
         try {
             String kw = view.getTxtTimPhieu().getText();
             danhSachPhieu = tienDoDao.searchPhieuĐượcGiao("", kw, tabTrangThaiDangChon);
@@ -297,7 +313,7 @@ public class QLTienDoSuaChuaController {
         view.getPnlHopLoiTrangThai().setVisible(false);
         try {
             tienDoDao.capNhatTrangThaiPhieu(phieuDangChon.getMaPhieuTNSC(), trangThaiMoi, "");
-            loadDanhSachPhieu(phieuDangChon.getMaPhieuTNSC());
+            taiLai(phieuDangChon.getMaPhieuTNSC());
             JOptionPane.showMessageDialog(view,
                     "Đã cập nhật trạng thái phiếu " + phieuDangChon.getMaPhieuTNSC() + " sang '" + trangThaiMoi + "'.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -345,7 +361,7 @@ public class QLTienDoSuaChuaController {
                     return;
                 }
                 tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi);
-                loadDanhSachPhieu(ct.getPhieu().getMaPhieuTNSC());
+                taiLai(ct.getPhieu().getMaPhieuTNSC());
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -657,7 +673,7 @@ public class QLTienDoSuaChuaController {
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             view.hienThiManHinh(QLTienDoSuaChua.CARD_TIEN_DO);
-            loadDanhSachPhieu(phieuDangChon.getMaPhieuTNSC());
+            taiLai(phieuDangChon.getMaPhieuTNSC());
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu yêu cầu phụ tùng: " + ex.getMessage(),

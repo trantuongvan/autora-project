@@ -49,6 +49,7 @@ public class QLTienDoSuaChua extends JPanel {
             true
     );
     private final String[] CAC_TAB_LOC = {"Tất cả", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"};
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton[] btnLocTrangThai = new JButton[CAC_TAB_LOC.length];
     private final JPanel pnlDanhSachPhieu = new JPanel();
 
@@ -296,7 +297,10 @@ public class QLTienDoSuaChua extends JPanel {
         pnlTopTrai.them(UIComponents.label("Phiếu được giao", UIConstants.FONT_SECTION_TITLE.deriveFont(18f), UIConstants.TEXT_DARK), 0);
 
         fTimPhieu.setPreferredSize(new Dimension(100, 40));
-        pnlTopTrai.them(fTimPhieu, 12);
+        JPanel hangTim = UIComponents.trong(new BorderLayout(8, 0));
+        hangTim.add(fTimPhieu, BorderLayout.CENTER);
+        hangTim.add(btnTaiDuLieu, BorderLayout.EAST);
+        pnlTopTrai.them(hangTim, 12);
 
         // Dùng WrapFlowLayout để các nhãn lọc ("Hoàn thành") tự động rớt xuống dòng dưới
         JPanel pnlFilterPills = UIComponents.trong(new WrapFlowLayout(FlowLayout.LEFT, 6, 6));
@@ -858,6 +862,7 @@ public class QLTienDoSuaChua extends JPanel {
     public JButton getBtnMenuTienDo() { return btnMenuTienDo; }
     public JButton getBtnDangXuat() { return btnDangXuat; }
     public JTextField getTxtTimPhieu() { return fTimPhieu.getTextField(); }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public String[] getCacTabLoc() { return CAC_TAB_LOC; }
     public JButton[] getBtnLocTrangThai() { return btnLocTrangThai; }
     public JPanel getPnlDanhSachPhieu() { return pnlDanhSachPhieu; }

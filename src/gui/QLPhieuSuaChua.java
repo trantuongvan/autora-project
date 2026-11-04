@@ -24,8 +24,8 @@ public class QLPhieuSuaChua extends JPanel {
     private final JComboBox<Object> cboLocTrangThai = new JComboBox<>();
     private final JTextField txtTuNgay = new PlaceholderField("Từ ngày");
     private final JTextField txtDenNgay = new PlaceholderField("Đến ngày");
-    private final JButton btnLoc = UIComponents.nutChinh("Lọc", UIConstants.PRIMARY);
-    private final JButton btnLamMoi = UIComponents.nutPhu("Làm mới");
+    private final JButton btnLoc = UIComponents.nutTaiDuLieu();
+    private final JButton btnLamMoi = UIComponents.nutPhu("Xóa bộ lọc");
     private final JButton btnTaoPhieu = UIComponents.nutChinh("+  Tiếp nhận xe mới", UIConstants.PRIMARY);
     private final JLabel lblLoiLoc = UIComponents.errorLabel();
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(

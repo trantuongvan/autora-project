@@ -8,8 +8,6 @@ import gui.QLKhuyenMai;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -37,34 +35,19 @@ public class QLKhuyenMaiController {
     private List<KhuyenMai> ketQuaTimKiem = new ArrayList<>();
     // Đánh số phiên tải để bỏ qua kết quả của lần tìm kiếm đã cũ
     private int phienBan = 0;
+    private boolean daTai;
 
     public QLKhuyenMaiController(QLKhuyenMai view) {
         this.view = view;
         initController();
-        taiDuLieu();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
         view.getBtnTaoMoi().addActionListener(e -> moFormThem());
         view.getBtnXuatExcel().addActionListener(e -> xuatExcel());
-        view.getCboLocTinhTrang().addActionListener(e -> hienThiBang());
-        view.getCboLocHinhThuc().addActionListener(e -> taiDuLieu());
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-        });
+        view.getBtnTaiDuLieu().addActionListener(e -> taiDuLieu());
+        view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -113,7 +96,16 @@ public class QLKhuyenMaiController {
     // Tải dữ liệu
     // ==========================================================
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            taiDuLieu();
+        }
+    }
+
     private void taiDuLieu() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int phien = ++phienBan;
         final String tuKhoa = view.getTxtTimKiem().getText().trim();
         final Object chonHinhThuc = view.getCboLocHinhThuc().getSelectedItem();
@@ -307,7 +299,7 @@ public class QLKhuyenMaiController {
                 try {
                     get();
                     JOptionPane.showMessageDialog(view, "Thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -330,7 +322,7 @@ public class QLKhuyenMaiController {
                 try {
                     get();
                     JOptionPane.showMessageDialog(view, "Thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -374,7 +366,7 @@ public class QLKhuyenMaiController {
                     get();
                     hopThoai.dispose();
                     JOptionPane.showMessageDialog(view, "Lưu chương trình khuyến mãi thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -418,7 +410,7 @@ public class QLKhuyenMaiController {
                     get();
                     hopThoai.dispose();
                     JOptionPane.showMessageDialog(view, "Lưu chương trình khuyến mãi thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {

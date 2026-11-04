@@ -30,6 +30,7 @@ public class QLNhanVien extends JPanel {
 
     // --- Danh sách ---
     private final JButton btnThemNhanVien = UIComponents.nutChinh("+  Thêm nhân viên", UIConstants.ROLE_MANAGER);
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JTextField txtTimKiem;
     private final JComboBox<Object> cboLocViTri = new JComboBox<>();
     private final JTable tblDanhSach;
@@ -96,6 +97,7 @@ public class QLNhanVien extends JPanel {
         trai.add(timKiem);
         JPanel phai = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         phai.add(cboLocViTri);
+        phai.add(btnTaiDuLieu);
         hangTim.add(trai, BorderLayout.WEST);
         hangTim.add(phai, BorderLayout.EAST);
         noiDung.them(hangTim, 18);
@@ -421,6 +423,7 @@ public class QLNhanVien extends JPanel {
     // --- Getter cho Controller ---
     public JButton getBtnThemNhanVien() { return btnThemNhanVien; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public JComboBox<Object> getCboLocViTri() { return cboLocViTri; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }

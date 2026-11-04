@@ -12,8 +12,6 @@ import gui.QLNhanVien;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -31,6 +29,7 @@ public class QLNhanVienController {
     private String selectedId;
     private int loadVersion;
     private boolean loadErrorShown;
+    private boolean daTai;
 
     public QLNhanVienController(QLNhanVien view) {
         this(view, tenDangNhapHienTai());
@@ -42,7 +41,7 @@ public class QLNhanVienController {
                 ? "system" : tenDangNhap.trim();
         taiDanhMuc();
         initController();
-        load();
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void taiDanhMuc() {
@@ -62,23 +61,8 @@ public class QLNhanVienController {
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                load();
-            }
-        });
-        view.getCboLocViTri().addActionListener(e -> load());
+        view.getTxtTimKiem().addActionListener(e -> load());
+        view.getBtnTaiDuLieu().addActionListener(e -> load());
         view.getBtnLuu().addActionListener(e -> save());
         // Tick "Làm được" thì điền sẵn số phút chuẩn của dịch vụ.
         view.getKyNangModel().addTableModelListener(e -> {
@@ -124,6 +108,8 @@ public class QLNhanVienController {
     }
 
     private void load() {
+        daTai = true;
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int version = ++loadVersion;
         final String keyword = view.getTxtTimKiem().getText();
         final Object chonViTri = view.getCboLocViTri().getSelectedItem();
@@ -293,7 +279,7 @@ public class QLNhanVienController {
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
             selectedId = null;
-            load();
+            if (daTai) load();
         } catch (IllegalArgumentException ex) {
             if (view.getTxtHoTen().getText().trim().isEmpty()) {
                 view.hienLoiHoTen(ex.getMessage());
@@ -322,7 +308,7 @@ public class QLNhanVienController {
             view.xoaTrangForm();
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
-            load();
+            if (daTai) load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
                     "Không thể xóa nhân viên đang được tham chiếu bởi dữ liệu khác.\n"

@@ -8,8 +8,6 @@ import gui.QLPhieuSuaChua;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -32,27 +30,23 @@ public class QLPhieuSuaChuaController {
     private final DieuHuongPhieu dieuHuong;
     private final PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
     private int phienBanTai;
+    private boolean daTai;
 
     public QLPhieuSuaChuaController(QLPhieuSuaChua view, DieuHuongPhieu dieuHuong) {
         this.view = view;
         this.dieuHuong = dieuHuong;
         initController();
-        taiDanhSach();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
-        });
+        view.getTxtTimKiem().addActionListener(e -> taiDanhSach());
         view.getBtnLoc().addActionListener(e -> taiDanhSach());
         view.getBtnLamMoi().addActionListener(e -> {
             view.getTxtTimKiem().setText("");
             view.getCboLocTrangThai().setSelectedIndex(0);
             view.getTxtTuNgay().setText("");
             view.getTxtDenNgay().setText("");
-            taiDanhSach();
         });
         view.getBtnTaoPhieu().addActionListener(e -> dieuHuong.moTiepNhanMoi());
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
@@ -110,6 +104,13 @@ public class QLPhieuSuaChuaController {
         return String.valueOf(view.getTableModel().getValueAt(dongModel, 0));
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    public void taiLai() {
+        if (daTai) {
+            taiDanhSach();
+        }
+    }
+
     public void taiDanhSach() {
         LocalDate tuNgay;
         LocalDate denNgay;
@@ -125,6 +126,8 @@ public class QLPhieuSuaChuaController {
             return;
         }
         view.hienLoiLoc(null);
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
 
         String tuKhoa = view.getTxtTimKiem().getText();
         Object chon = view.getCboLocTrangThai().getSelectedItem();
@@ -181,7 +184,7 @@ public class QLPhieuSuaChuaController {
                         "Không thể hủy", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            taiDanhSach();
+            taiLai();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view, "Không thể hủy phiếu.\n" + ex.getMessage(), "Lỗi dữ liệu",
                     JOptionPane.ERROR_MESSAGE);

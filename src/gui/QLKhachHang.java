@@ -33,7 +33,7 @@ public class QLKhachHang extends JPanel {
     private final JComboBox<String> cboLocGhiNo = new JComboBox<>(new String[] {TAT_CA, DUOC_PHEP, KHONG});
     private final JComboBox<String> cboLocLichHen =
             new JComboBox<>(new String[] {TAT_CA, CO_LICH_HEN, KHONG_LICH_HEN});
-    private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
+    private final JButton btnTim = UIComponents.nutTaiDuLieu();
     private final JButton btnThem = UIComponents.nutChinh("+  Thêm khách hàng", UIConstants.PRIMARY);
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(
             "Mã KH", "Họ tên", "SĐT", "Địa chỉ", "Email / MST", "Loại KH", "Ghi nợ", "Xe", "Lịch hẹn", "Thao tác");
