@@ -256,6 +256,17 @@ public class HoaDon_Dao {
                 }
             }
         }
+        // Phụ tùng chỉ vào hóa đơn sau khi duyệt xuất kho: lập lúc này sẽ tính thiếu tiền phụ tùng.
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ? AND trangThai = N'Chờ xuất'")) {
+            statement.setString(1, maPhieu);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    throw new SQLException("Phiếu " + maPhieu + " còn yêu cầu phụ tùng chờ xuất kho. "
+                            + "Hãy duyệt hoặc từ chối yêu cầu trước khi lập hóa đơn.");
+                }
+            }
+        }
         if (coHoaDonHieuLuc(connection, maPhieu, "WITH (UPDLOCK, HOLDLOCK)")) {
             throw new SQLException("Phiếu " + maPhieu + " đã có hóa đơn còn hiệu lực.");
         }

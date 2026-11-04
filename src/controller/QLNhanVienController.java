@@ -299,7 +299,7 @@ public class QLNhanVienController {
             return;
         }
         try {
-            if (!dao.delete(selectedId)) {
+            if (!dao.delete(selectedId, PhienDangNhap.getHienTai().getTenDangNhap())) {
                 throw new SQLException("Không tìm thấy nhân viên.");
             }
             view.anXacNhanXoa();
@@ -309,6 +309,8 @@ public class QLNhanVienController {
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
             if (daTai) load();
+        } catch (IllegalStateException ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
                     "Không thể xóa nhân viên đang được tham chiếu bởi dữ liệu khác.\n"

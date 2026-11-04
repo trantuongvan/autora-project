@@ -37,7 +37,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             + "JOIN NhanVien n ON n.maNV = p.maNV_LapPhieu "
             + "LEFT JOIN NhanVien pt ON pt.maNV = p.maNV_PhuTrach ";
 
-    private static final String NOT_LOCKED =
+    static final String NOT_LOCKED =
             "NOT EXISTS (SELECT 1 FROM HoaDon h "
             + "WHERE h.maPhieuTNSC = p.maPhieuTNSC "
             + "AND h.trangThaiThanhToan <> N'Đã hủy') AND p.trangThai <> N'Đã hủy'";
@@ -359,25 +359,36 @@ public class PhieuTiepNhanVaSuaChua_Dao {
     }
 
     /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ, nên hai máy cùng sửa không vượt luồng được. */
-    public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi) throws SQLException {
+    public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi, String tenDangNhap) throws SQLException {
         if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
             return false;
         }
         String sql = "UPDATE p SET trangThai = ? "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "WHERE p.maPhieuTNSC = ? AND p.trangThai = ? AND " + NOT_LOCKED;
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, moi.getText());
-            statement.setString(2, ma);
-            statement.setString(3, cu.getText());
-            return statement.executeUpdate() == 1;
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, moi.getText());
+                statement.setString(2, ma);
+                statement.setString(3, cu.getText());
+                if (statement.executeUpdate() != 1) {
+                    connection.rollback();
+                    return false;
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Cập nhật trạng thái phiếu", ma, cu.getText(), moi.getText());
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
         }
     }
 
     /**
      * Hủy phiếu: giữ lại dữ liệu để đối soát thay vì xóa, và ghi nhật ký trong cùng transaction.
-     * Trả về false khi phiếu đã hủy hoặc đã có hóa đơn, phiếu bàn giao, yêu cầu xuất kho.
+     * Trả về false khi phiếu đã hủy hoặc đã có hóa đơn, phiếu bàn giao, yêu cầu xuất kho chưa bị từ chối.
      */
     public boolean huy(String ma, String tenDangNhap) throws SQLException {
         String sqlCu = "SELECT trangThai FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = ?";
@@ -388,7 +399,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao b "
                 + "WHERE b.maPhieuTNSC = p.maPhieuTNSC) "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho y "
-                + "WHERE y.maPhieuTNSC = p.maPhieuTNSC)";
+                + "WHERE y.maPhieuTNSC = p.maPhieuTNSC AND y.trangThai <> N'Từ chối')";
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try (PreparedStatement doc = connection.prepareStatement(sqlCu);

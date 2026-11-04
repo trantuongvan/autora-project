@@ -235,6 +235,23 @@ public class TaiKhoan_Dao {
         }
     }
 
+    /** Gọi đầu transaction xóa nhân viên: tài khoản bị xóa theo (ON DELETE CASCADE) nên cũng phải giữ Chủ cửa hàng cuối. */
+    void chanChuCuoiCuaNhanVien(Connection connection, String maNV) throws SQLException {
+        int soChu = demChuDangHoatDong(connection);
+        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maNV);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    TaiKhoan taiKhoan = new TaiKhoan();
+                    taiKhoan.setVaiTro(VaiTro.fromDb(rs.getString(1)));
+                    taiKhoan.setTrangThai(rs.getBoolean(2));
+                    chanChuCuoi(taiKhoan, soChu);
+                }
+            }
+        }
+    }
+
     private void chanChuCuoi(TaiKhoan taiKhoan, int soChuDangHoatDong) {
         if (taiKhoan.getVaiTro() == VaiTro.CHU_CUA_HANG && taiKhoan.isTrangThai()
                 && soChuDangHoatDong <= 1) {

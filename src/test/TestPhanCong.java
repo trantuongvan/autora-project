@@ -357,7 +357,7 @@ public class TestPhanCong {
         // 09:00 trong ca sáng, 15 phút: xong 09:15, sớm hơn NV0006 (vào ca 13:00).
         dung("KTV mới có kỹ năng và ca được scheduler chọn", ma.equals(tho(chon(D9, "DV0006"), "DV0006")));
         dung("Trước khi xóa có dòng kỹ năng", dem("SELECT COUNT(*) FROM NhanVien_DichVu WHERE maNV = '" + ma + "'") == 1);
-        dung("Xóa nhân viên", dao.delete(ma));
+        dung("Xóa nhân viên", dao.delete(ma, "admin"));
         dung("Xóa nhân viên xóa luôn dòng kỹ năng", dem("SELECT COUNT(*) FROM NhanVien_DichVu WHERE maNV = '" + ma + "'") == 0);
     }
 

@@ -251,12 +251,37 @@ public class NhanVien_Dao {
                 + (diaChi == null ? "" : diaChi) + "; Vị trí=" + viTri;
     }
 
-    public boolean delete(String id) throws SQLException {
-        String sql = "DELETE FROM NhanVien WHERE maNV = ?";
-        try (Connection connection = ConnectDB.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, id);
-            return statement.executeUpdate() == 1;
+    /** Tài khoản của nhân viên bị xóa theo; ném IllegalStateException nếu đó là Chủ cửa hàng đang hoạt động cuối cùng. */
+    public boolean delete(String id, String tenDangNhap) throws SQLException {
+        String sqlCu = "SELECT hoTen, soDienThoai, diaChi, viTriLamViec "
+                + "FROM NhanVien WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                new TaiKhoan_Dao().chanChuCuoiCuaNhanVien(connection, id);
+                String oldValue;
+                try (PreparedStatement statement = connection.prepareStatement(sqlCu)) {
+                    statement.setString(1, id);
+                    try (ResultSet result = statement.executeQuery()) {
+                        if (!result.next()) {
+                            connection.rollback();
+                            return false;
+                        }
+                        oldValue = giaTri(result.getString("hoTen"), result.getString("soDienThoai"),
+                                result.getString("diaChi"), result.getString("viTriLamViec"));
+                    }
+                }
+                try (PreparedStatement statement = connection.prepareStatement("DELETE FROM NhanVien WHERE maNV = ?")) {
+                    statement.setString(1, id);
+                    statement.executeUpdate();
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Xóa nhân viên", id, oldValue, null);
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
         }
     }
 

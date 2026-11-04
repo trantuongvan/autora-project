@@ -265,7 +265,7 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> phieuDao.capNhatTrangThai(maPhieu, hienTai, trangThai));
+        ghi(() -> phieuDao.capNhatTrangThai(maPhieu, hienTai, trangThai, PhienDangNhap.getHienTai().getTenDangNhap()));
     }
 
     private void huyPhieu() {

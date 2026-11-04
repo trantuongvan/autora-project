@@ -3,6 +3,7 @@ package controller;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
+import entity.PhienDangNhap;
 import entity.ChiTietYeuCauXuatKho;
 import entity.NhanVien;
 import entity.PhieuYeuCauXuatKho;
@@ -344,7 +345,8 @@ public class QLDuyetXuatKhoController {
                     yeuCauDangChon.getMaPhieuYC(),
                     yeuCauDangChon.getPhieu().getMaPhieuTNSC(),
                     maThuKho,
-                    danhSachChiTiet
+                    danhSachChiTiet,
+                    PhienDangNhap.getHienTai().getTenDangNhap()
             );
             JOptionPane.showMessageDialog(view,
                     "Xuất kho thành công cho phiếu " + yeuCauDangChon.getMaPhieuYC() + "!\nSố lượng tồn kho đã được trừ tự động.",
@@ -365,7 +367,11 @@ public class QLDuyetXuatKhoController {
         if (cf == JOptionPane.YES_OPTION) {
             try {
                 String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
-                yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho);
+                if (!yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho,
+                        PhienDangNhap.getHienTai().getTenDangNhap())) {
+                    JOptionPane.showMessageDialog(view, "Yêu cầu " + yeuCauDangChon.getMaPhieuYC()
+                            + " không còn chờ xuất nên không thể từ chối.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                }
                 taiLai();
             } catch (SQLException ex) {
                 ex.printStackTrace();
