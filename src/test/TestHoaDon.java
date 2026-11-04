@@ -7,6 +7,7 @@ import controller.ChiTietHoaDonController;
 import controller.QLPhuTungController;
 import dao.HoaDon_Dao;
 import dao.Thue_Dao;
+import dao.TrangChuQuanLy_Dao;
 import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.Thue;
@@ -54,6 +55,7 @@ public class TestHoaDon {
         kiemTraLapLai();
         kiemTraTranhChap();
         kiemTraTimKiemVaPdf();
+        kiemTraBoDemChoThanhToan();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
@@ -327,6 +329,32 @@ public class TestHoaDon {
     }
 
     // ---------- Hỗ trợ ----------
+
+    private static void kiemTraBoDemChoThanhToan() throws Exception {
+        TrangChuQuanLy_Dao trangChu = new TrangChuQuanLy_Dao();
+        Object[] goc = trangChu.hoaDonChoThanhToan();
+        int so = (Integer) goc[0];
+        double tien = (Double) goc[1];
+        taoPhieu(XE_CO_NO, "Đang sửa", 100000);
+        kiem("Phiếu chưa xong không tính", (Integer) trangChu.hoaDonChoThanhToan()[0] == so);
+
+        String tra = taoPhieu(XE_CO_NO, "Hoàn thành", 100000);
+        Object[] coPhieu = trangChu.hoaDonChoThanhToan();
+        kiem("Phiếu xong chưa hóa đơn được tính", (Integer) coPhieu[0] == so + 1);
+        kiem("Phiếu chưa hóa đơn không cộng tiền nợ", (Double) coPhieu[1] == tien);
+        lap(tra, null, HoaDon.CHUYEN_KHOAN);
+        kiem("Trả ngay thì hết chờ", (Integer) trangChu.hoaDonChoThanhToan()[0] == so);
+
+        String no = taoPhieu(XE_CO_NO, "Hoàn thành", 100000);
+        String maNo = lap(no, null, HoaDon.CONG_NO);
+        Object[] coNo = trangChu.hoaDonChoThanhToan();
+        kiem("Công nợ được tính một lần", (Integer) coNo[0] == so + 1);
+        kiem("Công nợ cộng tiền", (Double) coNo[1] > tien);
+        dao.huy(maNo, "Lập sai", "admin");
+        Object[] daHuy = trangChu.hoaDonChoThanhToan();
+        kiem("Hủy hóa đơn nợ thì phiếu lại chờ", (Integer) daHuy[0] == so + 1);
+        kiem("Hủy hóa đơn nợ thì hết tiền nợ", (Double) daHuy[1] == tien);
+    }
 
     private static String lap(String maPhieu, String maKM, String hinhThuc) throws SQLException {
         return dao.lapHoaDon(maPhieu, maKM, "VAT08", hinhThuc, null, "NV0002");

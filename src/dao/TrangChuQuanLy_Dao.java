@@ -79,10 +79,16 @@ public class TrangChuQuanLy_Dao {
         }
     }
 
-    /** {số hóa đơn còn nợ, tổng tiền còn nợ}. */
+    /**
+     * {số việc chờ thanh toán, tổng tiền còn nợ}. Số việc gồm hóa đơn công nợ và phiếu đã hoàn thành chưa có hóa đơn;
+     * tổng tiền chỉ tính công nợ vì phiếu chưa lập hóa đơn chưa có khuyến mãi và thuế nên chưa biết số tiền cuối.
+     */
     public Object[] hoaDonChoThanhToan() throws SQLException {
-        String sql = "SELECT COUNT(*) AS soLuong, COALESCE(SUM(tongThanhToan), 0) AS tongTien "
-                + "FROM HoaDon WHERE " + CONG_NO;
+        String sql = "SELECT (SELECT COUNT(*) FROM HoaDon WHERE " + CONG_NO + ") "
+                + "+ (SELECT COUNT(*) FROM PhieuTiepNhanVaSuaChua p WHERE p.trangThai = N'Hoàn thành' "
+                + "AND NOT EXISTS (SELECT 1 FROM HoaDon h WHERE h.maPhieuTNSC = p.maPhieuTNSC "
+                + "AND h.trangThaiThanhToan <> N'Đã hủy')) AS soLuong, "
+                + "(SELECT COALESCE(SUM(tongThanhToan), 0) FROM HoaDon WHERE " + CONG_NO + ") AS tongTien";
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql);
              ResultSet r = p.executeQuery()) {
