@@ -18,6 +18,9 @@ import java.awt.*;
 
 /** Màn hình Tiếp nhận xe & Lập phiếu (JPanel) theo Figma. Phụ trách: Nguyễn Xuân Việt Anh. */
 public class QLTiepNhanSuaChua extends JPanel {
+    private static final String NGOAI_THAT_MAC_DINH = "Bình thường";
+    private static final String NOI_THAT_MAC_DINH = "Bình thường";
+    private static final String TAI_SAN_MAC_DINH = "Không có";
     // --- Tra cứu ---
     private final JTextField txtTraCuu = new PlaceholderField("Nhập biển số xe hoặc số điện thoại");
     private final JButton btnTraCuu = UIComponents.nutIcon(new LineIcon(Loai.SEARCH, UIConstants.PRIMARY, 22));
@@ -36,8 +39,8 @@ public class QLTiepNhanSuaChua extends JPanel {
     // --- Phương tiện ---
     private final JTextField txtBienSo = new JTextField();
     private final JTextField txtSoKhung = new JTextField();
-    private final JTextField txtHangXe = new JTextField();
-    private final JTextField txtDongXe = new JTextField();
+    private final JComboBox<String> cboHangXe = new JComboBox<>();
+    private final JComboBox<String> cboDongXe = new JComboBox<>();
     private final JTextField txtDoiXe = new JTextField();
     private final JTextField txtMauSon = new JTextField();
 
@@ -45,9 +48,9 @@ public class QLTiepNhanSuaChua extends JPanel {
     private final JTextField txtSoKm = new JTextField();
     private final JSlider sldNhienLieu = new JSlider(0, 100, 50);
     private final JLabel lblNhienLieu = UIComponents.formLabel("Mức nhiên liệu: 50%", true);
-    private final JTextField txtNgoaiThat = new JTextField();
-    private final JTextField txtNoiThat = new JTextField();
-    private final JTextField txtTaiSan = new JTextField();
+    private final JTextField txtNgoaiThat = new JTextField(NGOAI_THAT_MAC_DINH);
+    private final JTextField txtNoiThat = new JTextField(NOI_THAT_MAC_DINH);
+    private final JTextField txtTaiSan = new JTextField(TAI_SAN_MAC_DINH);
     private final JTextArea txtGhiChu = new JTextArea(3, 20);
 
     // --- Yêu cầu & dịch vụ ---
@@ -88,10 +91,23 @@ public class QLTiepNhanSuaChua extends JPanel {
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
         add(taoThanhHanhDong(), BorderLayout.SOUTH);
         for (JTextField o : new JTextField[] {txtTraCuu, txtHoTen, txtSoDienThoai, txtDiaChi, txtEmail, txtMaSoThue, txtBienSo,
-                txtSoKhung, txtHangXe, txtDongXe, txtDoiXe, txtMauSon, txtSoKm, txtNgoaiThat, txtNoiThat, txtTaiSan,
+                txtSoKhung, txtDoiXe, txtMauSon, txtSoKm, txtNgoaiThat, txtNoiThat, txtTaiSan,
                 txtPhuTungDuKien, txtDuKien}) {
             UIComponents.styleInput(o);
         }
+        UIComponents.styleCombo(cboHangXe);
+        UIComponents.styleCombo(cboDongXe);
+        // Có thể gõ hãng/dòng ngoài danh sách; chọn hãng thì nạp lại danh sách dòng.
+        cboHangXe.setEditable(true);
+        cboDongXe.setEditable(true);
+        for (String h : QLHoSoXe.HANG_DONG.keySet()) cboHangXe.addItem(h);
+        cboHangXe.addActionListener(e -> {
+            String[] dong = QLHoSoXe.HANG_DONG.get(getHangXe());
+            cboDongXe.removeAllItems();
+            if (dong != null) for (String d : dong) cboDongXe.addItem(d);
+            cboDongXe.setSelectedItem("");
+        });
+        cboHangXe.setSelectedItem("");
         util.ChonNgay.ganNgayGio(txtDuKien);
         UIComponents.styleCombo(cboTrangThai);
         // Phiếu mới luôn bắt đầu ở "Chờ kiểm tra"; đổi trạng thái tại Chi tiết phiếu.
@@ -142,8 +158,8 @@ public class QLTiepNhanSuaChua extends JPanel {
 
     private JPanel taoThePhuongTien() {
         JPanel than = than();
-        than.add(luoi(3, o("Biển số", true, txtBienSo), o("Số khung", true, txtSoKhung), o("Hãng xe", true, txtHangXe),
-                o("Dòng xe", true, txtDongXe), o("Đời xe", true, txtDoiXe), o("Màu sơn", true, txtMauSon)));
+        than.add(luoi(3, o("Biển số", true, txtBienSo), o("Số khung", true, txtSoKhung), o("Hãng xe", true, cboHangXe),
+                o("Dòng xe", true, cboDongXe), o("Đời xe", true, txtDoiXe), o("Màu sơn", true, txtMauSon)));
         return the("Thông tin phương tiện", Loai.CAR, than);
     }
 
@@ -171,7 +187,7 @@ public class QLTiepNhanSuaChua extends JPanel {
         than.add(Box.createVerticalStrut(12));
         than.add(o("Hạng mục dịch vụ (giữ Ctrl để chọn nhiều)", true, new JScrollPane(lstDichVu)));
         than.add(Box.createVerticalStrut(12));
-        than.add(o("Phụ tùng dự kiến thay thế", true, txtPhuTungDuKien));
+        than.add(o("Phụ tùng dự kiến thay thế", false, txtPhuTungDuKien));
         return the("Yêu cầu & Hạng mục dịch vụ", Loai.CLIPBOARD, than);
     }
 
@@ -267,9 +283,11 @@ public class QLTiepNhanSuaChua extends JPanel {
 
     /** Khóa nhóm phương tiện khi xe đã có trong hệ thống. */
     public void setChoSuaXe(boolean choSua) {
-        for (JTextField o : new JTextField[] {txtBienSo, txtSoKhung, txtHangXe, txtDongXe, txtDoiXe, txtMauSon}) {
+        for (JTextField o : new JTextField[] {txtBienSo, txtSoKhung, txtDoiXe, txtMauSon}) {
             o.setEditable(choSua);
         }
+        cboHangXe.setEnabled(choSua);
+        cboDongXe.setEnabled(choSua);
     }
 
     /** Khi sửa phiếu, trạng thái và dịch vụ được quản lý tại màn hình Chi tiết phiếu. */
@@ -283,10 +301,14 @@ public class QLTiepNhanSuaChua extends JPanel {
 
     public void xoaTrangForm() {
         for (JTextField o : new JTextField[] {txtTraCuu, txtHoTen, txtSoDienThoai, txtDiaChi, txtEmail, txtMaSoThue, txtBienSo,
-                txtSoKhung, txtHangXe, txtDongXe, txtDoiXe, txtMauSon, txtSoKm, txtNgoaiThat, txtNoiThat, txtTaiSan,
-                txtPhuTungDuKien, txtDuKien}) {
+                txtSoKhung, txtDoiXe, txtMauSon, txtSoKm, txtPhuTungDuKien, txtDuKien}) {
             o.setText("");
         }
+        cboHangXe.setSelectedItem("");
+        cboDongXe.setSelectedItem("");
+        txtNgoaiThat.setText(NGOAI_THAT_MAC_DINH);
+        txtNoiThat.setText(NOI_THAT_MAC_DINH);
+        txtTaiSan.setText(TAI_SAN_MAC_DINH);
         txtGhiChu.setText("");
         txtYeuCau.setText("");
         lstDichVu.clearSelection();
@@ -320,8 +342,19 @@ public class QLTiepNhanSuaChua extends JPanel {
     }
     public JTextField getTxtBienSo() { return txtBienSo; }
     public JTextField getTxtSoKhung() { return txtSoKhung; }
-    public JTextField getTxtHangXe() { return txtHangXe; }
-    public JTextField getTxtDongXe() { return txtDongXe; }
+    public JComboBox<String> getCboHangXe() { return cboHangXe; }
+    public JComboBox<String> getCboDongXe() { return cboDongXe; }
+    public String getHangXe() { return chuCuaCombo(cboHangXe); }
+    public String getDongXe() { return chuCuaCombo(cboDongXe); }
+    /** Điền hãng trước rồi mới tới dòng vì đổi hãng sẽ nạp lại danh sách dòng. */
+    public void setHangDongXe(String hang, String dong) {
+        cboHangXe.setSelectedItem(hang == null ? "" : hang);
+        cboDongXe.setSelectedItem(dong == null ? "" : dong);
+    }
+    private static String chuCuaCombo(JComboBox<String> c) {
+        Object v = c.getEditor().getItem();
+        return v == null ? "" : v.toString();
+    }
     public JTextField getTxtDoiXe() { return txtDoiXe; }
     public JTextField getTxtMauSon() { return txtMauSon; }
     public JTextField getTxtSoKm() { return txtSoKm; }

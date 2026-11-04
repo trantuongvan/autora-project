@@ -394,20 +394,8 @@ public class QLTienDoSuaChuaController {
         view.getTxtNgayYeuCau().setText(LocalDateTime.now().format(DT_FMT));
         view.getBadgeTrangThaiYC().set("Chờ xuất", UIConstants.STATUS_WARNING);
 
+        // Bắt đầu rỗng: kỹ thuật viên tự tìm và thêm đúng phụ tùng cần cho phiếu này.
         danhSachPhuTungYeuCau.clear();
-        try {
-            List<PhuTung> dsKho = phuTungDao.findAll();
-            int dem = 0;
-            for (PhuTung pt : dsKho) {
-                if (pt.getSoLuongTon() > 0 && dem < 2) {
-                    danhSachPhuTungYeuCau.add(new ChiTietYeuCauXuatKho(
-                            new PhieuYeuCauXuatKho(view.getTxtMaYeuCau().getText()), pt, 1));
-                    dem++;
-                }
-            }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
-        }
 
         UIComponents.showError(view.getLblLoiSoLuongPT(), null);
         veDanhSachPhuTungYeuCau();

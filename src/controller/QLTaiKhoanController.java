@@ -18,11 +18,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.text.Normalizer;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /** Điều phối tạo, sửa, khóa và xóa tài khoản; các quy tắc giữ Chủ cửa hàng cuối cùng nằm trong DAO. */
 public class QLTaiKhoanController {
@@ -39,6 +41,7 @@ public class QLTaiKhoanController {
     /** Cùng thứ tự với bảng tài khoản. */
     private List<TaiKhoan> dsTaiKhoan = new ArrayList<>();
     private TaiKhoan dangSua;
+    private String tenGoiY = "";
     private int phienBanDanhSach;
     private int phienBanNhanVien;
 
@@ -219,7 +222,37 @@ public class QLTaiKhoanController {
         int chon = view.getCboNhanVien().getSelectedIndex();
         if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()) {
             view.getCboVaiTro().setSelectedItem(dsNhanVien.get(chon).getViTriLamViec());
+            goiYTenDangNhap(dsNhanVien.get(chon));
         }
+    }
+
+    /** Chỉ thay ô tên đăng nhập khi trống hoặc còn đúng giá trị tự gợi ý lần trước, để không đè tên người dùng đã gõ. */
+    private void goiYTenDangNhap(NhanVien nv) {
+        String hienTai = view.getTxtTenDangNhap().getText();
+        if (!hienTai.isEmpty() && !hienTai.equals(tenGoiY)) {
+            return;
+        }
+        try {
+            String goc = taoTenDangNhap(nv.getHoTen());
+            tenGoiY = goc.isEmpty() ? "" : dao.tenDangNhapConTrong(goc);
+            view.getTxtTenDangNhap().setText(tenGoiY);
+        } catch (SQLException ex) {
+            baoLoi("Không thể gợi ý tên đăng nhập.", ex);
+        }
+    }
+
+    /** "Nguyễn Tuấn Vũ" -> "vunt": tên gọi cộng chữ cái đầu các từ còn lại, chữ thường, không dấu. */
+    public static String taoTenDangNhap(String hoTen) {
+        if (hoTen == null) {
+            return "";
+        }
+        String[] tu = Normalizer.normalize(hoTen.replace('đ', 'd').replace('Đ', 'D'), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", "").trim().split("\\s+");
+        StringBuilder ten = new StringBuilder(tu[tu.length - 1]);
+        for (int i = 0; i < tu.length - 1; i++) {
+            ten.append(tu[i].charAt(0));
+        }
+        return ten.toString();
     }
 
     // ==========================================================
@@ -234,6 +267,7 @@ public class QLTaiKhoanController {
         dsNhanVien = new ArrayList<>();
         view.getCboNhanVien().removeAllItems();
         view.getTxtTenDangNhap().setText("");
+        tenGoiY = "";
         view.getPwdMatKhau().setText("");
         view.getCboTrangThai().setSelectedItem(TaiKhoan.DANG_HOAT_DONG);
         taiNhanVien();

@@ -470,6 +470,20 @@ public class HoaDon_Dao {
         }
     }
 
+    /** Khuyến mãi giảm nhiều tiền nhất theo cùng công thức tinhTien; hòa thì giữ cái đứng trước; không cái nào giảm > 0 thì null. */
+    public static KhuyenMai khuyenMaiTotNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
+        KhuyenMai tot = null;
+        double giamMax = 0;
+        for (KhuyenMai km : hopLe) {
+            double giam = tinhTien(tienCong, tienPhuTung, km.getHinhThuc(), km.getGiaTri(), km.getPhamViApDung(), 0).giam;
+            if (giam > giamMax) {
+                giamMax = giam;
+                tot = km;
+            }
+        }
+        return tot;
+    }
+
     /** Hàm thuần để màn hình xem trước và lúc lưu dùng cùng một công thức. hinhThucKM null là không có khuyến mãi. */
     public static TienHoaDon tinhTien(double tienCong, double tienPhuTung, HinhThucKhuyenMai hinhThucKM, double giaTriKM,
             PhamViKhuyenMai phamViKM, double thueSuat) {

@@ -135,6 +135,26 @@ public class PhieuNhapKho_Dao {
         return list;
     }
 
+    /** Nhà cung cấp của lần nhập gần nhất có phụ tùng này; null nếu chưa từng nhập. */
+    public NhaCungCap findNhaCungCapGanNhat(String maSKU) throws SQLException {
+        String sql = "SELECT TOP 1 ncc.maNCC, ncc.tenNCC FROM ChiTietNhapKho ct "
+                + "JOIN PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap "
+                + "JOIN NhaCungCap ncc ON ncc.maNCC = pn.maNCC "
+                + "WHERE ct.maSKU = ? ORDER BY pn.ngayNhap DESC, pn.maPhieuNhap DESC";
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, maSKU);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                NhaCungCap ncc = new NhaCungCap(rs.getString("maNCC"));
+                ncc.setTenNCC(rs.getString("tenNCC"));
+                return ncc;
+            }
+        }
+    }
+
     public List<ChiTietNhapKho> findChiTietByMaPhieu(String maPhieuNhap) throws SQLException {
         String sql = "SELECT ct.maPhieuNhap, ct.maSKU, ct.soLuongNhap, ct.giaNhapThucTe, pt.tenPhuTung "
                 + "FROM ChiTietNhapKho ct "
