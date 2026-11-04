@@ -18,15 +18,14 @@ public class QLHoaDon extends JPanel {
     public static final String TAT_CA = "Tất cả";
     public static final int COT_TRANG_THAI = 11;
     public static final int COT_THAO_TAC = 12;
-    public static final int ICON_CHI_TIET = 0;
-    public static final int ICON_IN = 1;
-    public static final int ICON_HUY = 2;
+    public static final int ICON_IN = 0;
+    public static final int ICON_HUY = 1;
 
     private final JTextField txtTimKiem = new PlaceholderField("Mã HĐ / Mã phiếu / SĐT / Biển số");
     private final JComboBox<String> cboTrangThai = new JComboBox<>();
     private final JComboBox<String> cboHinhThuc = new JComboBox<>();
-    private final JTextField txtTuNgay = new PlaceholderField("dd/MM/yyyy");
-    private final JTextField txtDenNgay = new PlaceholderField("dd/MM/yyyy");
+    private final JTextField txtTuNgay = new PlaceholderField("Chọn ngày");
+    private final JTextField txtDenNgay = new PlaceholderField("Chọn ngày");
     private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
     private final JButton btnLapHoaDon = UIComponents.nutChinh("+ Lập hóa đơn", UIConstants.PRIMARY);
     private final JLabel lblLoiLoc = UIComponents.errorLabel();
@@ -49,7 +48,7 @@ public class QLHoaDon extends JPanel {
 
         CotDoc noiDung = new CotDoc();
         noiDung.setBorder(new EmptyBorder(24, 24, 24, 24));
-        noiDung.them(UIComponents.tieuDeTrang("Quản lý hóa đơn", "F5 làm mới • Ctrl+F tìm kiếm",
+        noiDung.them(UIComponents.tieuDeTrang("Quản lý hóa đơn", "F5 làm mới • Ctrl+F tìm kiếm • Bấm đúp vào dòng để xem chi tiết",
                 UIConstants.ROLE_RECEPTION, btnLapHoaDon), 0);
 
         RoundedPanel the = UIComponents.card();
@@ -67,7 +66,6 @@ public class QLHoaDon extends JPanel {
                 .setCellRenderer(new CellRenderer(UIConstants.FONT_FORM_LABEL, null));
         tblDanhSach.getColumnModel().getColumn(COT_TRANG_THAI).setCellRenderer(new BadgeRenderer(QLHoaDon::mauTrangThai));
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(
-                new LineIcon(Loai.EYE, UIConstants.PRIMARY),
                 new LineIcon(Loai.PRINT, UIConstants.PRIMARY),
                 new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT)));
         tblDanhSach.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
@@ -83,6 +81,7 @@ public class QLHoaDon extends JPanel {
         UIComponents.styleInput(txtTimKiem);
         UIComponents.styleInput(txtTuNgay);
         UIComponents.styleInput(txtDenNgay);
+        util.ChonNgay.ganNgay(txtTuNgay, txtDenNgay);
         cboTrangThai.addItem(TAT_CA);
         for (String s : HoaDon.TRANG_THAI) {
             cboTrangThai.addItem(s);

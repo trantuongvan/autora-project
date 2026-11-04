@@ -13,6 +13,8 @@ import java.util.List;
 /** Nhật ký hệ thống (JPanel, chỉ đọc) dành cho Chủ cửa hàng. Phụ trách: Nguyễn Xuân Việt Anh. */
 public class QLNhatKy extends JPanel {
     private final JTextField txtTimKiem;
+    private final IconField fTuNgay = new IconField("Từ ngày", new LineIcon(Loai.CALENDAR, UIConstants.TEXT_MUTED, 15), false);
+    private final IconField fDenNgay = new IconField("Đến ngày", new LineIcon(Loai.CALENDAR, UIConstants.TEXT_MUTED, 15), false);
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(
             "Thời gian", "Tài khoản", "Hành động", "Đối tượng", "Giá trị cũ", "Giá trị mới");
     private final JTable tblDanhSach = new JTable(tableModel);
@@ -28,8 +30,13 @@ public class QLNhatKy extends JPanel {
                 new LineIcon(Loai.SEARCH, UIConstants.TEXT_MUTED), true);
         timKiem.setPreferredSize(new Dimension(420, 40));
         txtTimKiem = timKiem.getTextField();
-        JPanel hang = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel hang = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 8, 0));
         hang.add(timKiem);
+        fTuNgay.setPreferredSize(new Dimension(150, 40));
+        fDenNgay.setPreferredSize(new Dimension(150, 40));
+        util.ChonNgay.ganNgay(fTuNgay.getTextField(), fDenNgay.getTextField());
+        hang.add(fTuNgay);
+        hang.add(fDenNgay);
         noiDung.them(hang, 18);
 
         UIComponents.styleTable(tblDanhSach);
@@ -59,5 +66,7 @@ public class QLNhatKy extends JPanel {
     }
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
+    public JTextField getTxtTuNgay() { return fTuNgay.getTextField(); }
+    public JTextField getTxtDenNgay() { return fDenNgay.getTextField(); }
     public DefaultTableModel getTableModel() { return tableModel; }
 }

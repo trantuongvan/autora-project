@@ -17,14 +17,13 @@ import java.util.List;
 public class QLPhieuSuaChua extends JPanel {
     public static final String TAT_CA_TRANG_THAI = "Tất cả trạng thái";
     public static final int COT_THAO_TAC = 7;
-    public static final int ICON_XEM = 0;
-    public static final int ICON_SUA = 1;
-    public static final int ICON_XOA = 2;
+    public static final int ICON_SUA = 0;
+    public static final int ICON_XOA = 1;
 
     private final JTextField txtTimKiem;
     private final JComboBox<String> cboLocTrangThai = new JComboBox<>();
-    private final JTextField txtTuNgay = new PlaceholderField("Từ dd/MM/yyyy");
-    private final JTextField txtDenNgay = new PlaceholderField("Đến dd/MM/yyyy");
+    private final JTextField txtTuNgay = new PlaceholderField("Từ ngày");
+    private final JTextField txtDenNgay = new PlaceholderField("Đến ngày");
     private final JButton btnLoc = UIComponents.nutChinh("Lọc", UIConstants.PRIMARY);
     private final JButton btnLamMoi = UIComponents.nutPhu("Làm mới");
     private final JButton btnTaoPhieu = UIComponents.nutChinh("+  Tiếp nhận xe mới", UIConstants.PRIMARY);
@@ -41,7 +40,7 @@ public class QLPhieuSuaChua extends JPanel {
         CotDoc noiDung = new CotDoc();
         noiDung.setBorder(new EmptyBorder(24, 24, 24, 24));
         noiDung.them(UIComponents.tieuDeTrang("Phiếu sửa chữa",
-                "F5 làm mới • Ctrl+F tìm kiếm • Delete hủy phiếu đang chọn", UIConstants.ROLE_RECEPTION, btnTaoPhieu), 0);
+                "F5 làm mới • Ctrl+F tìm kiếm • Bấm đúp vào dòng để xem chi tiết • Delete hủy phiếu đang chọn", UIConstants.ROLE_RECEPTION, btnTaoPhieu), 0);
 
         IconField timKiem = new IconField("Tìm mã phiếu, biển số, khách hàng hoặc SĐT",
                 new LineIcon(Loai.SEARCH, UIConstants.TEXT_MUTED), true);
@@ -56,6 +55,7 @@ public class QLPhieuSuaChua extends JPanel {
         cboLocTrangThai.setPreferredSize(new Dimension(170, 40));
         UIComponents.styleInput(txtTuNgay);
         UIComponents.styleInput(txtDenNgay);
+        util.ChonNgay.ganNgay(txtTuNgay, txtDenNgay);
         txtTuNgay.setPreferredSize(new Dimension(130, 40));
         txtDenNgay.setPreferredSize(new Dimension(130, 40));
         JPanel hangLoc = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 8, 0));
@@ -75,7 +75,6 @@ public class QLPhieuSuaChua extends JPanel {
                 .setCellRenderer(new CellRenderer(UIConstants.FONT_FORM_LABEL.deriveFont(14f), null));
         tblDanhSach.getColumnModel().getColumn(6).setCellRenderer(new BadgeRenderer(QLPhieuSuaChua::mauTrangThai));
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(
-                new LineIcon(Loai.EYE, UIConstants.ROLE_RECEPTION),
                 new LineIcon(Loai.PENCIL, UIConstants.ROLE_RECEPTION),
                 new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT)));
         UIComponents.datDoRong(tblDanhSach, 105, 95, 170, 125, 150, 80, 125, 110);

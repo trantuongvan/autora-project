@@ -6,7 +6,6 @@ import gui.QLHoSoXe;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -45,6 +44,7 @@ public class QLHoSoXeController {
                 load();
             }
         });
+        view.getCboLocHang().addActionListener(e -> load());
         view.getBtnLuu().addActionListener(e -> save());
         view.getBtnThemHoSo().addActionListener(e -> selectedPlate = null);
         view.getBtnHuy().addActionListener(e -> selectedPlate = null);
@@ -56,34 +56,19 @@ public class QLHoSoXeController {
                 deleteSelected();
             }
         });
+        view.getTblDanhSach().getSelectionModel().addListSelectionListener(e -> {
+            int row = view.getTblDanhSach().getSelectedRow();
+            if (!e.getValueIsAdjusting() && row >= 0) {
+                int modelRow = view.getTblDanhSach().convertRowIndexToModel(row);
+                edit(String.valueOf(view.getTableModel().getValueAt(modelRow, 0)), modelRow);
+            }
+        });
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 JTable table = view.getTblDanhSach();
-                int viewRow = table.rowAtPoint(e.getPoint());
-                int viewColumn = table.columnAtPoint(e.getPoint());
-                if (viewRow < 0 || viewColumn < 0) {
-                    return;
-                }
-                int actionColumn = table.convertColumnIndexToView(QLHoSoXe.COT_THAO_TAC);
-                if (viewColumn == actionColumn) {
-                    Rectangle cell = table.getCellRect(viewRow, viewColumn, false);
-                    int icon = util.UIComponents.viTriBieuTuong(table, e, actionColumn, 2);
-                    // Chia toàn bộ ô thao tác thành hai vùng để icon vẫn dễ bấm.
-                    if (icon < 0) {
-                        icon = e.getX() - cell.x < cell.width / 2
-                                ? QLHoSoXe.ICON_XEM : QLHoSoXe.ICON_SUA;
-                    }
-                    int modelRow = table.convertRowIndexToModel(viewRow);
-                    String plate = String.valueOf(view.getTableModel().getValueAt(modelRow, 0));
-                    if (icon == QLHoSoXe.ICON_XEM) {
-                        viewRecord(plate, modelRow);
-                    } else {
-                        edit(plate, modelRow);
-                    }
-                } else if (e.getClickCount() > 1) {
-                    int modelRow = table.convertRowIndexToModel(viewRow);
-                    edit(String.valueOf(view.getTableModel().getValueAt(modelRow, 0)), modelRow);
+                if (util.UIComponents.viTriBieuTuong(table, e, QLHoSoXe.COT_THAO_TAC, 2) == QLHoSoXe.ICON_XOA) {
+                    deleteSelected();
                 }
             }
         });
@@ -92,9 +77,11 @@ public class QLHoSoXeController {
     private void load() {
         final int version = ++loadVersion;
         final String query = view.getTxtTimKiem().getText();
+        final String hang = QLHoSoXe.TAT_CA_HANG.equals(view.getCboLocHang().getSelectedItem())
+                ? "" : String.valueOf(view.getCboLocHang().getSelectedItem());
         new SwingWorker<Object[], Void>() {
             @Override protected Object[] doInBackground() throws Exception {
-                return new Object[]{dao.search(query), dao.findChuSoHuu()};
+                return new Object[]{dao.search(query, hang), dao.findChuSoHuu()};
             }
             @Override protected void done() {
                 if (version != loadVersion) return;
@@ -129,19 +116,6 @@ public class QLHoSoXeController {
             view.dienForm(xe);
             view.setCheDoSua(true);
             view.setThongKeBang(view.getTableModel().getRowCount(), selectedPlate);
-            showHistory(modelRow);
-        } catch (SQLException ex) {
-            showLoadError("Không thể tải hồ sơ xe", ex);
-        }
-    }
-
-    private void viewRecord(String plate, int modelRow) {
-        try {
-            Xe xe = dao.findById(plate);
-            if (xe == null) throw new SQLException("Không tìm thấy hồ sơ xe " + plate + ".");
-            selectedPlate = null;
-            view.dienForm(xe);
-            view.setCheDoXem(true);
             showHistory(modelRow);
         } catch (SQLException ex) {
             showLoadError("Không thể tải hồ sơ xe", ex);
@@ -214,7 +188,13 @@ public class QLHoSoXeController {
         if (confirm != JOptionPane.YES_OPTION) return;
         try {
             if (!dao.delete(plate)) throw new SQLException("Không tìm thấy hồ sơ xe.");
-            if (plate.equals(selectedPlate)) selectedPlate = null;
+            // Biểu mẫu đang hiện xe vừa xóa: dọn đi để nút lưu không ghi lại xe đó.
+            if (plate.equals(selectedPlate)) {
+                selectedPlate = null;
+                view.xoaTrangForm();
+                view.setCheDoSua(false);
+                view.anLichSu();
+            }
             load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,

@@ -56,12 +56,12 @@ public class QLNhapKho extends JPanel {
     private final JComboBox<String> cboLocNCC = new JComboBox<>(new String[]{"Nhà cung cấp: Tất cả"});
     private final UIComponents.IconField fTuNgay = new UIComponents.IconField(
             "Từ ngày",
-            new UIComponents.LineIcon(UIComponents.Loai.CLIPBOARD, UIConstants.TEXT_MUTED, 15),
+            new UIComponents.LineIcon(UIComponents.Loai.CALENDAR, UIConstants.TEXT_MUTED, 15),
             false
     );
     private final UIComponents.IconField fDenNgay = new UIComponents.IconField(
             "Đến ngày",
-            new UIComponents.LineIcon(UIComponents.Loai.CLIPBOARD, UIConstants.TEXT_MUTED, 15),
+            new UIComponents.LineIcon(UIComponents.Loai.CALENDAR, UIConstants.TEXT_MUTED, 15),
             false
     );
 
@@ -92,6 +92,7 @@ public class QLNhapKho extends JPanel {
     private final JLabel lblLoiModal = UIComponents.errorLabel();
     private final JLabel lblTongTienModal = UIComponents.label("Tổng tiền nhập   0đ", UIConstants.FONT_SECTION_TITLE.deriveFont(Font.BOLD, 16f), UIConstants.TEXT_DARK);
 
+    private final JButton btnNhapExcel = UIComponents.nutPhu("Nhập từ Excel");
     private final JButton btnDongModal = UIComponents.nutPhu("×");
     private final JButton btnHuyModal = new NutVienDo("Hủy");
     private final JButton btnLuuPhieuNhap = UIComponents.nutChinh("Lưu phiếu nhập", UIConstants.ROLE_MANAGER);
@@ -170,6 +171,7 @@ public class QLNhapKho extends JPanel {
         cboLocNCC.setPreferredSize(new Dimension(270, 40));
         fTuNgay.setPreferredSize(new Dimension(140, 40));
         fDenNgay.setPreferredSize(new Dimension(140, 40));
+        util.ChonNgay.ganNgay(fTuNgay.getTextField(), fDenNgay.getTextField());
 
         pnlFilterRow.add(fTimPhieu);
         pnlFilterRow.add(cboLocNCC);
@@ -215,7 +217,9 @@ public class QLNhapKho extends JPanel {
         UIComponents.RoundedPanel modal = new UIComponents.RoundedPanel(14, UIConstants.CARD_BG, UIConstants.BORDER_COLOR);
         modal.setLayout(new BorderLayout(0, 14));
         modal.setBorder(new EmptyBorder(22, 26, 22, 26));
-        modal.setPreferredSize(new Dimension(680, 560));
+        // Danh sách cần đủ chỗ để kiểm tra các dòng nhập từ Excel, nhưng không vượt quá màn hình laptop.
+        int caoModal = Math.min(720, Toolkit.getDefaultToolkit().getScreenSize().height - 200);
+        modal.setPreferredSize(new Dimension(800, caoModal));
 
         JPanel pnlModalHead = UIComponents.trong(new BorderLayout());
         pnlModalHead.add(UIComponents.label("Lập phiếu nhập kho", UIConstants.FONT_SECTION_TITLE.deriveFont(Font.BOLD, 20f), UIConstants.TEXT_DARK), BorderLayout.WEST);
@@ -263,7 +267,11 @@ public class QLNhapKho extends JPanel {
         JPanel pnlMetaAndSearch = UIComponents.trong(new BorderLayout(0, 12));
         pnlMetaAndSearch.add(pnlGridMeta, BorderLayout.NORTH);
         fTimPhuTungModal.setPreferredSize(new Dimension(100, 40));
-        pnlMetaAndSearch.add(fTimPhuTungModal, BorderLayout.SOUTH);
+        btnNhapExcel.setToolTipText("Dòng 1 là tiêu đề. Cột A: mã SKU, cột B: số lượng, cột C: đơn giá.");
+        JPanel pnlTimVaExcel = UIComponents.trong(new BorderLayout(10, 0));
+        pnlTimVaExcel.add(fTimPhuTungModal, BorderLayout.CENTER);
+        pnlTimVaExcel.add(btnNhapExcel, BorderLayout.EAST);
+        pnlMetaAndSearch.add(pnlTimVaExcel, BorderLayout.SOUTH);
         pnlModalBody.add(pnlMetaAndSearch, BorderLayout.NORTH);
 
         JPanel pnlTableWrap = new JPanel(new BorderLayout());
@@ -437,6 +445,7 @@ public class QLNhapKho extends JPanel {
     public JLabel getLblLoiModal() { return lblLoiModal; }
     public JLabel getLblTongTienModal() { return lblTongTienModal; }
     public JButton getBtnDongModal() { return btnDongModal; }
+    public JButton getBtnNhapExcel() { return btnNhapExcel; }
     public JButton getBtnHuyModal() { return btnHuyModal; }
     public JButton getBtnLuuPhieuNhap() { return btnLuuPhieuNhap; }
 

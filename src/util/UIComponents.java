@@ -569,7 +569,7 @@ public final class UIComponents {
     // ==========================================================
 
     public enum Loai { EYE, PENCIL, TRASH, SEARCH, LOCK, CLOSE, CHECK, ALERT, CLIPBOARD, WRENCH, KEY, REFRESH,
-        HOME, CAR, USER, USERS, BOX, DOWNLOAD, UPLOAD, RECEIPT, PERCENT, CHART, HISTORY, LOGOUT, PLUS, SAVE, PRINT, PLAY, CALENDAR }
+        HOME, CAR, USER, USERS, BOX, DOWNLOAD, UPLOAD, RECEIPT, PERCENT, CHART, HISTORY, LOGOUT, PLUS, SAVE, PRINT, PLAY, CALENDAR, INFO, HELP }
 
     public static class LineIcon implements Icon {
         private final Loai loai;
@@ -782,6 +782,20 @@ public final class UIComponents {
                     g2.draw(new Line2D.Float(2.5f, 7.5f, 15.5f, 7.5f));
                     g2.draw(new Line2D.Float(6, 2, 6, 5));
                     g2.draw(new Line2D.Float(12, 2, 12, 5));
+                    break;
+                case INFO:
+                    g2.draw(new Ellipse2D.Float(1.5f, 1.5f, 15, 15));
+                    g2.fill(new Ellipse2D.Float(8.2f, 4.6f, 1.6f, 1.6f));
+                    g2.draw(new Line2D.Float(9, 8, 9, 12.5f));
+                    break;
+                case HELP:
+                    g2.draw(new Ellipse2D.Float(1.5f, 1.5f, 15, 15));
+                    Path2D hoi = new Path2D.Float();
+                    hoi.moveTo(6.8f, 7);
+                    hoi.curveTo(6.8f, 4.2f, 11.2f, 4.2f, 11.2f, 7);
+                    hoi.curveTo(11.2f, 8.8f, 9, 8.6f, 9, 10.6f);
+                    g2.draw(hoi);
+                    g2.fill(new Ellipse2D.Float(8.2f, 12.2f, 1.6f, 1.6f));
                     break;
                 default:
                     break;
