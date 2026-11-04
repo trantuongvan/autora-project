@@ -4,11 +4,13 @@ import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import connection.ConnectDB;
 import controller.ChiTietHoaDonController;
+import controller.QLPhuTungController;
 import dao.HoaDon_Dao;
 import dao.Thue_Dao;
 import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.Thue;
+import util.FormatUtil;
 import util.PdfExporter;
 import util.VietQRUtil;
 
@@ -85,6 +87,21 @@ public class TestHoaDon {
         loi("Tiền âm nhập tay", () -> ChiTietHoaDonController.docTien("-5"));
         loi("Tiền chấm sai", () -> ChiTietHoaDonController.docTien("1.50"));
         loi("Tiền rỗng", () -> ChiTietHoaDonController.docTien(" "));
+        kiem("Giá nhập hiển thị 150.000đ", FormatUtil.parseCurrency("150.000đ") == 150000);
+        kiem("Giá nhập hiển thị 1.500.000đ", FormatUtil.parseCurrency("1.500.000đ") == 1500000);
+        kiem("Giá nhập gõ số thuần", FormatUtil.parseCurrency("150000") == 150000);
+        kiem("Giá nhập chỉ số 0", FormatUtil.parseCurrency("0") == 0);
+        loi("Giá nhập chữ", () -> FormatUtil.parseCurrency("abc"));
+        loi("Giá nhập chấm sai 1.50đ", () -> FormatUtil.parseCurrency("1.50đ"));
+        loi("Giá nhập âm", () -> FormatUtil.parseCurrency("-150.000đ"));
+        loi("Giá nhập rỗng", () -> FormatUtil.parseCurrency(""));
+        loi("Giá nhập chỉ có đ", () -> FormatUtil.parseCurrency("đ"));
+        loi("Giá nhập null", () -> FormatUtil.parseCurrency(null));
+        kiem("Giá phụ tùng dấu chấm", QLPhuTungController.docGia("150.000") == 150000);
+        kiem("Giá phụ tùng dấu phẩy", QLPhuTungController.docGia("1,500,000") == 1500000);
+        kiem("Giá phụ tùng số thuần", QLPhuTungController.docGia("85000") == 85000);
+        loi("Giá phụ tùng thập phân", () -> QLPhuTungController.docGia("150.5"));
+        loi("Giá phụ tùng rỗng", () -> QLPhuTungController.docGia(" "));
     }
 
     private static void kiemTraQr() {

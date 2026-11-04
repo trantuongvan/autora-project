@@ -8,6 +8,7 @@ import entity.KhuyenMai;
 import entity.PhienDangNhap;
 import entity.Thue;
 import gui.ChiTietHoaDon;
+import util.FormatUtil;
 import util.PdfExporter;
 import util.VietQRUtil;
 
@@ -59,11 +60,11 @@ public class ChiTietHoaDonController {
 
     /** Tiền khách đưa: số nguyên, cho phép dấu chấm ngăn cách hàng nghìn. */
     public static double docTien(String chuoi) {
-        String s = chuoi == null ? "" : chuoi.trim();
-        if (!s.matches("\\d{1,15}|\\d{1,3}(\\.\\d{3}){1,4}")) {
+        try {
+            return FormatUtil.parseCurrency(chuoi);
+        } catch (NumberFormatException ex) {
             throw new IllegalArgumentException("Tiền khách đưa phải là số, ví dụ 1.500.000.");
         }
-        return Double.parseDouble(s.replace(".", ""));
     }
 
     private static final class DuLieu {

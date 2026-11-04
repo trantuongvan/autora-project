@@ -331,8 +331,7 @@ public class QLNhapKhoController {
             }
 
             try {
-                String rawGia = txtGia.getText().replaceAll("[^0-9.]", "");
-                gia = Double.parseDouble(rawGia);
+                gia = FormatUtil.parseCurrency(txtGia.getText());
                 if (gia <= 0) throw new NumberFormatException();
             } catch (NumberFormatException ex) {
                 loiGia = true;
