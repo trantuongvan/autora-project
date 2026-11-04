@@ -13,8 +13,6 @@ import util.ChonNgay;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -49,23 +47,17 @@ public class QLKhachHangController {
     private int phienBanDanhSach;
     private int phienBanLienKet;
     private int phienBanLichHen;
+    private boolean daTai;
 
     public QLKhachHangController(QLKhachHang view) {
         this.view = view;
         initController();
         moFormThem();
-        taiDanhSach();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
-        });
-        view.getCboLocLoai().addActionListener(e -> taiDanhSach());
-        view.getCboLocGhiNo().addActionListener(e -> taiDanhSach());
-        view.getCboLocLichHen().addActionListener(e -> taiDanhSach());
+        view.getTxtTimKiem().addActionListener(e -> taiDanhSach());
         view.getBtnThemLichHen().addActionListener(e -> themLichHen());
         view.getBtnHuyLichHen().addActionListener(e -> huyLichHen());
         view.getTblLichHen().getSelectionModel().addListSelectionListener(e -> {
@@ -123,7 +115,16 @@ public class QLKhachHangController {
     // Tải dữ liệu
     // ==========================================================
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            taiDanhSach();
+        }
+    }
+
     public void taiDanhSach() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         String tuKhoa = view.getTxtTimKiem().getText();
         Object loai = view.getCboLocLoai().getSelectedItem();
         String ghiNo = String.valueOf(view.getCboLocGhiNo().getSelectedItem());
@@ -326,7 +327,7 @@ public class QLKhachHangController {
             }
             hop.dispose();
             taiLichHen();
-            taiDanhSach();
+            taiLai();
         });
         hop.setVisible(true);
     }
@@ -355,7 +356,7 @@ public class QLKhachHangController {
             return;
         }
         taiLichHen();
-        taiDanhSach();
+        taiLai();
     }
 
     private List<Object[]> thanhDongLichSu(List<Object[]> lichSu) {
@@ -430,7 +431,7 @@ public class QLKhachHangController {
                 if (!dao.update(kh)) {
                     JOptionPane.showMessageDialog(view, "Khách hàng này không còn tồn tại.", "Không thể lưu",
                             JOptionPane.WARNING_MESSAGE);
-                    taiDanhSach();
+                    taiLai();
                     return;
                 }
             }
@@ -443,7 +444,7 @@ public class QLKhachHangController {
         }
         JOptionPane.showMessageDialog(view, "Thao tác thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         moFormThem();
-        taiDanhSach();
+        taiLai();
     }
 
     private boolean kiemTra(JTextField o, JLabel lblLoi, int doDaiToiDa, Consumer<String> setter) {
@@ -477,14 +478,14 @@ public class QLKhachHangController {
                 JOptionPane.showMessageDialog(view,
                         "Không thể xóa khách hàng đang có xe liên kết. Hãy chuyển hoặc xóa xe tại màn hình Hồ sơ xe trước.",
                         "Không thể xóa", JOptionPane.WARNING_MESSAGE);
-                taiDanhSach();
+                taiLai();
                 return;
             }
             if (ma.equals(view.getTxtMaKH().getText())) {
                 moFormThem();
             }
             JOptionPane.showMessageDialog(view, "Thao tác thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            taiDanhSach();
+            taiLai();
         } catch (SQLException ex) {
             baoLoi("Không thể xóa khách hàng.", ex);
         }

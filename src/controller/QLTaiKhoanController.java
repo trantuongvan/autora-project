@@ -11,8 +11,6 @@ import gui.QLTaiKhoan;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -44,23 +42,19 @@ public class QLTaiKhoanController {
     private String tenGoiY = "";
     private int phienBanDanhSach;
     private int phienBanNhanVien;
+    private boolean daTai;
 
     public QLTaiKhoanController(QLTaiKhoan view) {
         this.view = view;
         initController();
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.goiYChuaTai(view.getTblNhatKy(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
-        });
-        view.getCboLocVaiTro().addActionListener(e -> taiDanhSach());
-        view.getCboLocTrangThai().addActionListener(e -> taiDanhSach());
+        view.getTxtTimKiem().addActionListener(e -> taiTatCa());
+        view.getBtnTaiDuLieu().addActionListener(e -> taiTatCa());
         view.getCboNhanVien().addActionListener(e -> theoViTriNhanVien());
         view.getBtnDong().addActionListener(e -> moFormTao());
         view.getBtnLuu().addActionListener(e -> luu());
@@ -71,8 +65,7 @@ public class QLTaiKhoanController {
             }
         });
         ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", () -> {
-            taiDanhSach();
-            taiNhatKy();
+            taiTatCa();
             if (dangSua == null) {
                 taiNhanVien();
             }
@@ -111,6 +104,23 @@ public class QLTaiKhoanController {
     // ==========================================================
     // Tải dữ liệu
     // ==========================================================
+
+    /** Nút Tải dữ liệu: danh sách tài khoản và nhật ký là danh sách nên chỉ tải khi bấm. */
+    private void taiTatCa() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
+        UIComponents.goiYChuaTai(view.getTblNhatKy(), false);
+        taiDanhSach();
+        taiNhatKy();
+    }
+
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi đã tải. */
+    private void taiLai() {
+        if (daTai) {
+            taiDanhSach();
+            taiNhatKy();
+        }
+    }
 
     private void taiDanhSach() {
         String tuKhoa = view.getTxtTimKiem().getText();
@@ -311,8 +321,7 @@ public class QLTaiKhoanController {
         }
         JOptionPane.showMessageDialog(view, "Thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        taiLai();
     }
 
     /** Trả về false khi dữ liệu nhập sai và đã được đánh dấu trên form. */
@@ -358,7 +367,7 @@ public class QLTaiKhoanController {
         if (!dao.capNhat(dangSua.getTenDangNhap(), vaiTro, matKhau.isEmpty() ? null : matKhau, hoatDong, nguoiThucHien())) {
             JOptionPane.showMessageDialog(view, "Tài khoản này không còn tồn tại.", "Không thể lưu", JOptionPane.WARNING_MESSAGE);
             moFormTao();
-            taiDanhSach();
+            taiLai();
             return false;
         }
         return true;
@@ -432,8 +441,7 @@ public class QLTaiKhoanController {
             baoLoi("Không thể thực hiện: " + ten + ".", ex);
         }
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        taiLai();
     }
 
     private boolean xacNhan(String cauHoi) {

@@ -11,8 +11,6 @@ import gui.QLBanGiaoXe;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -27,31 +25,17 @@ public class QLBanGiaoXeController {
     private String selected;
     private int loadVersion;
     private boolean loadErrorShown;
+    private boolean daTai;
 
     public QLBanGiaoXeController(QLBanGiaoXe view) {
         this.view = view;
         initController();
-        load();
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                load();
-            }
-        });
-        view.getCboLoc().addActionListener(e -> load());
+        view.getTxtTimKiem().addActionListener(e -> load());
+        view.getBtnTaiDuLieu().addActionListener(e -> load());
         view.getTblDanhSach().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && view.getTblDanhSach().getSelectedRow() >= 0) {
                 int row = view.getTblDanhSach().convertRowIndexToModel(
@@ -65,6 +49,8 @@ public class QLBanGiaoXeController {
     }
 
     private void load() {
+        daTai = true;
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int version = ++loadVersion;
         final String query = view.getTxtTimKiem().getText();
         final String filter = String.valueOf(view.getCboLoc().getSelectedItem());
@@ -187,7 +173,7 @@ public class QLBanGiaoXeController {
             dao.xacNhan(selected, receptionists.get(0).getMaNV(), "");
             JOptionPane.showMessageDialog(view, "Đã ghi nhận bàn giao.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            load();
+            if (daTai) load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage(),
                     "Không thể bàn giao", JOptionPane.WARNING_MESSAGE);

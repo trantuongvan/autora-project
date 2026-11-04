@@ -27,7 +27,7 @@ public class QLHoaDon extends JPanel {
     private final JComboBox<Object> cboHinhThuc = new JComboBox<>();
     private final JTextField txtTuNgay = new PlaceholderField("Chọn ngày");
     private final JTextField txtDenNgay = new PlaceholderField("Chọn ngày");
-    private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
+    private final JButton btnTim = UIComponents.nutTaiDuLieu();
     private final JButton btnLapHoaDon = UIComponents.nutChinh("+ Lập hóa đơn", UIConstants.PRIMARY);
     private final JLabel lblLoiLoc = UIComponents.errorLabel();
     private final JLabel lblSoDong = UIComponents.label(" ", UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);

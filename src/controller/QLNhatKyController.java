@@ -4,10 +4,9 @@ import dao.NhatKy_Dao;
 import entity.NhatKyHoatDong;
 import gui.QLNhatKy;
 import util.ChonNgay;
+import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.time.LocalDate;
@@ -27,17 +26,12 @@ public class QLNhatKyController {
     public QLNhatKyController(QLNhatKy view) {
         this.view = view;
         initController();
-        taiDuLieu();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDuLieu(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDuLieu(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDuLieu(); }
-        });
-        view.getTxtTuNgay().addActionListener(e -> taiDuLieu());
-        view.getTxtDenNgay().addActionListener(e -> taiDuLieu());
+        view.getBtnTaiDuLieu().addActionListener(e -> taiDuLieu());
+        view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
         view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai");
         view.getActionMap().put("taiLai", new AbstractAction() {
             @Override
@@ -48,6 +42,7 @@ public class QLNhatKyController {
     }
 
     private void taiDuLieu() {
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         String tuKhoa = view.getTxtTimKiem().getText();
         LocalDate tuNgay = docNgay(view.getTxtTuNgay().getText());
         LocalDate denNgay = docNgay(view.getTxtDenNgay().getText());

@@ -33,6 +33,7 @@ public class QLPhuTungController {
     private List<PhuTung> danhSachHienThi = new ArrayList<>();
     private boolean cheDoSua = false;
     private boolean dangNapDuLieuForm = false;
+    private boolean daTai = false;
 
     public QLPhuTungController(QLPhuTung view) {
         this.view = view;
@@ -42,7 +43,7 @@ public class QLPhuTungController {
 
         initHeaderAndFilters();
         initController();
-        loadData();
+        UIComponents.goiYChuaTai(view.getTblPhuTung(), true);
     }
 
     private void initHeaderAndFilters() {
@@ -56,10 +57,14 @@ public class QLPhuTungController {
             view.getLblBadgeSidebarDuyetXuat().setVisible(soCho > 0);
 
             List<String> dsHang = phuTungDao.findAllHangSanXuat();
+            Object dangChon = view.getCboHangSanXuat().getSelectedItem();
             view.getCboHangSanXuat().removeAllItems();
             view.getCboHangSanXuat().addItem("Hãng sản xuất: Tất cả");
             for (String h : dsHang) {
                 view.getCboHangSanXuat().addItem(h);
+            }
+            if (dangChon != null) {
+                view.getCboHangSanXuat().setSelectedItem(dangChon);
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -82,21 +87,9 @@ public class QLPhuTungController {
             }
         });
 
-        // Bộ lọc realtime
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadData();
-            }
-        });
-        view.getCboHangSanXuat().addActionListener(e -> loadData());
-        view.getCboKhoangGia().addActionListener(e -> loadData());
-        view.getCboTinhTrangTon().addActionListener(e -> loadData());
+        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
+        view.getBtnTaiDuLieu().addActionListener(e -> loadData());
+        view.getTxtTimKiem().addActionListener(e -> loadData());
 
         // Mở / đóng Drawer
         view.getBtnMoThemPhuTung().addActionListener(e -> moDrawerThemMoi());
@@ -152,7 +145,16 @@ public class QLPhuTungController {
         };
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadData();
+        }
+    }
+
     public void loadData() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblPhuTung(), false);
         try {
             List<PhuTung> all = phuTungDao.findAll();
             int tongMatHang = all.size();
@@ -400,7 +402,7 @@ public class QLPhuTungController {
             }
             view.hienThiDrawer(false);
             initHeaderAndFilters();
-            loadData();
+            taiLai();
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phụ tùng: " + ex.getMessage(),
@@ -421,7 +423,7 @@ public class QLPhuTungController {
                     "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
             if (cf == JOptionPane.YES_OPTION) {
                 phuTungDao.delete(pt.getMaSKU());
-                loadData();
+                taiLai();
             }
         } catch (SQLException ex) {
             ex.printStackTrace();

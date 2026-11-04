@@ -68,6 +68,7 @@ public class QLTaiKhoan extends JPanel {
 
     public static final String TAT_CA_VAI_TRO = "Tất cả vai trò";
     public static final String TAT_CA_TRANG_THAI = "Tất cả trạng thái";
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JTextField txtTimKiem;
     private final JComboBox<Object> cboLocVaiTro = new JComboBox<>();
     private final JComboBox<String> cboLocTrangThai = new JComboBox<>(
@@ -167,6 +168,7 @@ public class QLTaiKhoan extends JPanel {
         CotDoc than = new CotDoc();
         JPanel dau = UIComponents.trong(new BorderLayout(12, 0));
         dau.add(UIComponents.label("Danh sách tài khoản", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK), BorderLayout.CENTER);
+        dau.add(btnTaiDuLieu, BorderLayout.EAST);
         than.them(dau, 0);
         cboLocVaiTro.addItem(TAT_CA_VAI_TRO);
         for (VaiTro vaiTro : VaiTro.values()) {
@@ -296,4 +298,6 @@ public class QLTaiKhoan extends JPanel {
     public JComboBox<Object> getCboLocVaiTro() { return cboLocVaiTro; }
     public JComboBox<String> getCboLocTrangThai() { return cboLocTrangThai; }
     public JTable getTblDanhSach() { return tblDanhSach; }
+    public JTable getTblNhatKy() { return tblNhatKy; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
 }

@@ -16,8 +16,6 @@ import util.UIConstants;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -41,6 +39,7 @@ public class QLDuyetXuatKhoController {
     private PhieuYeuCauXuatKho yeuCauDangChon;
     private List<ChiTietYeuCauXuatKho> danhSachChiTiet = new ArrayList<>();
     private boolean duTonKho = true;
+    private boolean daTai;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -52,7 +51,7 @@ public class QLDuyetXuatKhoController {
 
         initThuKhoInfo();
         initController();
-        loadDanhSach(null);
+        hienChuaTai();
     }
 
     private void initThuKhoInfo() {
@@ -82,17 +81,8 @@ public class QLDuyetXuatKhoController {
             }
         });
 
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-        });
+        view.getBtnTaiDuLieu().addActionListener(e -> loadDanhSach(null));
+        view.getTxtTimKiem().addActionListener(e -> loadDanhSach(null));
 
         JButton[] tabs = view.getBtnTabs();
         TrangThaiYeuCauXuat[] tenTabs = view.getCacTab();
@@ -103,7 +93,6 @@ public class QLDuyetXuatKhoController {
                 for (int j = 0; j < tabs.length; j++) {
                     view.capNhatStyleTab(tabs[j], j == idx);
                 }
-                loadDanhSach(null);
             });
         }
 
@@ -191,7 +180,26 @@ public class QLDuyetXuatKhoController {
         loadDanhSach(maPhieuYC);
     }
 
+    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
+    private void hienChuaTai() {
+        JPanel container = view.getPnlDanhSachYeuCau();
+        container.removeAll();
+        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
+        container.add(lblGoiY);
+        yeuCauDangChon = null;
+        loadChiTiet();
+    }
+
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadDanhSach(null);
+        }
+    }
+
     public void loadDanhSach(String maYCCanChon) {
+        daTai = true;
         try {
             String kw = view.getTxtTimKiem().getText();
             danhSachHienTai = yeuCauDao.searchYeuCauThongMinh(kw, tabDangChon);
@@ -202,7 +210,15 @@ public class QLDuyetXuatKhoController {
             view.getLblBadgeSidebarDuyetXuat().setVisible(countCho > 0);
             view.getBtnTabs()[0].setText("Chờ xuất (" + countCho + ")");
             view.getLblDemYeuCauTrai().setText(danhSachHienTai.size() + " yêu cầu");
+            hienDanhSach(maYCCanChon);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
 
+    /** Vẽ lại danh sách đã tải và chọn một yêu cầu, không truy vấn lại theo bộ lọc mới chưa áp dụng. */
+    private void hienDanhSach(String maYCCanChon) {
+        try {
             JPanel container = view.getPnlDanhSachYeuCau();
             container.removeAll();
             yeuCauDangChon = null;
@@ -229,7 +245,7 @@ public class QLDuyetXuatKhoController {
                     item.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
-                            loadDanhSach(yc.getMaPhieuYC());
+                            hienDanhSach(yc.getMaPhieuYC());
                         }
                     });
                     container.add(item);
@@ -333,7 +349,7 @@ public class QLDuyetXuatKhoController {
             JOptionPane.showMessageDialog(view,
                     "Xuất kho thành công cho phiếu " + yeuCauDangChon.getMaPhieuYC() + "!\nSố lượng tồn kho đã được trừ tự động.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            loadDanhSach(null);
+            taiLai();
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi khi duyệt xuất kho: " + ex.getMessage(),
@@ -350,7 +366,7 @@ public class QLDuyetXuatKhoController {
             try {
                 String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
                 yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho);
-                loadDanhSach(null);
+                taiLai();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }

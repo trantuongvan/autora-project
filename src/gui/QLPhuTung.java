@@ -43,7 +43,8 @@ public class QLPhuTung extends JPanel {
     };
 
     // Thành phần màn hình chính Danh mục phụ tùng
-    private final JLabel lblMoTaSoMatHang = new JLabel("<html>0 mặt hàng • <font color='#E53935'><b>0 mặt hàng dưới ngưỡng cảnh báo</b></font></html>");
+    private final JLabel lblMoTaSoMatHang = new JLabel("<html>— mặt hàng • <font color='#E53935'><b>— mặt hàng dưới ngưỡng cảnh báo</b></font></html>");
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton btnMoThemPhuTung = UIComponents.nutChinh("Thêm phụ tùng", UIConstants.PRIMARY);
 
     private final UIComponents.IconField fTimKiem = new UIComponents.IconField(
@@ -161,18 +162,19 @@ public class QLPhuTung extends JPanel {
         root.them(pnlHeader, 0);
 
         JPanel pnlFilterRow = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 12, 0));
-        fTimKiem.setPreferredSize(new Dimension(280, 40));
+        fTimKiem.setPreferredSize(new Dimension(230, 40));
         UIComponents.styleCombo(cboHangSanXuat);
         UIComponents.styleCombo(cboKhoangGia);
         UIComponents.styleCombo(cboTinhTrangTon);
         cboHangSanXuat.setPreferredSize(new Dimension(195, 40));
-        cboKhoangGia.setPreferredSize(new Dimension(235, 40));
-        cboTinhTrangTon.setPreferredSize(new Dimension(260, 40));
+        cboKhoangGia.setPreferredSize(new Dimension(200, 40));
+        cboTinhTrangTon.setPreferredSize(new Dimension(220, 40));
 
         pnlFilterRow.add(fTimKiem);
         pnlFilterRow.add(cboHangSanXuat);
         pnlFilterRow.add(cboKhoangGia);
         pnlFilterRow.add(cboTinhTrangTon);
+        pnlFilterRow.add(btnTaiDuLieu);
         root.them(pnlFilterRow, 18);
 
         UIComponents.RoundedPanel cardBang = UIComponents.card();
@@ -321,7 +323,7 @@ public class QLPhuTung extends JPanel {
         if (spBang == null) return;
         int rowCount = tblPhuTung.getRowCount();
         int headerH = tblPhuTung.getTableHeader().getPreferredSize().height;
-        int totalH = headerH + rowCount * tblPhuTung.getRowHeight() + 2;
+        int totalH = headerH + Math.max(rowCount, 3) * tblPhuTung.getRowHeight() + 2;
         Dimension d = new Dimension(100, totalH);
         spBang.setPreferredSize(d);
         spBang.setMinimumSize(d);
@@ -465,6 +467,7 @@ public class QLPhuTung extends JPanel {
     public JLabel getLblBadgeSidebarDuyetXuat() { return lblBadgeSidebarDuyetXuat; }
 
     public JLabel getLblMoTaSoMatHang() { return lblMoTaSoMatHang; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public JButton getBtnMoThemPhuTung() { return btnMoThemPhuTung; }
     public JTextField getTxtTimKiem() { return fTimKiem.getTextField(); }
     public JComboBox<String> getCboHangSanXuat() { return cboHangSanXuat; }

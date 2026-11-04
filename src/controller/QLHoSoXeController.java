@@ -6,8 +6,6 @@ import entity.TrangThaiHoaDon;
 import entity.Xe;
 import gui.QLHoSoXe;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -22,31 +20,18 @@ public class QLHoSoXeController {
     private String selectedPlate;
     private int loadVersion;
     private boolean loadErrorShown;
+    private boolean daTai;
 
     public QLHoSoXeController(QLHoSoXe view) {
         this.view = view;
         initController();
-        load();
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        loadChuSoHuu();
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                load();
-            }
-        });
-        view.getCboLocHang().addActionListener(e -> load());
+        view.getTxtTimKiem().addActionListener(e -> load());
+        view.getBtnTaiDuLieu().addActionListener(e -> load());
         view.getBtnLuu().addActionListener(e -> save());
         view.getBtnThemHoSo().addActionListener(e -> selectedPlate = null);
         view.getBtnHuy().addActionListener(e -> selectedPlate = null);
@@ -76,7 +61,25 @@ public class QLHoSoXeController {
         });
     }
 
+    /** Danh sách chủ xe cho biểu mẫu: cần ngay khi mở màn hình, không chờ bấm Tải dữ liệu. */
+    private void loadChuSoHuu() {
+        new SwingWorker<List<String>, Void>() {
+            @Override protected List<String> doInBackground() throws Exception {
+                return dao.findChuSoHuu();
+            }
+            @Override protected void done() {
+                try {
+                    view.setDanhSachChuSoHuu(get());
+                } catch (Exception ex) {
+                    view.setDanhSachChuSoHuu(Collections.emptyList());
+                }
+            }
+        }.execute();
+    }
+
     private void load() {
+        daTai = true;
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int version = ++loadVersion;
         final String query = view.getTxtTimKiem().getText();
         final String hang = QLHoSoXe.TAT_CA_HANG.equals(view.getCboLocHang().getSelectedItem())
@@ -167,7 +170,7 @@ public class QLHoSoXeController {
             view.xoaTrangForm();
             view.setCheDoSua(false);
             view.anLichSu();
-            load();
+            if (daTai) load();
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(view, "Năm sản xuất phải là số nguyên.", "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
         } catch (IllegalArgumentException ex) {
@@ -202,7 +205,7 @@ public class QLHoSoXeController {
                 view.setCheDoSua(false);
                 view.anLichSu();
             }
-            load();
+            if (daTai) load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
                     "Không thể xóa hồ sơ xe đang được phiếu tiếp nhận hoặc dữ liệu khác sử dụng.\n" + ex.getMessage(),

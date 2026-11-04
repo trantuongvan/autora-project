@@ -34,21 +34,18 @@ public class QLHoaDonController {
     private final HoaDon_Dao dao = new HoaDon_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     private int phienBanTai;
+    private boolean daTai;
 
     public QLHoaDonController(QLHoaDon view, DieuHuongHoaDon dieuHuong) {
         this.view = view;
         this.dieuHuong = dieuHuong;
         initController();
-        taiDuLieu();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
         view.getBtnTim().addActionListener(e -> taiDuLieu());
         view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
-        view.getTxtTuNgay().addActionListener(e -> taiDuLieu());
-        view.getTxtDenNgay().addActionListener(e -> taiDuLieu());
-        view.getCboTrangThai().addActionListener(e -> taiDuLieu());
-        view.getCboHinhThuc().addActionListener(e -> taiDuLieu());
         view.getBtnLapHoaDon().addActionListener(e -> chonPhieuLapHoaDon());
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
             @Override
@@ -89,6 +86,13 @@ public class QLHoaDonController {
         }
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    public void taiLai() {
+        if (daTai) {
+            taiDuLieu();
+        }
+    }
+
     public void taiDuLieu() {
         LocalDate tuNgay;
         LocalDate denNgay;
@@ -104,6 +108,8 @@ public class QLHoaDonController {
             return;
         }
         view.hienLoiLoc(null);
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
 
         String tuKhoa = view.getTxtTimKiem().getText();
         TrangThaiHoaDon trangThai = giaTriLoc(view.getCboTrangThai(), TrangThaiHoaDon.class);
@@ -199,7 +205,7 @@ public class QLHoaDonController {
         }
         try {
             dao.huy(ma, lyDo, PhienDangNhap.getHienTai().getTenDangNhap());
-            taiDuLieu();
+            taiLai();
         } catch (IllegalArgumentException | SQLException ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể hủy hóa đơn", JOptionPane.WARNING_MESSAGE);
         }

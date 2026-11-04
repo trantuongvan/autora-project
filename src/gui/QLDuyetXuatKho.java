@@ -30,15 +30,16 @@ public class QLDuyetXuatKho extends JPanel {
     private final JButton btnMenuDuyetXuat = TrangChuThuKho.taoNutMenuDuyetXuat(true, lblBadgeSidebarDuyetXuat);
 
     // Header badge
-    private final UIComponents.Badge badgeSoYeuCauCho = new UIComponents.Badge("0 yêu cầu chờ duyệt", UIConstants.ROLE_RECEPTION_LIGHT);
+    private final UIComponents.Badge badgeSoYeuCauCho = new UIComponents.Badge("— yêu cầu chờ duyệt", UIConstants.ROLE_RECEPTION_LIGHT);
 
     // Cột trái: Yêu cầu xuất kho
-    private final JLabel lblDemYeuCauTrai = UIComponents.label("0 yêu cầu", UIConstants.FONT_CAPTION.deriveFont(12f), UIConstants.TEXT_MUTED);
+    private final JLabel lblDemYeuCauTrai = UIComponents.label("—", UIConstants.FONT_CAPTION.deriveFont(12f), UIConstants.TEXT_MUTED);
     private final UIComponents.IconField fTimKiem = new UIComponents.IconField(
             "Tìm mã yêu cầu hoặc mã phiếu",
             new UIComponents.LineIcon(UIComponents.Loai.SEARCH, UIConstants.TEXT_MUTED, 16),
             true
     );
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final TrangThaiYeuCauXuat[] CAC_TAB = TrangThaiYeuCauXuat.values();
     private final JButton[] btnTabs = new JButton[CAC_TAB.length];
     private final JPanel pnlDanhSachYeuCau = new JPanel();
@@ -123,7 +124,10 @@ public class QLDuyetXuatKho extends JPanel {
         pnlTopTrai.them(pnlTabWrap, 8);
 
         fTimKiem.setPreferredSize(new Dimension(100, 40));
-        pnlTopTrai.them(fTimKiem, 12);
+        JPanel hangTim = UIComponents.trong(new BorderLayout(8, 0));
+        hangTim.add(fTimKiem, BorderLayout.CENTER);
+        hangTim.add(btnTaiDuLieu, BorderLayout.EAST);
+        pnlTopTrai.them(hangTim, 12);
         cardTrai.add(pnlTopTrai, BorderLayout.NORTH);
 
         pnlDanhSachYeuCau.setLayout(new BoxLayout(pnlDanhSachYeuCau, BoxLayout.Y_AXIS));
@@ -371,6 +375,7 @@ public class QLDuyetXuatKho extends JPanel {
     public JTextField getTxtTimKiem() { return fTimKiem.getTextField(); }
     public TrangThaiYeuCauXuat[] getCacTab() { return CAC_TAB; }
     public JButton[] getBtnTabs() { return btnTabs; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public JPanel getPnlDanhSachYeuCau() { return pnlDanhSachYeuCau; }
     public UIComponents.Badge getBadgeTrangThai() { return badgeTrangThai; }
     public JLabel getLblMaYeuCau() { return lblMaYeuCau; }
