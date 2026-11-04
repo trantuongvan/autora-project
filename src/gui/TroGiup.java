@@ -43,6 +43,9 @@ public class TroGiup extends JPanel {
                 "F5: làm mới, Ctrl+F: tới ô tìm kiếm (trên các màn hình có ghi chú ở tiêu đề).",
                 "Ctrl+1 đến Ctrl+9: mở mục menu theo thứ tự.",
                 "Delete: xóa hồ sơ xe hoặc hủy phiếu đang chọn."), 16);
+        noiDung.them(the("Tự động phân công", Loai.WRENCH, UIConstants.PRIMARY,
+                "Khi lập phiếu, hệ thống tự chọn kỹ thuật viên có kỹ năng và xong sớm nhất cho từng hạng mục; lễ tân chỉ chọn tay khi có ngoại lệ tại Chi tiết phiếu.",
+                "Chủ cửa hàng đặt ca làm việc và kỹ năng (dịch vụ làm được, số phút) của kỹ thuật viên tại Quản lý nhân viên."), 16);
         noiDung.ketThuc();
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
     }

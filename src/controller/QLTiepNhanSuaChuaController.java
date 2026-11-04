@@ -1,6 +1,7 @@
 package controller;
 
 import dao.DichVu_Dao;
+import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.DichVu;
 import entity.KhachHang;
@@ -33,9 +34,13 @@ public class QLTiepNhanSuaChuaController {
     private final DieuHuongPhieu dieuHuong;
     private final PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
+    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private PhieuTiepNhanVaSuaChua phieuDangSua;
     private String maKhachDaCo;
     private boolean xeDaCo;
+    /** Lễ tân đã tự chọn ngày dự kiến: ngừng ghi đè bằng giá trị tự tính cho tới khi form được làm mới. */
+    private boolean datTay;
+    private String ketQuaPhanCong;
 
     public QLTiepNhanSuaChuaController(QLTiepNhanSuaChua view, DieuHuongPhieu dieuHuong) {
         this.view = view;
@@ -50,6 +55,16 @@ public class QLTiepNhanSuaChuaController {
         view.getBtnHuy().addActionListener(e -> moFormMoi());
         view.getBtnLuu().addActionListener(e -> luuPhieu(false));
         view.getBtnLuuVaChiDinh().addActionListener(e -> luuPhieu(true));
+        view.getLstDichVu().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                capNhatDuKienTuDong();
+            }
+        });
+        // Ô ngày chỉ đổi qua lịch và lịch phát sự kiện hành động: có giá trị là lễ tân tự chọn, xóa là về tự động.
+        view.getTxtDuKien().addActionListener(e -> {
+            datTay = !view.getTxtDuKien().getText().trim().isEmpty();
+            capNhatDuKienTuDong();
+        });
         ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK), "phieuMoi", this::moFormMoi);
         ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "luu", () -> luuPhieu(false));
         ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
@@ -77,7 +92,22 @@ public class QLTiepNhanSuaChuaController {
         }
     }
 
+    /** Xem trước giờ hoàn thành từ cùng phép tính lúc lưu; chưa lưu gì. */
+    private void capNhatDuKienTuDong() {
+        if (datTay || phieuDangSua != null) {
+            return;
+        }
+        List<DichVu> dichVu = view.getLstDichVu().getSelectedValuesList();
+        try {
+            LocalDateTime duKien = dichVu.isEmpty() ? null : phanCongDao.chon(LocalDateTime.now(), dichVu).getDuKien();
+            view.getTxtDuKien().setText(duKien == null ? "" : duKien.format(DINH_DANG_GIO));
+        } catch (SQLException ex) {
+            hienLoiDuLieu("Không thể tính dự kiến hoàn thành.", ex);
+        }
+    }
+
     public void moFormMoi() {
+        datTay = false;
         phieuDangSua = null;
         maKhachDaCo = null;
         xeDaCo = false;
@@ -135,6 +165,7 @@ public class QLTiepNhanSuaChuaController {
             if (xe == null && khach == null) {
                 // Chưa có trong hệ thống: nhập mới ngay trên form, giữ lại giá trị vừa tra cứu.
                 view.xoaTrangForm();
+                datTay = false;
                 maKhachDaCo = null;
                 xeDaCo = false;
                 if (laSdt) {
@@ -185,6 +216,7 @@ public class QLTiepNhanSuaChuaController {
     private void luuPhieu(boolean tiepTucChiDinh) {
         try {
             view.hienLoi(null);
+            ketQuaPhanCong = null;
             PhieuTiepNhanVaSuaChua p = docPhieu();
             if (phieuDangSua != null) {
                 if (!dao.update(p)) {
@@ -199,7 +231,8 @@ public class QLTiepNhanSuaChuaController {
             if (tiepTucChiDinh) {
                 dieuHuong.moChiTiet(ma);
             } else {
-                JOptionPane.showMessageDialog(view, "Đã lưu phiếu " + ma + ".");
+                JOptionPane.showMessageDialog(view, "Đã lưu phiếu " + ma + "."
+                        + (ketQuaPhanCong == null ? "" : "\n" + ketQuaPhanCong));
             }
         } catch (NumberFormatException ex) {
             view.hienLoi("Số km và đời xe phải là số nguyên.");
@@ -221,7 +254,8 @@ public class QLTiepNhanSuaChuaController {
         p.setYeuCauBanDau(batBuoc(view.getTxtYeuCau().getText(), "Yêu cầu của khách"));
         p.setPhuTungDuKien(batBuoc(view.getTxtPhuTungDuKien().getText(), "Phụ tùng dự kiến thay thế"));
         p.setUuTien(view.getRadKhan().isSelected() ? MucUuTien.KHAN : MucUuTien.THUONG);
-        p.setThoiGianDuKien(docDuKien(view.getTxtDuKien().getText()));
+        // Phiếu mới chưa tự chọn ngày thì để DAO tính lại, không lấy bản xem trước đã cũ.
+        p.setThoiGianDuKien(phieuDangSua == null && !datTay ? null : docDuKien(view.getTxtDuKien().getText()));
         return p;
     }
 
@@ -263,8 +297,24 @@ public class QLTiepNhanSuaChuaController {
         p.setNhanVienLap(new NhanVien(PhienDangNhap.getHienTai().getMaNV()));
         p.setThoiGianTiepNhan(LocalDateTime.now());
         p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
-        dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu);
+        ketQuaPhanCong = moTaPhanCong(dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu));
         return true;
+    }
+
+    private static String moTaPhanCong(PhanCong_Dao.KetQua ketQua) {
+        StringBuilder mo = new StringBuilder();
+        for (java.util.Map.Entry<DichVu, NhanVien> dong : ketQua.getPhanCong().entrySet()) {
+            if (dong.getValue() != null) {
+                mo.append("\n- ").append(dong.getKey().getTenDichVu()).append(": ").append(dong.getValue().getHoTen());
+            }
+        }
+        if (ketQua.getPhuTrach() != null) {
+            mo.append("\nKTV phụ trách: ").append(ketQua.getPhuTrach().getHoTen());
+        }
+        for (String ghiChu : ketQua.getGhiChu()) {
+            mo.append("\nCần chú ý: ").append(ghiChu);
+        }
+        return mo.length() == 0 ? null : "Đã tự phân công:" + mo;
     }
 
     private KhachHang docKhachMoi() {

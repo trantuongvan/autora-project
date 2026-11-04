@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -126,11 +127,15 @@ public class PhieuTiepNhanVaSuaChua_Dao {
     /**
      * Lưu một lần tiếp nhận trong cùng transaction: khách mới (nếu có), xe mới (nếu có), phiếu và các dòng dịch vụ.
      * Lỗi ở bất kỳ bước nào sẽ hủy toàn bộ để không còn khách hoặc xe mồ côi.
+     * Kỹ thuật viên từng dòng, người phụ trách và giờ dự kiến (khi lễ tân không tự chọn) do PhanCong_Dao tính
+     * tại thời điểm tiếp nhận; trả về kết quả đó để báo lại cho lễ tân.
      */
-    public void taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
+    public PhanCong_Dao.KetQua taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
             List<DichVu> dichVu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
+            LocalDateTime duKienGoc = phieu.getThoiGianDuKien();
+            NhanVien phuTrachGoc = phieu.getNhanVienPhuTrach();
             try {
                 phieu.setMaPhieuTNSC(nextId(connection));
                 if (khachMoi != null) {
@@ -141,11 +146,23 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 if (xeMoi != null) {
                     insertXe(connection, xeMoi);
                 }
+                LocalDateTime hienTai = phieu.getThoiGianTiepNhan() != null
+                        ? phieu.getThoiGianTiepNhan() : LocalDateTime.now();
+                PhanCong_Dao.KetQua phanCong = new PhanCong_Dao().chon(connection, hienTai, dichVu);
+                if (duKienGoc == null) {
+                    phieu.setThoiGianDuKien(phanCong.getDuKien());
+                }
+                if (phanCong.getPhuTrach() != null) {
+                    phieu.setNhanVienPhuTrach(phanCong.getPhuTrach());
+                }
                 insert(connection, phieu);
-                insertDichVu(connection, phieu.getMaPhieuTNSC(), dichVu);
+                insertDichVu(connection, phieu.getMaPhieuTNSC(), dichVu, phanCong);
                 connection.commit();
+                return phanCong;
             } catch (SQLException | RuntimeException ex) {
                 connection.rollback();
+                phieu.setThoiGianDuKien(duKienGoc);
+                phieu.setNhanVienPhuTrach(phuTrachGoc);
                 throw ex;
             }
         }
@@ -180,13 +197,16 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    private void insertDichVu(Connection connection, String maPhieu, List<DichVu> dichVu) throws SQLException {
-        String sql = "INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe) VALUES (?, ?, ?)";
+    private void insertDichVu(Connection connection, String maPhieu, List<DichVu> dichVu,
+            PhanCong_Dao.KetQua phanCong) throws SQLException {
+        String sql = "INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, maNV_KyThuat) VALUES (?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (DichVu dv : dichVu) {
+                NhanVien tho = phanCong.getPhanCong().get(dv);
                 statement.setString(1, maPhieu);
                 statement.setString(2, dv.getMaDichVu());
                 statement.setDouble(3, dv.getTienCong());
+                statement.setString(4, tho == null ? null : tho.getMaNV());
                 statement.executeUpdate();
             }
         }
@@ -273,8 +293,8 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         String sql = "INSERT INTO PhieuTiepNhanVaSuaChua "
                 + "(maPhieuTNSC, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, "
                 + "taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, "
-                + "trangThai, bienSo, maNV_LapPhieu, danhGiaNoiThat, ghiChu, phuTungDuKien, uuTien) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                + "trangThai, bienSo, maNV_LapPhieu, danhGiaNoiThat, ghiChu, phuTungDuKien, uuTien, maNV_PhuTrach) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, phieu.getMaPhieuTNSC());
             statement.setString(2, phieu.getYeuCauBanDau());
@@ -299,6 +319,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             statement.setString(13, phieu.getGhiChu());
             statement.setString(14, phieu.getPhuTungDuKien());
             statement.setString(15, phieu.getUuTien().getText());
+            statement.setString(16, phieu.getNhanVienPhuTrach() == null ? null : phieu.getNhanVienPhuTrach().getMaNV());
             return statement.executeUpdate() == 1;
         }
     }

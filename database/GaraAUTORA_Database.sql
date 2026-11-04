@@ -22,13 +22,24 @@ GO
 -- 1. TẠO CÁC BẢNG DANH MỤC ĐỘC LẬP (BÊN 1)
 -- ==============================================================
 
+-- 1.0. Bảng Ca làm việc (ca cố định, áp dụng mọi ngày)
+CREATE TABLE CaLamViec (
+    maCa VARCHAR(20) PRIMARY KEY,
+    tenCa NVARCHAR(50) NOT NULL,
+    gioBatDau TIME NOT NULL,
+    gioKetThuc TIME NOT NULL
+);
+GO
+
 -- 1.1. Bảng Nhân viên
 CREATE TABLE NhanVien (
     maNV VARCHAR(20) PRIMARY KEY,
     hoTen NVARCHAR(100) NOT NULL,
     soDienThoai VARCHAR(15) NOT NULL UNIQUE,
     diaChi NVARCHAR(255),
-    viTriLamViec NVARCHAR(50) NOT NULL -- 'Chủ cửa hàng', 'Lễ tân', 'Kỹ thuật viên', 'Thủ kho'
+    viTriLamViec NVARCHAR(50) NOT NULL, -- 'Chủ cửa hàng', 'Lễ tân', 'Kỹ thuật viên', 'Thủ kho'
+    maCa VARCHAR(20) NULL,
+    CONSTRAINT FK_NhanVien_CaLamViec FOREIGN KEY (maCa) REFERENCES CaLamViec(maCa)
 );
 GO
 
@@ -49,7 +60,8 @@ GO
 CREATE TABLE DichVu (
     maDichVu VARCHAR(20) PRIMARY KEY,
     tenDichVu NVARCHAR(150) NOT NULL,
-    tienCong FLOAT NOT NULL DEFAULT 0
+    tienCong FLOAT NOT NULL DEFAULT 0,
+    thoiGianChuan INT NOT NULL DEFAULT 60 -- Số phút chuẩn để làm xong dịch vụ
 );
 GO
 
@@ -110,6 +122,17 @@ CREATE TABLE TaiKhoan (
     trangThai BIT DEFAULT 1,
     maNV VARCHAR(20) NOT NULL UNIQUE,
     CONSTRAINT FK_TaiKhoan_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV) ON DELETE CASCADE
+);
+GO
+
+-- 2.1b. Kỹ năng của kỹ thuật viên: một dòng là KTV làm được dịch vụ đó trong thoiGianPhut phút
+CREATE TABLE NhanVien_DichVu (
+    maNV VARCHAR(20) NOT NULL,
+    maDichVu VARCHAR(20) NOT NULL,
+    thoiGianPhut INT NOT NULL,
+    PRIMARY KEY (maNV, maDichVu),
+    CONSTRAINT FK_NVDV_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV) ON DELETE CASCADE,
+    CONSTRAINT FK_NVDV_DichVu FOREIGN KEY (maDichVu) REFERENCES DichVu(maDichVu)
 );
 GO
 
@@ -292,14 +315,21 @@ GO
 -- 5. BỘ DỮ LIỆU MẪU ĐẦY ĐỦ ĐỂ TEST CHỨC NĂNG (SAMPLE DATA)
 -- ==============================================================
 
+-- 5.0. Thêm Ca làm việc
+INSERT INTO CaLamViec (maCa, tenCa, gioBatDau, gioKetThuc) VALUES
+('CA01', N'Ca sáng', '08:00', '12:00'),
+('CA02', N'Ca chiều', '13:00', '17:00'),
+('CA03', N'Ca hành chính', '08:00', '17:00');
+GO
+
 -- 5.1. Thêm Nhân viên
-INSERT INTO NhanVien (maNV, hoTen, soDienThoai, diaChi, viTriLamViec) VALUES
-('NV0001', N'Trần Thị Tường Vân', '0901234567', N'Gò Vấp, TP.HCM', N'Chủ cửa hàng'),
-('NV0002', N'Nguyễn Tuấn Vũ', '0912345678', N'Bình Thạnh, TP.HCM', N'Lễ tân'),
-('NV0003', N'Nguyễn Xuân Việt Anh', '0923456789', N'Quận 12, TP.HCM', N'Lễ tân'),
-('NV0004', N'Bùi Thái Vy', '0934567890', N'Thủ Đức, TP.HCM', N'Thủ kho'),
-('NV0005', N'Lê Văn Thợ Máy', '0945678901', N'Tân Bình, TP.HCM', N'Kỹ thuật viên'),
-('NV0006', N'Trần Văn Điện Lạnh', '0956789012', N'Phú Nhuận, TP.HCM', N'Kỹ thuật viên');
+INSERT INTO NhanVien (maNV, hoTen, soDienThoai, diaChi, viTriLamViec, maCa) VALUES
+('NV0001', N'Trần Thị Tường Vân', '0901234567', N'Gò Vấp, TP.HCM', N'Chủ cửa hàng', 'CA03'),
+('NV0002', N'Nguyễn Tuấn Vũ', '0912345678', N'Bình Thạnh, TP.HCM', N'Lễ tân', 'CA03'),
+('NV0003', N'Nguyễn Xuân Việt Anh', '0923456789', N'Quận 12, TP.HCM', N'Lễ tân', 'CA03'),
+('NV0004', N'Bùi Thái Vy', '0934567890', N'Thủ Đức, TP.HCM', N'Thủ kho', 'CA03'),
+('NV0005', N'Lê Văn Thợ Máy', '0945678901', N'Tân Bình, TP.HCM', N'Kỹ thuật viên', 'CA03'),
+('NV0006', N'Trần Văn Điện Lạnh', '0956789012', N'Phú Nhuận, TP.HCM', N'Kỹ thuật viên', 'CA02');
 GO
 
 -- 5.2. Thêm Tài khoản (mật khẩu băm PBKDF2 bằng util.MatKhauUtil; mật khẩu mẫu: admin123 và 123456)
@@ -328,13 +358,25 @@ INSERT INTO Xe (bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, maKH) VALUES
 GO
 
 -- 5.5. Thêm Danh mục Dịch vụ
-INSERT INTO DichVu (maDichVu, tenDichVu, tienCong) VALUES
-('DV0001', N'Bảo dưỡng định kỳ cấp 1 (5.000 km)', 250000),
-('DV0002', N'Thay dầu động cơ & lọc nhớt', 150000),
-('DV0003', N'Vệ sinh kim phun buồng đốt', 450000),
-('DV0004', N'Cân chỉnh thước lái góc đặt bánh xe', 500000),
-('DV0005', N'Bảo dưỡng hệ thống phanh 4 bánh', 350000),
-('DV0006', N'Nạp gas & bảo dưỡng điều hòa', 400000);
+INSERT INTO DichVu (maDichVu, tenDichVu, tienCong, thoiGianChuan) VALUES
+('DV0001', N'Bảo dưỡng định kỳ cấp 1 (5.000 km)', 250000, 120),
+('DV0002', N'Thay dầu động cơ & lọc nhớt', 150000, 45),
+('DV0003', N'Vệ sinh kim phun buồng đốt', 450000, 90),
+('DV0004', N'Cân chỉnh thước lái góc đặt bánh xe', 500000, 60),
+('DV0005', N'Bảo dưỡng hệ thống phanh 4 bánh', 350000, 120),
+('DV0006', N'Nạp gas & bảo dưỡng điều hòa', 400000, 90);
+GO
+
+-- 5.5b. Kỹ năng kỹ thuật viên (NV0006 làm phanh nhanh hơn thời gian chuẩn)
+INSERT INTO NhanVien_DichVu (maNV, maDichVu, thoiGianPhut) VALUES
+('NV0005', 'DV0001', 120),
+('NV0005', 'DV0002', 45),
+('NV0005', 'DV0004', 60),
+('NV0005', 'DV0005', 120),
+('NV0006', 'DV0001', 120),
+('NV0006', 'DV0003', 90),
+('NV0006', 'DV0005', 90),
+('NV0006', 'DV0006', 90);
 GO
 
 -- 5.6. Thêm Danh mục Phụ tùng

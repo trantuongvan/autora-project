@@ -6,6 +6,7 @@ public class DichVu {
     private String maDichVu;
     private String tenDichVu;
     private double tienCong;
+    private int thoiGianChuan = 60;
 
     public DichVu() {
     }
@@ -51,6 +52,18 @@ public class DichVu {
             throw new IllegalArgumentException("Tiền công phải là số hữu hạn không âm.");
         }
         this.tienCong = tienCong;
+    }
+
+    /** Số phút chuẩn để làm xong dịch vụ. */
+    public int getThoiGianChuan() {
+        return thoiGianChuan;
+    }
+
+    public void setThoiGianChuan(int thoiGianChuan) {
+        if (thoiGianChuan <= 0) {
+            throw new IllegalArgumentException("Thời gian chuẩn phải lớn hơn 0 phút.");
+        }
+        this.thoiGianChuan = thoiGianChuan;
     }
 
     @Override

@@ -229,7 +229,10 @@ public class TestNghiepVuTiepNhan {
         dung("Hoàn tác khách khi lỗi bước cuối", dao.findKhachTheoSdt("0911000003") == null);
         dung("Hoàn tác xe khi lỗi bước cuối", dao.findXeDayDu("59A-333.33") == null);
 
-        dung("Phiếu chưa phân công có KTV phụ trách null", dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach() == null);
+        // Phiếu mới được tự phân công: DV0001 chỉ NV0005 và NV0006 làm được.
+        NhanVien tuDong = dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach();
+        dung("Phiếu mới được tự chọn KTV phụ trách có kỹ năng", tuDong != null
+                && ("NV0005".equals(tuDong.getMaNV()) || "NV0006".equals(tuDong.getMaNV())));
         dung("Lưu phân công", dao.capNhatPhanCong(p.getMaPhieuTNSC(), "NV0005", "Kiểm tra lại")
                 && dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach() != null
                 && "NV0005".equals(dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach().getMaNV())

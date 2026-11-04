@@ -4,6 +4,7 @@ import com.itextpdf.text.DocumentException;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DichVu_Dao;
 import dao.NhanVien_Dao;
+import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
@@ -22,7 +23,9 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -35,6 +38,7 @@ public class ChiTietPhieuSuaChuaController {
     private final ChiTietSuaChua_DichVu_Dao chiTietDao = new ChiTietSuaChua_DichVu_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
     private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
+    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     private List<ChiTietSuaChua_DichVu> danhSach = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieu;
@@ -63,6 +67,7 @@ public class ChiTietPhieuSuaChuaController {
     private void initController() {
         view.getBtnThemDichVu().addActionListener(e -> themDong());
         view.getBtnXoaDichVu().addActionListener(e -> xoaDong());
+        view.getBtnTuDongPhanCong().addActionListener(e -> tuDongPhanCong());
         view.getBtnLuuPhanCong().addActionListener(e -> luuPhanCong());
         view.getBtnCapNhatTienDo().addActionListener(e -> capNhatTienDo());
         view.getBtnHuyPhieu().addActionListener(e -> huyPhieu());
@@ -164,6 +169,52 @@ public class ChiTietPhieuSuaChuaController {
         moi.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
         moi.setTienCongThucTe(dv.getTienCong());
         ghi(() -> chiTietDao.insert(moi));
+        for (int i = 0; i < danhSach.size(); i++) {
+            if (danhSach.get(i).getDichVu().equals(dv)) {
+                tuChonTho(Collections.singletonList(i), false);
+            }
+        }
+    }
+
+    /** Điền thợ vào các dòng chưa có thợ (và KTV phụ trách nếu còn trống); chỉ điền lên bảng, chưa lưu. */
+    private void tuDongPhanCong() {
+        if (view.getTblChiTiet().isEditing()) {
+            view.getTblChiTiet().getCellEditor().stopCellEditing();
+        }
+        List<Integer> dongTrong = new ArrayList<>();
+        for (int i = 0; i < danhSach.size(); i++) {
+            if (!(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO) instanceof NhanVien)) {
+                dongTrong.add(i);
+            }
+        }
+        if (dongTrong.isEmpty()) {
+            view.hienLoi("Mọi dịch vụ đã có thợ phụ trách.");
+            return;
+        }
+        tuChonTho(dongTrong, true);
+    }
+
+    private void tuChonTho(List<Integer> dong, boolean dienPhuTrach) {
+        List<DichVu> dichVu = new ArrayList<>();
+        for (int i : dong) {
+            dichVu.add(danhSach.get(i).getDichVu());
+        }
+        try {
+            PhanCong_Dao.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
+            for (int i : dong) {
+                NhanVien tho = ketQua.getPhanCong().get(danhSach.get(i).getDichVu());
+                if (tho != null) {
+                    view.getTableModel().setValueAt(thoHienThi(tho), i, ChiTietPhieuSuaChua.COT_THO);
+                }
+            }
+            if (dienPhuTrach && ketQua.getPhuTrach() != null
+                    && !(view.getCboKtvPhuTrach().getSelectedItem() instanceof NhanVien)) {
+                view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(ketQua.getPhuTrach()));
+            }
+            view.hienLoi(ketQua.getGhiChu().isEmpty() ? null : String.join(" ", ketQua.getGhiChu()));
+        } catch (SQLException ex) {
+            hienLoiDuLieu(ex);
+        }
     }
 
     private void xoaDong() {
