@@ -46,6 +46,9 @@ public class TroGiup extends JPanel {
         noiDung.them(the("Tự động phân công", Loai.WRENCH, UIConstants.PRIMARY,
                 "Khi lập phiếu, hệ thống tự chọn kỹ thuật viên có kỹ năng và xong sớm nhất cho từng hạng mục; lễ tân chỉ chọn tay khi có ngoại lệ tại Chi tiết phiếu.",
                 "Chủ cửa hàng đặt ca làm việc và kỹ năng (dịch vụ làm được, số phút) của kỹ thuật viên tại Quản lý nhân viên."), 16);
+        noiDung.them(the("Lịch hẹn", Loai.CALENDAR, UIConstants.PRIMARY,
+                "Tại Khách hàng, chọn một khách rồi bấm Thêm lịch hẹn để hẹn ngày đến; chọn một lịch và bấm Hủy lịch hẹn để hủy. Lập phiếu cho xe sẽ tự chuyển lịch hẹn tới hạn sang Đã đến.",
+                "Trang chủ Lễ tân liệt kê lịch hẹn hôm nay: bấm đúp vào dòng để mở Tiếp nhận xe với biển số hoặc SĐT đã điền sẵn."), 16);
         noiDung.ketThuc();
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
     }

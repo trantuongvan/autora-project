@@ -16,6 +16,8 @@ public class KhachHang {
     private boolean duocGhiNo;
     /** Chỉ chứa biển số khi lấy từ KhachHang_Dao.search; không dùng để ghi. */
     private List<Xe> danhSachXe = new ArrayList<>();
+    /** Chỉ có thời gian hẹn, và chỉ khi lấy từ KhachHang_Dao.search: lịch Đang hẹn gần nhất từ hôm nay; không dùng để ghi. */
+    private LichHen lichHenGanNhat;
 
     public KhachHang() {
     }
@@ -129,6 +131,14 @@ public class KhachHang {
 
     public void setDanhSachXe(List<Xe> danhSachXe) {
         this.danhSachXe = danhSachXe == null ? new ArrayList<>() : danhSachXe;
+    }
+
+    public LichHen getLichHenGanNhat() {
+        return lichHenGanNhat;
+    }
+
+    public void setLichHenGanNhat(LichHen lichHenGanNhat) {
+        this.lichHenGanNhat = lichHenGanNhat;
     }
 
     @Override

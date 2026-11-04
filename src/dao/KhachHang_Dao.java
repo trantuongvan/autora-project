@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.KhachHang;
+import entity.LichHen;
 import entity.LoaiKhachHang;
 import entity.Xe;
 
@@ -42,15 +43,28 @@ public class KhachHang_Dao {
      * duocGhiNo null là không lọc. getDanhSachXe() của mỗi khách chứa mọi xe của khách, chỉ có biển số.
      */
     public List<KhachHang> search(String tuKhoa, LoaiKhachHang loaiKhachHang, Boolean duocGhiNo) throws SQLException {
+        return search(tuKhoa, loaiKhachHang, duocGhiNo, null);
+    }
+
+    /**
+     * coLichHen null là không lọc; true chỉ lấy khách có lịch Đang hẹn từ hôm nay trở đi, false là khách không có.
+     * getLichHenGanNhat() của mỗi khách là lịch Đang hẹn gần nhất đó (chỉ có thời gian), null nếu không có.
+     */
+    public List<KhachHang> search(String tuKhoa, LoaiKhachHang loaiKhachHang, Boolean duocGhiNo, Boolean coLichHen)
+            throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
         String loai = loaiKhachHang == null ? "" : loaiKhachHang.getText();
-        String sql = "SELECT " + COT_KHACH_HANG + ", xe.bienSo "
+        String sql = "SELECT " + COT_KHACH_HANG + ", xe.bienSo, lh.gan "
                 + "FROM KhachHang k LEFT JOIN Xe xe ON xe.maKH = k.maKH "
+                + "LEFT JOIN (SELECT maKH, MIN(thoiGianHen) AS gan FROM LichHen WHERE trangThai = N'Đang hẹn' "
+                + "AND thoiGianHen >= " + LichHen_Dao.DAU_NGAY + " GROUP BY maKH) lh ON lh.maKH = k.maKH "
                 + "WHERE (? = N'' OR k.hoTen LIKE ? OR k.soDienThoai LIKE ? "
                 + "OR EXISTS (SELECT 1 FROM Xe x WHERE x.maKH = k.maKH AND x.bienSo LIKE ?)) "
                 + "AND (? = N'' OR k.loaiKhachHang = ?) AND (? = -1 OR k.duocGhiNo = ?) "
+                + "AND (? = -1 OR (? = 1 AND lh.gan IS NOT NULL) OR (? = 0 AND lh.gan IS NULL)) "
                 + "ORDER BY k.maKH, xe.bienSo";
         int ghiNo = duocGhiNo == null ? -1 : duocGhiNo ? 1 : 0;
+        int lich = coLichHen == null ? -1 : coLichHen ? 1 : 0;
         List<KhachHang> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -62,11 +76,21 @@ public class KhachHang_Dao {
             statement.setString(6, loai);
             statement.setInt(7, ghiNo);
             statement.setInt(8, ghiNo);
+            statement.setInt(9, lich);
+            statement.setInt(10, lich);
+            statement.setInt(11, lich);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     String maKH = rs.getString("maKH");
                     if (ketQua.isEmpty() || !ketQua.get(ketQua.size() - 1).getMaKH().equals(maKH)) {
-                        ketQua.add(docKhachHang(rs));
+                        KhachHang kh = docKhachHang(rs);
+                        Timestamp gan = rs.getTimestamp("gan");
+                        if (gan != null) {
+                            LichHen lh = new LichHen();
+                            lh.setThoiGianHen(gan.toLocalDateTime());
+                            kh.setLichHenGanNhat(lh);
+                        }
+                        ketQua.add(kh);
                     }
                     String bienSo = rs.getString("bienSo");
                     if (bienSo != null) {

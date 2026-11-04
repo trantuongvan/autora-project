@@ -1,5 +1,6 @@
 package gui;
 
+import controller.TrangChuLeTanController;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -46,6 +47,10 @@ public class TrangChuLeTan extends JPanel {
     private final JTable tblDanhSach;
     private final DefaultTableModel tableModel;
     private final JButton btnLamMoi;
+    private final JLabel lblThongTinLich = new JLabel();
+    private final DefaultTableModel lichHenModel;
+    private final JTable tblLichHen;
+    private TrangChuLeTanController controller;
     private DieuHuongListener dieuHuong = (card, ma) -> { };
 
     public TrangChuLeTan() {
@@ -112,6 +117,21 @@ public class TrangChuLeTan extends JPanel {
         chan.add(phai, BorderLayout.EAST);
         theBang.add(chan, BorderLayout.SOUTH);
         noiDung.them(theBang, 16);
+
+        // --- Lịch hẹn hôm nay ---
+        RoundedPanel theLich = UIComponents.card();
+        theLich.setLayout(new BorderLayout());
+        lblThongTinLich.setFont(UIConstants.FONT_BODY.deriveFont(13f));
+        lblThongTinLich.setForeground(UIConstants.TEXT_MUTED);
+        theLich.add(UIComponents.tieuDeCard(new JLabel("Lịch hẹn hôm nay"), lblThongTinLich), BorderLayout.NORTH);
+        lichHenModel = UIComponents.modelKhongSua("Giờ", "Khách hàng", "SĐT", "Xe", "Ghi chú");
+        tblLichHen = new JTable(lichHenModel);
+        UIComponents.styleTable(tblLichHen);
+        tblLichHen.getColumnModel().getColumn(0).setCellRenderer(new CellRenderer(UIConstants.FONT_FORM_LABEL.deriveFont(14f), null));
+        UIComponents.datDoRong(tblLichHen, 80, 200, 130, 230, 300);
+        theLich.add(UIComponents.cuonBang(tblLichHen), BorderLayout.CENTER);
+        noiDung.them(theLich, 16);
+        UIComponents.canChieuCaoBang(tblLichHen, 2, 6);
         noiDung.ketThuc();
 
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
@@ -122,7 +142,7 @@ public class TrangChuLeTan extends JPanel {
     public static JPanel createPanel() {
         TrangChuLeTan panel = new TrangChuLeTan();
         panel.napDuLieuMau();
-        new controller.TrangChuLeTanController(panel);
+        panel.controller = new TrangChuLeTanController(panel);
         return panel;
     }
 
@@ -223,6 +243,17 @@ public class TrangChuLeTan extends JPanel {
         UIComponents.canChieuCaoBang(tblDanhSach, 3, 7);
     }
 
+    /** Mỗi dòng: {giờ, khách hàng, SĐT, xe, ghi chú}; danh sách rỗng hiện dòng báo hôm nay không có lịch hẹn. */
+    public void setLichHen(List<Object[]> dong) {
+        lichHenModel.setRowCount(0);
+        for (Object[] r : dong) lichHenModel.addRow(r);
+        lblThongTinLich.setText(dong.isEmpty() ? "Hôm nay không có lịch hẹn."
+                : dong.size() + " lịch hẹn \u2022 Bấm đúp vào dòng để tiếp nhận xe");
+        UIComponents.canChieuCaoBang(tblLichHen, 2, 6);
+    }
+
+    public JTable getTblLichHen() { return tblLichHen; }
+    public TrangChuLeTanController getController() { return controller; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }
