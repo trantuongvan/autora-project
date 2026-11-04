@@ -185,7 +185,9 @@ CREATE TABLE PhieuTiepNhanVaSuaChua (
     bienSo VARCHAR(20) NOT NULL,
     maNV_LapPhieu VARCHAR(20) NOT NULL,
     maNV_PhuTrach VARCHAR(20) NULL,
+    maKH VARCHAR(20) NOT NULL, -- Chủ xe lúc tiếp nhận: xe đổi chủ về sau thì phiếu và hóa đơn cũ vẫn đúng người
     CONSTRAINT FK_PTNSC_Xe FOREIGN KEY (bienSo) REFERENCES Xe(bienSo),
+    CONSTRAINT FK_PTNSC_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
     CONSTRAINT FK_PTNSC_NhanVien FOREIGN KEY (maNV_LapPhieu) REFERENCES NhanVien(maNV),
     CONSTRAINT FK_PTNSC_PhuTrach FOREIGN KEY (maNV_PhuTrach) REFERENCES NhanVien(maNV)
 );
@@ -230,6 +232,7 @@ CREATE TABLE HoaDon (
     trangThaiThanhToan NVARCHAR(50) DEFAULT N'Đã thanh toán', -- 'Đã thanh toán', 'Công nợ', 'Đã hủy'
     lyDoHuy NVARCHAR(255),
     ngayLap DATETIME DEFAULT GETDATE(),
+    ngayThanhToan DATETIME NULL, -- Ngày thu tiền; doanh thu tính theo ngày này. NULL: công nợ chưa thu
     maPhieuTNSC VARCHAR(30) NOT NULL,
     maNV_Lap VARCHAR(20) NOT NULL,
     maKM VARCHAR(20) NULL,
@@ -421,9 +424,9 @@ INSERT INTO Thue (maThue, tenLoaiThue, thueSuat) VALUES
 GO
 
 -- 5.9. Thêm Phiếu tiếp nhận mẫu & Chi tiết
-INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, trangThai) VALUES
-('PTNSC00001', '51H-123.45', 'NV0002', N'Bảo dưỡng định kỳ mốc 4 vạn km, thay nhớt lọc và kiểm tra phanh', 40250, 65.0, N'Trầy nhẹ cản sau', N'Ví tiền lẻ trong hộc, 1 cặp kính râm', '2026-10-20 08:30:00', '2026-10-20 16:30:00', N'Hoàn thành'),
-('PTNSC00002', '50E-999.12', 'NV0003', N'Xe có tiếng kêu lục cục ở bánh trước khi qua gờ giảm tốc', 68000, 45.0, N'Không trầy xước', N'Không gửi tài sản', '2026-10-23 09:15:00', '2026-10-23 17:00:00', N'Đang sửa');
+INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, trangThai) VALUES
+('PTNSC00001', '51H-123.45', 'KH0001', 'NV0002', N'Bảo dưỡng định kỳ mốc 4 vạn km, thay nhớt lọc và kiểm tra phanh', 40250, 65.0, N'Trầy nhẹ cản sau', N'Ví tiền lẻ trong hộc, 1 cặp kính râm', '2026-10-20 08:30:00', '2026-10-20 16:30:00', N'Hoàn thành'),
+('PTNSC00002', '50E-999.12', 'KH0002', 'NV0003', N'Xe có tiếng kêu lục cục ở bánh trước khi qua gờ giảm tốc', 68000, 45.0, N'Không trầy xước', N'Không gửi tài sản', '2026-10-23 09:15:00', '2026-10-23 17:00:00', N'Đang sửa');
 GO
 
 INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, maNV_KyThuat, tienCongThucTe, trangThaiTienDo) VALUES
@@ -445,8 +448,8 @@ GO
 -- Giảm 10% (KM0001): 155.000đ -> Còn 1.395.000đ
 -- VAT 8%: 111.600đ
 -- Tổng thanh toán: 1.506.600đ
-INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan) VALUES
-('HD000001', 'PTNSC00001', 'NV0002', 'KM0001', 'VAT08', '2026-10-20 16:45:00', 750000, 800000, 155000, 111600, 1506600, N'Chuyển khoản', N'Đã thanh toán');
+INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan, ngayThanhToan) VALUES
+('HD000001', 'PTNSC00001', 'NV0002', 'KM0001', 'VAT08', '2026-10-20 16:45:00', 750000, 800000, 155000, 111600, 1506600, N'Chuyển khoản', N'Đã thanh toán', '2026-10-20 16:45:00');
 GO
 
 -- 5.11. Thêm Phiếu bàn giao xe mẫu (cho PTNSC00001)

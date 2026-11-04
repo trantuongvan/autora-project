@@ -63,7 +63,7 @@ public class ChiTietSuaChua_DichVu_Dao {
                 + "WHERE h.maPhieuTNSC = ? "
                 + "AND h.trangThaiThanhToan <> N'Đã hủy') "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuTiepNhanVaSuaChua p "
-                + "WHERE p.maPhieuTNSC = ? AND p.trangThai = N'Đã hủy')";
+                + "WHERE p.maPhieuTNSC = ? AND p.trangThai IN (N'Đã hủy', N'Hoàn thành'))";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, chiTiet.getPhieu().getMaPhieuTNSC());

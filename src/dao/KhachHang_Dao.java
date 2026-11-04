@@ -160,7 +160,7 @@ public class KhachHang_Dao {
         }
     }
 
-    /** Trả về false khi khách hàng còn xe liên kết hoặc không còn tồn tại. */
+    /** Trả về false khi khách hàng còn xe liên kết, đã có phiếu sửa chữa hoặc không còn tồn tại. */
     public boolean delete(String maKH) throws SQLException {
         String sql = "DELETE FROM KhachHang WHERE maKH = ? AND NOT EXISTS (SELECT 1 FROM Xe WHERE maKH = ?)";
         try (Connection connection = ConnectDB.getConnection();
@@ -169,7 +169,7 @@ public class KhachHang_Dao {
             statement.setString(2, maKH);
             return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            // Xe vừa được thêm ngay giữa lúc xóa.
+            // Khách đã có phiếu sửa chữa, hoặc xe vừa được thêm ngay giữa lúc xóa.
             if (ex.getErrorCode() == LOI_VI_PHAM_KHOA_NGOAI) {
                 return false;
             }
@@ -205,9 +205,9 @@ public class KhachHang_Dao {
                 + "JOIN DichVu d ON d.maDichVu = ct.maDichVu WHERE ct.maPhieuTNSC = p.maPhieuTNSC "
                 + "ORDER BY d.tenDichVu FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS hangMuc, "
                 + "hd.tongThanhToan "
-                + "FROM PhieuTiepNhanVaSuaChua p JOIN Xe x ON x.bienSo = p.bienSo "
+                + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon hd ON hd.maPhieuTNSC = p.maPhieuTNSC AND hd.trangThaiThanhToan <> N'Đã hủy' "
-                + "WHERE x.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
+                + "WHERE p.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
         List<Object[]> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {

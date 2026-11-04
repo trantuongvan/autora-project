@@ -1,14 +1,24 @@
 package test;
 
 import connection.ConnectDB;
+import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DangNhap_Dao;
 import dao.HoaDon_Dao;
+import dao.KhachHang_Dao;
 import dao.NhanVien_Dao;
+import dao.PhieuBanGiao_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
+import dao.PhuTung_Dao;
 import dao.TienDoSuaChua_Dao;
+import dao.TrangChuQuanLy_Dao;
+import dao.Xe_Dao;
+import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietYeuCauXuatKho;
+import entity.DichVu;
 import entity.HinhThucThanhToan;
+import entity.KhachHang;
+import entity.MucUuTien;
 import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhieuYeuCauXuatKho;
@@ -16,6 +26,7 @@ import entity.PhuTung;
 import entity.TrangThaiPhieu;
 import entity.TrangThaiTienDo;
 import entity.TrangThaiYeuCauXuat;
+import entity.Xe;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -24,6 +35,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +59,12 @@ public class TestKho {
         kiemTraDemHomNay();
         kiemTraXoaNhanVien();
         kiemTraCauHinh();
+        kiemTraBanGiao();
+        kiemTraThemDichVuPhieuXong();
+        kiemTraSuaPhuTung();
+        kiemTraYeuCauPhieuDaKhoa();
+        kiemTraThuCongNo();
+        kiemTraDoiChuXe();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
@@ -222,6 +240,167 @@ public class TestKho {
         }
     }
 
+    private static void kiemTraBanGiao() throws Exception {
+        PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
+        kiem("Tất cả có phiếu đã và chưa bàn giao", coPhieu(dao.findDanhSach("", "Tất cả"), "PTNSC00001") && coPhieu(dao.findDanhSach("", "Tất cả"), "PTNSC00002"));
+        kiem("Chờ bàn giao chỉ có phiếu chưa bàn giao", coPhieu(dao.findDanhSach("", "Chờ bàn giao"), "PTNSC00002") && !coPhieu(dao.findDanhSach("", "Chờ bàn giao"), "PTNSC00001"));
+        kiem("Đã bàn giao chỉ có phiếu đã bàn giao", coPhieu(dao.findDanhSach("", "Đã bàn giao"), "PTNSC00001") && !coPhieu(dao.findDanhSach("", "Đã bàn giao"), "PTNSC00002"));
+        kiem("Tìm theo biển số", coPhieu(dao.findDanhSach("50E-999", "Chờ bàn giao"), "PTNSC00002") && !coPhieu(dao.findDanhSach("51H-123", "Chờ bàn giao"), "PTNSC00002"));
+
+        String p = taoPhieu("Đang sửa");
+        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        boolean biChan = false;
+        try {
+            dao.xacNhan(p, "NV0002", "");
+        } catch (SQLException ex) {
+            biChan = true;
+        }
+        kiem("Chưa có hóa đơn thì không bàn giao", biChan);
+        lap(p);
+        kiem("Có hóa đơn thì bàn giao được", dao.xacNhan(p, "NV0002", ""));
+        kiem("Bàn giao xong chuyển sang danh sách đã bàn giao", coPhieu(dao.findDanhSach("", "Đã bàn giao"), p) && !coPhieu(dao.findDanhSach("", "Chờ bàn giao"), p));
+        biChan = false;
+        try {
+            dao.xacNhan(p, "NV0002", "");
+        } catch (SQLException ex) {
+            biChan = true;
+        }
+        kiem("Không bàn giao hai lần", biChan);
+        String h = taoPhieu("Đã hủy");
+        kiem("Phiếu đã hủy không có trong danh sách", !coPhieu(dao.findDanhSach("", "Tất cả"), h));
+    }
+
+    private static boolean coPhieu(List<Object[]> dong, String ma) {
+        for (Object[] d : dong) {
+            if (ma.equals(d[0])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void kiemTraThemDichVuPhieuXong() throws Exception {
+        ChiTietSuaChua_DichVu_Dao dao = new ChiTietSuaChua_DichVu_Dao();
+        String xong = taoPhieu("Đang sửa");
+        tienDo.capNhatTienDoHangMuc(xong, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        kiem("Không thêm dịch vụ vào phiếu đã hoàn thành", !dao.insert(dongDichVu(xong)));
+        kiem("Phiếu đã hoàn thành vẫn một dịch vụ", 1 == so("SELECT COUNT(*) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = '" + xong + "'"));
+        String ma = lap(xong);
+        kiem("Hóa đơn chỉ tính dịch vụ đã làm", 100000 == so("SELECT CAST(tongTienCong AS INT) FROM HoaDon WHERE maHD = '" + ma + "'"));
+        kiem("Xe vẫn bàn giao được", new PhieuBanGiao_Dao().xacNhan(xong, "NV0002", ""));
+        kiem("Phiếu đang sửa vẫn thêm được dịch vụ", dao.insert(dongDichVu(taoPhieu("Đang sửa"))));
+        kiem("Phiếu đã hủy không thêm được dịch vụ", !dao.insert(dongDichVu(taoPhieu("Đã hủy"))));
+    }
+
+    private static ChiTietSuaChua_DichVu dongDichVu(String p) {
+        ChiTietSuaChua_DichVu d = new ChiTietSuaChua_DichVu();
+        d.setPhieu(new PhieuTiepNhanVaSuaChua(p));
+        d.setDichVu(new DichVu("DV0002"));
+        d.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
+        d.setTienCongThucTe(150000);
+        return d;
+    }
+
+    private static void kiemTraSuaPhuTung() throws Exception {
+        PhuTung_Dao dao = new PhuTung_Dao();
+        PhuTung cu = dao.findById("SKU_BRK01");
+        int ton = cu.getSoLuongTon();
+        thucThi("UPDATE PhuTung SET soLuongTon = soLuongTon - 3 WHERE maSKU = 'SKU_BRK01'");
+        double giaMoi = cu.getGiaBanLe() + 1000;
+        cu.setGiaBanLe(giaMoi);
+        kiem("Sửa phụ tùng thành công", dao.update(cu));
+        kiem("Màn hình cũ không ghi đè tồn kho", ton("SKU_BRK01") == ton - 3);
+        kiem("Sửa phụ tùng vẫn lưu giá mới", dao.findById("SKU_BRK01").getGiaBanLe() == giaMoi);
+    }
+
+    private static void kiemTraYeuCauPhieuDaKhoa() throws Exception {
+        for (String trangThai : new String[] {"Đã hủy", "Hoàn thành"}) {
+            String p = taoPhieu(trangThai);
+            boolean biChan = false;
+            try {
+                taoYeuCau(p, "SKU_FLT01", 1);
+            } catch (SQLException ex) {
+                biChan = ex.getMessage().contains("không thể yêu cầu phụ tùng");
+            }
+            kiem("Không gửi yêu cầu cho phiếu " + trangThai, biChan);
+            kiem("Phiếu " + trangThai + " giữ nguyên trạng thái", trangThai.equals(trangThaiPhieu(p)));
+            kiem("Phiếu " + trangThai + " không có yêu cầu mồ côi", 0 == so("SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = '" + p + "'"));
+        }
+    }
+
+    private static void kiemTraThuCongNo() throws Exception {
+        TrangChuQuanLy_Dao trangChu = new TrangChuQuanLy_Dao();
+        LocalDate homNay = LocalDate.now();
+        kiem("Hóa đơn mẫu tính vào ngày thanh toán", trangChu.doanhThuNgay(LocalDate.of(2026, 10, 20)) >= 1506600);
+        double goc = trangChu.doanhThuNgay(homNay);
+
+        String p = taoPhieu("Đang sửa");
+        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        String ma = hoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.CONG_NO, null, "NV0002");
+        double tong = hoaDon.findById(ma).getTongThanhToan();
+        kiem("Công nợ chưa thu chưa tính doanh thu", trangChu.doanhThuNgay(homNay) == goc);
+        kiem("Công nợ chưa có ngày thanh toán", q("SELECT ngayThanhToan FROM HoaDon WHERE maHD = '" + ma + "'") == null);
+
+        thucThi("UPDATE HoaDon SET ngayLap = DATEADD(month, -1, GETDATE()) WHERE maHD = '" + ma + "'");
+        hoaDon.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "thu.ngan");
+        kiem("Thu nợ hôm nay tính vào doanh thu hôm nay", trangChu.doanhThuNgay(homNay) == goc + tong);
+        kiem("Thu nợ tính vào doanh thu tháng này", trangChu.doanhThuTheoNgay(homNay, homNay).get(homNay) == goc + tong);
+        kiem("Thu nợ có trong bảng doanh thu hôm nay", !trangChu.bangDoanhThu(homNay, homNay).isEmpty());
+        kiem("Ghi nhật ký thu nợ", coNhatKy("thu.ngan", "Thu tiền công nợ", ma));
+
+        String tra = taoPhieu("Đang sửa");
+        tienDo.capNhatTienDoHangMuc(tra, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        double truoc = trangChu.doanhThuNgay(homNay);
+        String maTra = lap(tra);
+        kiem("Trả ngay tính vào doanh thu ngay", trangChu.doanhThuNgay(homNay) == truoc + hoaDon.findById(maTra).getTongThanhToan());
+        hoaDon.huy(maTra, "Lập sai", NGUOI);
+        kiem("Hóa đơn hủy không tính doanh thu", trangChu.doanhThuNgay(homNay) == truoc);
+    }
+
+    private static void kiemTraDoiChuXe() throws Exception {
+        thucThi("INSERT INTO KhachHang (maKH, hoTen, soDienThoai, diaChi) VALUES ('KHK1', N'Chủ cũ', '0999000201', N'A'), ('KHK2', N'Chủ mới', '0999000202', N'B')");
+        thucThi("INSERT INTO Xe (bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, maKH) VALUES ('77K-100.01', 'VINKHO0000000001', 'Honda', 'City', 2020, N'Đỏ', 'KHK1')");
+        PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
+        List<DichVu> dichVu = Arrays.asList(new DichVu("DV0002"));
+        PhieuTiepNhanVaSuaChua cu = phieuXe("77K-100.01");
+        dao.taoTiepNhan(null, null, cu, dichVu);
+        String maCu = cu.getMaPhieuTNSC();
+        kiem("Tiếp nhận lưu chủ xe lúc đó", "KHK1".equals(q("SELECT maKH FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = '" + maCu + "'")));
+        thucThi("UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = N'Hoàn thành' WHERE maPhieuTNSC = '" + maCu + "'");
+        thucThi("UPDATE PhieuTiepNhanVaSuaChua SET trangThai = N'Hoàn thành' WHERE maPhieuTNSC = '" + maCu + "'");
+        String ma = lap(maCu);
+
+        Xe_Dao xeDao = new Xe_Dao();
+        Xe xe = xeDao.findById("77K-100.01");
+        xe.setKhachHang(new KhachHang("KHK2"));
+        kiem("Đổi chủ xe", xeDao.update(xe));
+        kiem("Hóa đơn cũ vẫn ghi chủ cũ", "Chủ cũ".equals(hoaDon.findById(ma).getPhieu().getXe().getKhachHang().getHoTen()));
+        kiem("Thông tin in hóa đơn vẫn ghi chủ cũ", "Chủ cũ".equals(hoaDon.findThongTinPhieu(maCu).getXe().getKhachHang().getHoTen()));
+        kiem("Phiếu cũ vẫn ghi chủ cũ", "Chủ cũ".equals(dao.findById(maCu).getXe().getKhachHang().getHoTen()));
+
+        KhachHang_Dao khDao = new KhachHang_Dao();
+        kiem("Lịch sử cũ thuộc chủ cũ", khDao.lichSuSuaChua("KHK1").size() == 1 && khDao.lichSuSuaChua("KHK2").isEmpty());
+        kiem("Chủ cũ đã có phiếu thì không xóa được", !khDao.delete("KHK1"));
+
+        PhieuTiepNhanVaSuaChua moi = phieuXe("77K-100.01");
+        dao.taoTiepNhan(null, null, moi, dichVu);
+        kiem("Phiếu mới ghi chủ mới", "KHK2".equals(q("SELECT maKH FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = '" + moi.getMaPhieuTNSC() + "'")));
+        kiem("Phiếu mới đọc ra chủ mới", "Chủ mới".equals(dao.findById(moi.getMaPhieuTNSC()).getXe().getKhachHang().getHoTen()));
+    }
+
+    private static PhieuTiepNhanVaSuaChua phieuXe(String bienSo) {
+        PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
+        p.setXe(new Xe(bienSo));
+        p.setNhanVienLap(new NhanVien("NV0003"));
+        p.setYeuCauBanDau("Kiểm tra");
+        p.setSoKm(100);
+        p.setMucNhienLieu(50);
+        p.setThoiGianTiepNhan(LocalDateTime.now());
+        p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
+        p.setUuTien(MucUuTien.THUONG);
+        return p;
+    }
+
     private static String loiCauHinh(File tep) {
         try {
             ConnectDB.docCauHinh(tep);
@@ -237,7 +416,7 @@ public class TestKho {
 
     private static String taoPhieu(String trangThai) throws Exception {
         String ma = "KHO" + (++stt);
-        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, trangThai) VALUES ('" + ma + "', '50E-999.12', 'NV0002', N'" + trangThai + "')");
+        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, trangThai) VALUES ('" + ma + "', '50E-999.12', 'KH0002', 'NV0002', N'" + trangThai + "')");
         thucThi("INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, trangThaiTienDo) VALUES ('" + ma + "', 'DV0001', 100000, N'Đang sửa')");
         return ma;
     }

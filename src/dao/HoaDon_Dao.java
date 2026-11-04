@@ -36,7 +36,7 @@ public class HoaDon_Dao {
             + "FROM HoaDon h "
             + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = h.maPhieuTNSC "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
-            + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN KhachHang k ON k.maKH = p.maKH "
             + "JOIN NhanVien n ON n.maNV = h.maNV_Lap "
             + "LEFT JOIN Thue t ON t.maThue = h.maThue ";
 
@@ -109,7 +109,7 @@ public class HoaDon_Dao {
     /** Phiếu đủ điều kiện lập hóa đơn, kèm xe và chủ xe. */
     public List<PhieuTiepNhanVaSuaChua> findPhieuChoLap() throws SQLException {
         String sql = "SELECT p.maPhieuTNSC, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + " FROM PhieuTiepNhanVaSuaChua p "
-                + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = x.maKH "
+                + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = p.maKH "
                 + "WHERE p.trangThai = N'Hoàn thành' AND NOT EXISTS (SELECT 1 FROM HoaDon h "
                 + "WHERE h.maPhieuTNSC = p.maPhieuTNSC AND h.trangThaiThanhToan <> N'Đã hủy') "
                 + "ORDER BY p.thoiGianTiepNhan DESC";
@@ -131,7 +131,7 @@ public class HoaDon_Dao {
     public PhieuTiepNhanVaSuaChua findThongTinPhieu(String maPhieu) throws SQLException {
         String sql = "SELECT p.maPhieuTNSC, p.trangThai, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + " "
                 + "FROM PhieuTiepNhanVaSuaChua p JOIN Xe x ON x.bienSo = p.bienSo "
-                + "JOIN KhachHang k ON k.maKH = x.maKH WHERE p.maPhieuTNSC = ?";
+                + "JOIN KhachHang k ON k.maKH = p.maKH WHERE p.maPhieuTNSC = ?";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
@@ -241,7 +241,7 @@ public class HoaDon_Dao {
     private static void kiemTraPhieu(Connection connection, String maPhieu, HinhThucThanhToan hinhThuc) throws SQLException {
         // Khóa dòng phiếu để hai máy không cùng lập hóa đơn cho một phiếu.
         String sql = "SELECT p.trangThai, k.duocGhiNo FROM PhieuTiepNhanVaSuaChua p WITH (UPDLOCK, ROWLOCK) "
-                + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = x.maKH WHERE p.maPhieuTNSC = ?";
+                + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = p.maKH WHERE p.maPhieuTNSC = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
@@ -353,9 +353,11 @@ public class HoaDon_Dao {
 
     private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, String maKM,
             String maThue, HinhThucThanhToan hinhThuc, TienHoaDon tien) throws SQLException {
+        // Hóa đơn công nợ chưa thu tiền nên chưa có ngày thanh toán và chưa tính vào doanh thu.
         String sql = "INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, "
-                + "tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan) "
-                + "VALUES (?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?, ?, ?, ?)";
+                + "tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan, ngayThanhToan) "
+                + "VALUES (?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, "
+                + (hinhThuc == HinhThucThanhToan.CONG_NO ? "NULL" : "GETDATE()") + ")";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maHD);
             statement.setString(2, maPhieu);
@@ -378,7 +380,8 @@ public class HoaDon_Dao {
     }
 
     /** Thu tiền hóa đơn công nợ. */
-    public void thanhToanCongNo(String maHD, HinhThucThanhToan hinhThuc, Double tienKhachDua) throws SQLException {
+    public void thanhToanCongNo(String maHD, HinhThucThanhToan hinhThuc, Double tienKhachDua, String tenDangNhap)
+            throws SQLException {
         if (hinhThuc != HinhThucThanhToan.TIEN_MAT && hinhThuc != HinhThucThanhToan.CHUYEN_KHOAN) {
             throw new IllegalArgumentException("Hình thức thanh toán không hợp lệ");
         }
@@ -398,12 +401,15 @@ public class HoaDon_Dao {
                     }
                 }
                 kiemTraTienMat(hinhThuc, tienKhachDua, tong);
-                String ghi = "UPDATE HoaDon SET hinhThucThanhToan = ?, trangThaiThanhToan = N'Đã thanh toán' WHERE maHD = ?";
+                String ghi = "UPDATE HoaDon SET hinhThucThanhToan = ?, trangThaiThanhToan = N'Đã thanh toán', "
+                        + "ngayThanhToan = GETDATE() WHERE maHD = ?";
                 try (PreparedStatement statement = connection.prepareStatement(ghi)) {
                     statement.setString(1, hinhThuc.getText());
                     statement.setString(2, maHD);
                     statement.executeUpdate();
                 }
+                nhatKyDao.ghi(connection, tenDangNhap, "Thu tiền công nợ", maHD,
+                        TrangThaiHoaDon.CONG_NO.getText(), hinhThuc.getText() + " - " + (long) tong);
                 connection.commit();
             } catch (SQLException | RuntimeException ex) {
                 connection.rollback();

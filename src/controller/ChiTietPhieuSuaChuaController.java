@@ -312,7 +312,7 @@ public class ChiTietPhieuSuaChuaController {
         try {
             view.hienLoi(null);
             if (!thaoTac.chay()) {
-                view.hienLoi("Không thực hiện được: phiếu đã có hóa đơn hoặc dữ liệu đã thay đổi.");
+                view.hienLoi("Không thực hiện được: phiếu đã hoàn thành, đã có hóa đơn hoặc dữ liệu đã thay đổi.");
             }
             taiDuLieu();
         } catch (NumberFormatException ex) {

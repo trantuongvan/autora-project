@@ -212,15 +212,15 @@ public class TestHoaDon {
                 && hd.getHinhThucThanhToan() == HinhThucThanhToan.CONG_NO);
         kiem("Ghi nợ không đổi tồn", ton(b) == 10);
 
-        bi("Thu nợ không chọn Công nợ lần nữa", "không hợp lệ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CONG_NO, null));
-        bi("Thu nợ tiền mặt thiếu", "chưa đủ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 1.0));
+        bi("Thu nợ không chọn Công nợ lần nữa", "không hợp lệ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CONG_NO, null, "admin"));
+        bi("Thu nợ tiền mặt thiếu", "chưa đủ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 1.0, "admin"));
         kiem("Thu nợ lỗi giữ nguyên trạng thái", dao.findById(ma).getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO);
-        dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null);
+        dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin");
         hd = dao.findById(ma);
         kiem("Thu nợ xong đổi trạng thái và hình thức", hd.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN
                 && hd.getHinhThucThanhToan() == HinhThucThanhToan.CHUYEN_KHOAN);
         kiem("Thu nợ không đổi tồn", ton(b) == 10);
-        bi("Không thu nợ hai lần", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0));
+        bi("Không thu nợ hai lần", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "admin"));
     }
 
     private static void kiemTraHuy() throws Exception {
@@ -244,7 +244,7 @@ public class TestHoaDon {
         kiem("Hủy ghi nhật ký", demNhatKy(ma, TrangThaiHoaDon.DA_THANH_TOAN.getText(), "%Đã hủy%Khách đổi ý%") == 1);
         bi("Không hủy hai lần", "hủy trước đó", () -> dao.huy(ma, "Lần hai", "admin"));
         kiem("Hủy lần hai không ghi thêm nhật ký", demNhatKy(ma, "%", "%") == 1);
-        bi("Không thu nợ hóa đơn đã hủy", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null));
+        bi("Không thu nợ hóa đơn đã hủy", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin"));
 
         String b = taoPhuTung(10);
         String q = taoPhieu(XE_CO_NO, TrangThaiPhieu.HOAN_THANH, 100000);
@@ -413,8 +413,9 @@ public class TestHoaDon {
 
     private static String taoPhieu(String bienSo, TrangThaiPhieu trangThai, double tienCong) throws SQLException {
         String ma = "TEST" + (++stt);
-        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, trangThai) VALUES (?, ?, 'NV0002', ?)",
-                ma, bienSo, trangThai.getText());
+        thucThi("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, trangThai) "
+                + "SELECT ?, bienSo, maKH, 'NV0002', ? FROM Xe WHERE bienSo = ?",
+                ma, trangThai.getText(), bienSo);
         try (Connection c = ConnectDB.getConnection(); PreparedStatement s = c.prepareStatement(
                 "INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, trangThaiTienDo) "
                 + "VALUES (?, 'DV0001', ?, N'Hoàn thành')")) {

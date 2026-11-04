@@ -135,8 +135,8 @@ public class TestKhachHangTaiKhoan {
         dung("Lịch sử mẫu: hóa đơn còn hiệu lực", Double.valueOf(1506600).equals(hangLichSu("KH0001", "PTNSC00001")[3]));
         dung("Lịch sử mẫu: chưa có hóa đơn", hangLichSu("KH0002", "PTNSC00002")[3] == null);
 
-        chay("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, thoiGianTiepNhan) VALUES "
-                + "('PTEST1', '60A-456.78', 'NV0002', '2026-11-01'), ('PTEST2', '60A-456.78', 'NV0002', '2026-11-02')");
+        chay("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, thoiGianTiepNhan) VALUES "
+                + "('PTEST1', '60A-456.78', 'KH0003', 'NV0002', '2026-11-01'), ('PTEST2', '60A-456.78', 'KH0003', 'NV0002', '2026-11-02')");
         chay("INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe) VALUES "
                 + "('PTEST1', 'DV0002', 1), ('PTEST1', 'DV0003', 1)");
         chay("INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, tongThanhToan, trangThaiThanhToan) VALUES "

@@ -476,7 +476,7 @@ public class QLKhachHangController {
         try {
             if (!dao.delete(ma)) {
                 JOptionPane.showMessageDialog(view,
-                        "Không thể xóa khách hàng đang có xe liên kết. Hãy chuyển hoặc xóa xe tại màn hình Hồ sơ xe trước.",
+                        "Không thể xóa khách hàng đang có xe liên kết hoặc đã có phiếu sửa chữa. Với xe liên kết, hãy chuyển hoặc xóa xe tại màn hình Hồ sơ xe trước.",
                         "Không thể xóa", JOptionPane.WARNING_MESSAGE);
                 taiLai();
                 return;

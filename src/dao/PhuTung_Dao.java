@@ -172,9 +172,10 @@ public class PhuTung_Dao {
         }
     }
 
+    /** Không ghi tồn kho: tồn chỉ đổi qua nhập kho và duyệt xuất kho, màn hình cũ không được ghi đè số mới. */
     public boolean update(PhuTung pt) throws SQLException {
         String sql = "UPDATE PhuTung SET tenPhuTung = ?, hangSanXuat = ?, viTriLuuKho = ?, giaNhap = ?, "
-                + "giaBanLe = ?, soLuongTon = ?, nguongCanhBao = ? WHERE maSKU = ?";
+                + "giaBanLe = ?, nguongCanhBao = ? WHERE maSKU = ?";
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, pt.getTenPhuTung());
@@ -182,9 +183,8 @@ public class PhuTung_Dao {
             p.setString(3, pt.getViTriLuuKho());
             p.setDouble(4, pt.getGiaNhap());
             p.setDouble(5, pt.getGiaBanLe());
-            p.setInt(6, pt.getSoLuongTon());
-            p.setInt(7, pt.getNguongCanhBao());
-            p.setString(8, pt.getMaSKU());
+            p.setInt(6, pt.getNguongCanhBao());
+            p.setString(7, pt.getMaSKU());
             return p.executeUpdate() == 1;
         }
     }
