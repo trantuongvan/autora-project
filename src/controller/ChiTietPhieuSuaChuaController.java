@@ -10,6 +10,9 @@ import entity.DichVu;
 import entity.NhanVien;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
+import entity.VaiTro;
 import gui.ChiTietPhieuSuaChua;
 import util.PdfExporter;
 
@@ -25,8 +28,6 @@ import java.util.Locale;
 
 /** Điều phối chi tiết phiếu: dòng dịch vụ, chỉ định thợ, KTV phụ trách, trạng thái, hủy và in phiếu. */
 public class ChiTietPhieuSuaChuaController {
-    private static final String HOAN_THANH = "Hoàn thành";
-
     private final ChiTietPhieuSuaChua view;
     private final String maPhieu;
     private final DieuHuongPhieu dieuHuong;
@@ -52,7 +53,7 @@ public class ChiTietPhieuSuaChuaController {
             return false;
         }
         for (ChiTietSuaChua_DichVu d : dong) {
-            if (!HOAN_THANH.equals(d.getTrangThaiTienDo())) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
                 return false;
             }
         }
@@ -87,10 +88,10 @@ public class ChiTietPhieuSuaChuaController {
             view.getTxtSoKm().setText(dinhDangTien.format(phieu.getSoKm()) + " km");
             view.getTxtPhuTungDuKien().setText(phieu.getPhuTungDuKien());
             view.getTxtGhiChuKyThuat().setText(phieu.getGhiChuKyThuat());
-            if (PhieuTiepNhanVaSuaChua.DA_HUY.equals(phieu.getTrangThai())
-                    && ((DefaultComboBoxModel<String>) view.getCboTrangThai().getModel())
-                            .getIndexOf(PhieuTiepNhanVaSuaChua.DA_HUY) < 0) {
-                view.getCboTrangThai().addItem(PhieuTiepNhanVaSuaChua.DA_HUY);
+            if (phieu.getTrangThai() == TrangThaiPhieu.DA_HUY
+                    && ((DefaultComboBoxModel<TrangThaiPhieu>) view.getCboTrangThai().getModel())
+                            .getIndexOf(TrangThaiPhieu.DA_HUY) < 0) {
+                view.getCboTrangThai().addItem(TrangThaiPhieu.DA_HUY);
             }
             view.getCboTrangThai().setSelectedItem(phieu.getTrangThai());
             view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getMaNVPhuTrach()));
@@ -111,7 +112,7 @@ public class ChiTietPhieuSuaChuaController {
         }
         view.getCboKtvPhuTrach().addItem(ChiTietPhieuSuaChua.CHO_PHAN_CONG);
         view.getCboThoTrongBang().addItem(ChiTietPhieuSuaChua.CHO_PHAN_CONG);
-        for (NhanVien nv : nhanVienDao.findByViTri("Kỹ thuật viên")) {
+        for (NhanVien nv : nhanVienDao.findByViTri(VaiTro.KY_THUAT_VIEN)) {
             view.getCboKtvPhuTrach().addItem(nv);
             view.getCboThoTrongBang().addItem(nv);
         }
@@ -160,7 +161,7 @@ public class ChiTietPhieuSuaChuaController {
         ChiTietSuaChua_DichVu moi = new ChiTietSuaChua_DichVu();
         moi.setMaPhieuTNSC(maPhieu);
         moi.setMaDichVu(dv.getMaDichVu());
-        moi.setTrangThaiTienDo(ChiTietSuaChua_DichVu.TIEN_DO[0]);
+        moi.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
         moi.setTienCongThucTe(dv.getTienCong());
         ghi(() -> chiTietDao.insert(moi));
     }
@@ -172,7 +173,7 @@ public class ChiTietPhieuSuaChuaController {
             return;
         }
         ChiTietSuaChua_DichVu dang = danhSach.get(view.getTblChiTiet().convertRowIndexToModel(dong));
-        if (HOAN_THANH.equals(dang.getTrangThaiTienDo())) {
+        if (dang.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
             view.hienLoi("Không thể xóa dịch vụ đã hoàn thành.");
             return;
         }
@@ -199,9 +200,9 @@ public class ChiTietPhieuSuaChuaController {
     }
 
     private void capNhatTienDo() {
-        String trangThai = String.valueOf(view.getCboTrangThai().getSelectedItem());
-        String hienTai = phieu.getTrangThai();
-        if (trangThai.equals(hienTai)) {
+        TrangThaiPhieu trangThai = (TrangThaiPhieu) view.getCboTrangThai().getSelectedItem();
+        TrangThaiPhieu hienTai = phieu.getTrangThai();
+        if (trangThai == hienTai) {
             view.hienLoi(null);
             return;
         }
@@ -209,7 +210,7 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
-        if (HOAN_THANH.equals(trangThai) && !coTheHoanThanh(danhSach)) {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !coTheHoanThanh(danhSach)) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }

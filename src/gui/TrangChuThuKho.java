@@ -2,6 +2,7 @@ package gui;
 
 import controller.TrangChuThuKhoController;
 import entity.NhanVien;
+import entity.TrangThaiYeuCauXuat;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -257,9 +258,9 @@ public class TrangChuThuKho extends JPanel {
 
     private Color mauTrangThaiYeuCau(String s) {
         if (s == null) return UIConstants.TEXT_MUTED;
-        if (s.startsWith("Đã xuất")) return UIConstants.STATUS_SUCCESS;
-        if (s.startsWith("Chờ xuất")) return UIConstants.STATUS_WARNING;
-        if (s.startsWith("Từ chối")) return UIConstants.STATUS_DANGER;
+        if (s.startsWith(TrangThaiYeuCauXuat.DA_XUAT.getText())) return UIConstants.STATUS_SUCCESS;
+        if (s.startsWith(TrangThaiYeuCauXuat.CHO_XUAT.getText())) return UIConstants.STATUS_WARNING;
+        if (s.startsWith(TrangThaiYeuCauXuat.TU_CHOI.getText())) return UIConstants.STATUS_DANGER;
         return UIConstants.TEXT_MUTED;
     }
 

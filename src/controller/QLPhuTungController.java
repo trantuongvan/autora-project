@@ -5,6 +5,7 @@ import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import entity.NhanVien;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLPhuTung;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -50,7 +51,7 @@ public class QLPhuTungController {
             if (tk != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), tk.getHoTen());
             }
-            int soCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int soCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(soCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(soCho > 0);
 

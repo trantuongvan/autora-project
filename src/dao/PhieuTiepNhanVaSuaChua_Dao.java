@@ -3,7 +3,9 @@ package dao;
 import connection.ConnectDB;
 import entity.DichVu;
 import entity.KhachHang;
+import entity.MucUuTien;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import entity.Xe;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -35,10 +37,10 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             + "WHERE h.maPhieuTNSC = p.maPhieuTNSC "
             + "AND h.trangThaiThanhToan <> N'Đã hủy') AND p.trangThai <> N'Đã hủy'";
 
-    public List<PhieuTiepNhanVaSuaChua> search(String keyword, String trangThai,
+    public List<PhieuTiepNhanVaSuaChua> search(String keyword, TrangThaiPhieu trangThai,
             LocalDate tuNgay, LocalDate denNgay) throws SQLException {
         String key = keyword == null ? "" : keyword.trim();
-        String status = trangThai == null ? "" : trangThai.trim();
+        String status = trangThai == null ? "" : trangThai.getText();
         String sql = SELECT_JOIN
                 + "WHERE (? = N'' OR p.maPhieuTNSC LIKE ? OR p.bienSo LIKE ? "
                 + "OR k.hoTen LIKE ? OR k.soDienThoai LIKE ?) "
@@ -154,7 +156,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             statement.setString(3, kh.getSoDienThoai());
             statement.setString(4, kh.getDiaChi());
             statement.setString(5, kh.getEmail());
-            statement.setString(6, kh.getLoaiKhachHang());
+            statement.setString(6, kh.getLoaiKhachHang().getText());
             statement.setString(7, kh.getMaSoThue());
             statement.executeUpdate();
         }
@@ -288,13 +290,13 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             } else {
                 statement.setTimestamp(8, Timestamp.valueOf(phieu.getThoiGianDuKien()));
             }
-            statement.setString(9, phieu.getTrangThai());
+            statement.setString(9, phieu.getTrangThai().getText());
             statement.setString(10, phieu.getBienSo());
             statement.setString(11, phieu.getMaNVLapPhieu());
             statement.setString(12, phieu.getDanhGiaNoiThat());
             statement.setString(13, phieu.getGhiChu());
             statement.setString(14, phieu.getPhuTungDuKien());
-            statement.setString(15, phieu.getUuTien());
+            statement.setString(15, phieu.getUuTien().getText());
             return statement.executeUpdate() == 1;
         }
     }
@@ -326,14 +328,14 @@ public class PhieuTiepNhanVaSuaChua_Dao {
             statement.setString(8, phieu.getDanhGiaNoiThat());
             statement.setString(9, phieu.getGhiChu());
             statement.setString(10, phieu.getPhuTungDuKien());
-            statement.setString(11, phieu.getUuTien());
+            statement.setString(11, phieu.getUuTien().getText());
             statement.setString(12, phieu.getMaPhieuTNSC());
             return statement.executeUpdate() == 1;
         }
     }
 
     /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ, nên hai máy cùng sửa không vượt luồng được. */
-    public boolean capNhatTrangThai(String ma, String cu, String moi) throws SQLException {
+    public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi) throws SQLException {
         if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
             return false;
         }
@@ -342,9 +344,9 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 + "WHERE p.maPhieuTNSC = ? AND p.trangThai = ? AND " + NOT_LOCKED;
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, moi);
+            statement.setString(1, moi.getText());
             statement.setString(2, ma);
-            statement.setString(3, cu);
+            statement.setString(3, cu.getText());
             return statement.executeUpdate() == 1;
         }
     }
@@ -380,7 +382,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                     connection.rollback();
                     return false;
                 }
-                new NhatKy_Dao().ghi(connection, tenDangNhap, "Hủy phiếu sửa chữa", ma, cu, PhieuTiepNhanVaSuaChua.DA_HUY);
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Hủy phiếu sửa chữa", ma, cu, TrangThaiPhieu.DA_HUY.getText());
                 connection.commit();
                 return true;
             } catch (SQLException | RuntimeException ex) {
@@ -467,7 +469,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 rs.getString("taiSanTrenXe"),
                 tiepNhan == null ? null : tiepNhan.toLocalDateTime(),
                 duKien == null ? null : duKien.toLocalDateTime(),
-                rs.getString("trangThai"),
+                TrangThaiPhieu.fromDb(rs.getString("trangThai")),
                 rs.getString("bienSo"),
                 rs.getString("maNV_LapPhieu"),
                 rs.getString("tenKhachHang"),
@@ -477,7 +479,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         phieu.setGhiChu(rs.getString("ghiChu"));
         phieu.setPhuTungDuKien(rs.getString("phuTungDuKien"));
         phieu.setGhiChuKyThuat(rs.getString("ghiChuKyThuat"));
-        phieu.setUuTien(rs.getString("uuTien"));
+        phieu.setUuTien(MucUuTien.fromDb(rs.getString("uuTien")));
         phieu.setMaNVPhuTrach(rs.getString("maNV_PhuTrach"));
         phieu.setSdtKhachHang(rs.getString("sdtKhachHang"));
         return phieu;

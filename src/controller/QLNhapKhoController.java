@@ -9,6 +9,7 @@ import entity.NhaCungCap;
 import entity.NhanVien;
 import entity.PhieuNhapKho;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLNhapKho;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -59,6 +60,10 @@ public class QLNhapKhoController {
     private static final DateTimeFormatter DATE_PARSE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
+    private static double thanhTien(ChiTietNhapKho ct) {
+        return ct.getSoLuongNhap() * ct.getGiaNhapThucTe();
+    }
+
     public QLNhapKhoController(QLNhapKho view) {
         this.view = view;
         this.nhapKhoDao = new PhieuNhapKho_Dao();
@@ -79,7 +84,7 @@ public class QLNhapKhoController {
                 view.getLblThuKhoModal().setText(thuKhoHienTai.getHoTen());
             }
 
-            int soCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int soCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(soCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(soCho > 0);
 
@@ -282,7 +287,7 @@ public class QLNhapKhoController {
         dsInputDonGia.add(txtGia);
         row.add(txtGia, QLNhapKho.cotModal(3, 0.14));
 
-        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(ct.getThanhTien()), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
+        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(thanhTien(ct)), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
         dsLabelThanhTien.add(lblThanhTien);
         row.add(lblThanhTien, QLNhapKho.cotModal(4, 0.16));
 
@@ -352,7 +357,7 @@ public class QLNhapKhoController {
             if (!loiSL && !loiGia) {
                 ct.setSoLuongNhap(sl);
                 ct.setGiaNhapThucTe(gia);
-                double tt = ct.getThanhTien();
+                double tt = thanhTien(ct);
                 tongTien += tt;
                 lblTT.setText(FormatUtil.formatCurrency(tt));
             } else {
@@ -578,7 +583,7 @@ public class QLNhapKhoController {
 
         double tongTien = 0;
         for (ChiTietNhapKho ct : dsChiTietModal) {
-            tongTien += ct.getThanhTien();
+            tongTien += thanhTien(ct);
         }
 
         try {
@@ -612,7 +617,7 @@ public class QLNhapKhoController {
                         ct.getTenPhuTung(),
                         ct.getSoLuongNhap(),
                         FormatUtil.formatCurrency(ct.getGiaNhapThucTe()),
-                        FormatUtil.formatCurrency(ct.getThanhTien())
+                        FormatUtil.formatCurrency(thanhTien(ct))
                 });
             }
             JTable tblCT = new JTable(modelCT);

@@ -2,6 +2,7 @@ package gui;
 
 import controller.QLDuyetXuatKhoController;
 import entity.PhieuYeuCauXuatKho;
+import entity.TrangThaiYeuCauXuat;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -38,7 +39,7 @@ public class QLDuyetXuatKho extends JPanel {
             new UIComponents.LineIcon(UIComponents.Loai.SEARCH, UIConstants.TEXT_MUTED, 16),
             true
     );
-    private final String[] CAC_TAB = {"Chờ xuất", "Đã xuất", "Từ chối"};
+    private final TrangThaiYeuCauXuat[] CAC_TAB = TrangThaiYeuCauXuat.values();
     private final JButton[] btnTabs = new JButton[CAC_TAB.length];
     private final JPanel pnlDanhSachYeuCau = new JPanel();
 
@@ -116,7 +117,7 @@ public class QLDuyetXuatKho extends JPanel {
         JPanel pnlTabWrap = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 16, 0));
         pnlTabWrap.setBorder(new MatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR));
         for (int i = 0; i < CAC_TAB.length; i++) {
-            btnTabs[i] = taoTab(CAC_TAB[i], i == 0);
+            btnTabs[i] = taoTab(CAC_TAB[i].getText(), i == 0);
             pnlTabWrap.add(btnTabs[i]);
         }
         pnlTopTrai.them(pnlTabWrap, 8);
@@ -266,9 +267,9 @@ public class QLDuyetXuatKho extends JPanel {
         center.add(UIComponents.label(tenKTV, UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK));
 
         JPanel right = UIComponents.trong(new GridBagLayout());
-        Color cTrangThai = yc.getTrangThai().equals("Chờ xuất") ? UIConstants.STATUS_WARNING
-                : (yc.getTrangThai().equals("Đã xuất") ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
-        right.add(new UIComponents.Badge(yc.getTrangThai(), cTrangThai));
+        Color cTrangThai = yc.getTrangThai() == TrangThaiYeuCauXuat.CHO_XUAT ? UIConstants.STATUS_WARNING
+                : (yc.getTrangThai() == TrangThaiYeuCauXuat.DA_XUAT ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
+        right.add(new UIComponents.Badge(yc.getTrangThai().getText(), cTrangThai));
 
         item.add(left, BorderLayout.WEST);
         item.add(center, BorderLayout.CENTER);
@@ -368,7 +369,7 @@ public class QLDuyetXuatKho extends JPanel {
     public UIComponents.Badge getBadgeSoYeuCauCho() { return badgeSoYeuCauCho; }
     public JLabel getLblDemYeuCauTrai() { return lblDemYeuCauTrai; }
     public JTextField getTxtTimKiem() { return fTimKiem.getTextField(); }
-    public String[] getCacTab() { return CAC_TAB; }
+    public TrangThaiYeuCauXuat[] getCacTab() { return CAC_TAB; }
     public JButton[] getBtnTabs() { return btnTabs; }
     public JPanel getPnlDanhSachYeuCau() { return pnlDanhSachYeuCau; }
     public UIComponents.Badge getBadgeTrangThai() { return badgeTrangThai; }

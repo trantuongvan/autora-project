@@ -1,6 +1,7 @@
 package controller;
 
 import dao.Xe_Dao;
+import entity.TrangThaiHoaDon;
 import entity.Xe;
 import gui.QLHoSoXe;
 import javax.swing.*;
@@ -129,7 +130,7 @@ public class QLHoSoXeController {
             String owner = String.valueOf(view.getTableModel().getValueAt(modelRow, 4));
             String info = String.valueOf(view.getTableModel().getValueAt(modelRow, 5)) + " • "
                     + view.getTableModel().getValueAt(modelRow, 1) + " " + view.getTableModel().getValueAt(modelRow, 2);
-            boolean paid = history.stream().anyMatch(h -> String.valueOf(h[3]).contains("Đã thanh toán"));
+            boolean paid = history.stream().anyMatch(h -> String.valueOf(h[3]).contains(TrangThaiHoaDon.DA_THANH_TOAN.getText()));
             view.hienThiLichSu(plate, owner, info, history,
                     paid ? "Phiếu đã thanh toán: nội dung sửa chữa được khóa, không thể thay đổi." : null);
         } catch (SQLException ex) {

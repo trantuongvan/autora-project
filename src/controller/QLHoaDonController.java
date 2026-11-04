@@ -1,8 +1,10 @@
 package controller;
 
 import dao.HoaDon_Dao;
+import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.PhienDangNhap;
+import entity.TrangThaiHoaDon;
 import gui.QLHoaDon;
 import util.UIComponents;
 
@@ -82,7 +84,7 @@ public class QLHoaDonController {
         } else if (icon == QLHoaDon.ICON_IN) {
             ChiTietHoaDonController.inHoaDon(view, ma);
         } else if (icon == QLHoaDon.ICON_HUY) {
-            huyHoaDon(ma, String.valueOf(view.getTableModel().getValueAt(dongModel, QLHoaDon.COT_TRANG_THAI)));
+            huyHoaDon(ma, (TrangThaiHoaDon) view.getTableModel().getValueAt(dongModel, QLHoaDon.COT_TRANG_THAI));
         }
     }
 
@@ -103,8 +105,8 @@ public class QLHoaDonController {
         view.hienLoiLoc(null);
 
         String tuKhoa = view.getTxtTimKiem().getText();
-        String trangThai = giaTriLoc(view.getCboTrangThai());
-        String hinhThuc = giaTriLoc(view.getCboHinhThuc());
+        TrangThaiHoaDon trangThai = giaTriLoc(view.getCboTrangThai(), TrangThaiHoaDon.class);
+        HinhThucThanhToan hinhThuc = giaTriLoc(view.getCboHinhThuc(), HinhThucThanhToan.class);
         int phienBan = ++phienBanTai;
         new SwingWorker<List<HoaDon>, Void>() {
             @Override
@@ -129,9 +131,10 @@ public class QLHoaDonController {
         }.execute();
     }
 
-    private static String giaTriLoc(JComboBox<String> cbo) {
-        String chon = String.valueOf(cbo.getSelectedItem());
-        return QLHoaDon.TAT_CA.equals(chon) ? "" : chon;
+    /** Mục "Tất cả" không thuộc kiểu enum nên trả về null, nghĩa là không lọc. */
+    private static <T> T giaTriLoc(JComboBox<Object> cbo, Class<T> loai) {
+        Object chon = cbo.getSelectedItem();
+        return loai.isInstance(chon) ? loai.cast(chon) : null;
     }
 
     private static LocalDate docNgay(String chuoi) {
@@ -181,8 +184,8 @@ public class QLHoaDonController {
         }
     }
 
-    private void huyHoaDon(String ma, String trangThai) {
-        if (HoaDon.DA_HUY.equals(trangThai)) {
+    private void huyHoaDon(String ma, TrangThaiHoaDon trangThai) {
+        if (trangThai == TrangThaiHoaDon.DA_HUY) {
             JOptionPane.showMessageDialog(view, "Hóa đơn " + ma + " đã được hủy trước đó.");
             return;
         }

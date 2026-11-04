@@ -2,7 +2,7 @@ package gui;
 
 import controller.DieuHuongPhieu;
 import controller.QLPhieuSuaChuaController;
-import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -21,7 +21,7 @@ public class QLPhieuSuaChua extends JPanel {
     public static final int ICON_XOA = 1;
 
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocTrangThai = new JComboBox<>();
+    private final JComboBox<Object> cboLocTrangThai = new JComboBox<>();
     private final JTextField txtTuNgay = new PlaceholderField("Từ ngày");
     private final JTextField txtDenNgay = new PlaceholderField("Đến ngày");
     private final JButton btnLoc = UIComponents.nutChinh("Lọc", UIConstants.PRIMARY);
@@ -47,10 +47,9 @@ public class QLPhieuSuaChua extends JPanel {
         timKiem.setPreferredSize(new Dimension(380, 40));
         txtTimKiem = timKiem.getTextField();
         cboLocTrangThai.addItem(TAT_CA_TRANG_THAI);
-        for (String trangThai : PhieuTiepNhanVaSuaChua.TRANG_THAI) {
+        for (TrangThaiPhieu trangThai : TrangThaiPhieu.values()) {
             cboLocTrangThai.addItem(trangThai);
         }
-        cboLocTrangThai.addItem(PhieuTiepNhanVaSuaChua.DA_HUY);
         UIComponents.styleCombo(cboLocTrangThai);
         cboLocTrangThai.setPreferredSize(new Dimension(170, 40));
         UIComponents.styleInput(txtTuNgay);
@@ -92,20 +91,22 @@ public class QLPhieuSuaChua extends JPanel {
     }
 
     static Color mauTrangThai(String trangThai) {
-        switch (trangThai) {
-            case "Chờ kiểm tra":
-                return UIConstants.STATUS_WARNING;
-            case "Đang sửa":
-                return UIConstants.PRIMARY_LIGHT;
-            case "Chờ phụ tùng":
-                return UIConstants.ROLE_TECH_STOCK_LIGHT;
-            case "Hoàn thành":
-                return UIConstants.STATUS_SUCCESS;
-            case PhieuTiepNhanVaSuaChua.DA_HUY:
-                return UIConstants.TEXT_MUTED;
-            default:
-                return null;
+        if (TrangThaiPhieu.CHO_KIEM_TRA.getText().equals(trangThai)) {
+            return UIConstants.STATUS_WARNING;
         }
+        if (TrangThaiPhieu.DANG_SUA.getText().equals(trangThai)) {
+            return UIConstants.PRIMARY_LIGHT;
+        }
+        if (TrangThaiPhieu.CHO_PHU_TUNG.getText().equals(trangThai)) {
+            return UIConstants.ROLE_TECH_STOCK_LIGHT;
+        }
+        if (TrangThaiPhieu.HOAN_THANH.getText().equals(trangThai)) {
+            return UIConstants.STATUS_SUCCESS;
+        }
+        if (TrangThaiPhieu.DA_HUY.getText().equals(trangThai)) {
+            return UIConstants.TEXT_MUTED;
+        }
+        return null;
     }
 
     /** Mỗi dòng: {maPhieu, bienSo, khachHang, xe, tiepNhan, uuTien, trangThai, ""}. */
@@ -123,7 +124,7 @@ public class QLPhieuSuaChua extends JPanel {
     }
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocTrangThai() { return cboLocTrangThai; }
+    public JComboBox<Object> getCboLocTrangThai() { return cboLocTrangThai; }
     public JTextField getTxtTuNgay() { return txtTuNgay; }
     public JTextField getTxtDenNgay() { return txtDenNgay; }
     public JButton getBtnLoc() { return btnLoc; }

@@ -2,6 +2,8 @@ package dao;
 
 import connection.ConnectDB;
 import entity.PhieuBanGiao;
+import entity.TrangThaiHoaDon;
+import entity.TrangThaiPhieu;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -92,8 +94,8 @@ public class PhieuBanGiao_Dao {
                 while (result.next()) {
                     int progress = result.getInt("tienDo");
                     String payment = result.getString("thanhToan");
-                    boolean paid = "Đã thanh toán".equals(payment);
-                    boolean debt = "Công nợ".equals(payment) && result.getBoolean("duocGhiNo");
+                    boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
+                    boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
                     boolean ready = progress == 100 && (paid || debt);
                     String invoice;
                     if (paid) {
@@ -200,8 +202,8 @@ public class PhieuBanGiao_Dao {
                 }
                 int progress = result.getInt("tienDo");
                 String payment = result.getString("thanhToan");
-                boolean paid = "Đã thanh toán".equals(payment);
-                boolean debt = "Công nợ".equals(payment) && result.getBoolean("duocGhiNo");
+                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
+                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
                 return new Object[]{
                         result.getString("bienSo"), result.getString("xe"),
                         result.getString("hoTen"), progress, result.getDouble("tienCong"),
@@ -226,14 +228,14 @@ public class PhieuBanGiao_Dao {
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
                 int progress = result.getInt("tienDo");
-                boolean paid = "Đã thanh toán".equals(result.getString("thanhToan"));
-                boolean debt = "Công nợ".equals(result.getString("thanhToan"))
+                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(result.getString("thanhToan"));
+                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(result.getString("thanhToan"))
                         && result.getBoolean("duocGhiNo");
                 boolean ready = progress == 100 && (paid || debt);
                 String status;
                 if (ready) {
                     status = "Chờ bàn giao";
-                } else if ("Chờ kiểm tra".equals(result.getString("trangThai"))) {
+                } else if (TrangThaiPhieu.fromDb(result.getString("trangThai")) == TrangThaiPhieu.CHO_KIEM_TRA) {
                     status = "Chờ tiếp nhận";
                 } else if (progress == 100) {
                     status = "Chờ xử lý hóa đơn";

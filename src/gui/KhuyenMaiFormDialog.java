@@ -1,6 +1,8 @@
 package gui;
 
+import entity.HinhThucKhuyenMai;
 import entity.KhuyenMai;
+import entity.PhamViKhuyenMai;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -35,9 +37,9 @@ public class KhuyenMaiFormDialog extends JDialog {
     private final JTextField txtGiaTri = new JTextField();
     private final JTextField txtBatDau = new PlaceholderField("Chọn ngày");
     private final JTextField txtKetThuc = new PlaceholderField("Chọn ngày");
-    private final JRadioButton radTongHoaDon = new JRadioButton(KhuyenMai.PHAM_VI[0], true);
-    private final JRadioButton radNhomDichVu = new JRadioButton(KhuyenMai.PHAM_VI[1]);
-    private final JRadioButton radPhuTung = new JRadioButton(KhuyenMai.PHAM_VI[2]);
+    private final JRadioButton radTongHoaDon = new JRadioButton(PhamViKhuyenMai.TONG_HOA_DON.getText(), true);
+    private final JRadioButton radNhomDichVu = new JRadioButton(PhamViKhuyenMai.NHOM_DICH_VU.getText());
+    private final JRadioButton radPhuTung = new JRadioButton(PhamViKhuyenMai.PHU_TUNG.getText());
     private final JTextField txtSoLuotToiDa = new PlaceholderField("Để trống nếu không giới hạn lượt sử dụng");
     private final JTextArea txtGhiChu = new JTextArea(3, 20);
     private final JCheckBox chkKichHoat = new JCheckBox("Đang kích hoạt", true);
@@ -162,7 +164,7 @@ public class KhuyenMaiFormDialog extends JDialog {
 
     public void dien(KhuyenMai km) {
         txtTen.setText(km.getTenChuongTrinh());
-        if (KhuyenMai.HINH_THUC_TIEN_MAT.equals(km.getHinhThuc())) {
+        if (km.getHinhThuc() == HinhThucKhuyenMai.TIEN_MAT) {
             radTienMat.setSelected(true);
         } else {
             radPhanTram.setSelected(true);
@@ -181,28 +183,28 @@ public class KhuyenMaiFormDialog extends JDialog {
         UIComponents.showError(lblLoi, msg);
     }
 
-    public String getPhamViDangChon() {
+    public PhamViKhuyenMai getPhamViDangChon() {
         if (radNhomDichVu.isSelected()) {
-            return KhuyenMai.PHAM_VI[1];
+            return PhamViKhuyenMai.NHOM_DICH_VU;
         }
         if (radPhuTung.isSelected()) {
-            return KhuyenMai.PHAM_VI[2];
+            return PhamViKhuyenMai.PHU_TUNG;
         }
-        return KhuyenMai.PHAM_VI[0];
+        return PhamViKhuyenMai.TONG_HOA_DON;
     }
 
-    private void chonPhamVi(String phamVi) {
-        if (KhuyenMai.PHAM_VI[1].equals(phamVi)) {
+    private void chonPhamVi(PhamViKhuyenMai phamVi) {
+        if (phamVi == PhamViKhuyenMai.NHOM_DICH_VU) {
             radNhomDichVu.setSelected(true);
-        } else if (KhuyenMai.PHAM_VI[2].equals(phamVi)) {
+        } else if (phamVi == PhamViKhuyenMai.PHU_TUNG) {
             radPhuTung.setSelected(true);
         } else {
             radTongHoaDon.setSelected(true);
         }
     }
 
-    private String dinhDangGiaTri(double giaTri, String hinhThuc) {
-        if (KhuyenMai.HINH_THUC_PHAN_TRAM.equals(hinhThuc)) {
+    private String dinhDangGiaTri(double giaTri, HinhThucKhuyenMai hinhThuc) {
+        if (hinhThuc == HinhThucKhuyenMai.PHAN_TRAM) {
             if (giaTri == Math.rint(giaTri)) {
                 return String.valueOf((long) giaTri);
             }

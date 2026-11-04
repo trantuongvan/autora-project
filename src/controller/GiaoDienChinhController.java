@@ -1,6 +1,7 @@
 package controller;
 
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import gui.ChiTietHoaDon;
 import gui.ChiTietPhieuSuaChua;
 import gui.DangNhap;
@@ -57,7 +58,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
 
     private static final Map<String, String> TIEU_DE = new HashMap<>();
     private static final Map<String, Loai> ICON = new HashMap<>();
-    private static final Map<String, List<String>> MENU_THEO_VAI_TRO = new HashMap<>();
+    private static final Map<VaiTro, List<String>> MENU_THEO_VAI_TRO = new HashMap<>();
 
     static {
         muc("TRANG_CHU_QL", "Trang chủ", Loai.HOME);
@@ -82,14 +83,14 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         muc(CARD_TRO_GIUP, "Trợ giúp", Loai.HELP);
         muc(CARD_GIOI_THIEU, "Giới thiệu", Loai.INFO);
 
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_CHU_CUA_HANG, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.CHU_CUA_HANG, Arrays.asList(
                 "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_TIEN_DO", "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
                 "QL_NHAP_KHO", "QL_DUYET_XUAT", "QL_HOA_DON", "QL_BAN_GIAO", "QL_KHUYEN_MAI", "QL_THONG_KE",
                 "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_LE_TAN, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.LE_TAN, Arrays.asList(
                 "TRANG_CHU_LT", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_HOA_DON", "QL_BAN_GIAO"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_THU_KHO, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
+        MENU_THEO_VAI_TRO.put(VaiTro.THU_KHO, Arrays.asList(
                 "TRANG_CHU_KHO", "QL_PHU_TUNG", "QL_NHAP_KHO", "QL_DUYET_XUAT"));
     }
 

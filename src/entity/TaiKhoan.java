@@ -1,17 +1,14 @@
 package entity;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 /** Tài khoản đăng nhập. Không giữ mật khẩu dạng rõ: mật khẩu chỉ đi qua kiemTraMatKhau rồi được DAO băm. */
 public class TaiKhoan {
-    public static final String[] VAI_TRO = {PhienDangNhap.VAI_TRO_CHU_CUA_HANG, PhienDangNhap.VAI_TRO_LE_TAN,
-        PhienDangNhap.VAI_TRO_KY_THUAT_VIEN, PhienDangNhap.VAI_TRO_THU_KHO};
     public static final String DANG_HOAT_DONG = "Đang hoạt động";
     public static final String BI_KHOA = "Bị khóa";
 
     private String tenDangNhap;
-    private String vaiTro;
+    private VaiTro vaiTro;
     private boolean trangThai = true;
     private String maNV;
     private String hoTen;
@@ -23,7 +20,7 @@ public class TaiKhoan {
         setTenDangNhap(tenDangNhap);
     }
 
-    public TaiKhoan(String tenDangNhap, String vaiTro, boolean trangThai, String maNV, String hoTen) {
+    public TaiKhoan(String tenDangNhap, VaiTro vaiTro, boolean trangThai, String maNV, String hoTen) {
         setTenDangNhap(tenDangNhap);
         setVaiTro(vaiTro);
         setTrangThai(trangThai);
@@ -51,12 +48,12 @@ public class TaiKhoan {
         this.tenDangNhap = tenDangNhap;
     }
 
-    public String getVaiTro() {
+    public VaiTro getVaiTro() {
         return vaiTro;
     }
 
-    public void setVaiTro(String vaiTro) {
-        if (!Arrays.asList(VAI_TRO).contains(vaiTro)) {
+    public void setVaiTro(VaiTro vaiTro) {
+        if (vaiTro == null) {
             throw new IllegalArgumentException("Vai trò không hợp lệ");
         }
         this.vaiTro = vaiTro;

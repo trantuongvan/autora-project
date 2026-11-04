@@ -3,10 +3,13 @@ package controller;
 import com.itextpdf.text.DocumentException;
 import dao.HoaDon_Dao;
 import dao.Thue_Dao;
+import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.PhienDangNhap;
 import entity.Thue;
+import entity.TrangThaiHoaDon;
+import entity.TrangThaiPhieu;
 import gui.ChiTietHoaDon;
 import util.FormatUtil;
 import util.PdfExporter;
@@ -98,7 +101,7 @@ public class ChiTietHoaDonController {
                     return d;
                 }
                 if (maHD == null) {
-                    if (!"Hoàn thành".equals(d.phieu.trangThaiPhieu) || dao.coHoaDonHieuLuc(ma)) {
+                    if (d.phieu.trangThaiPhieu != TrangThaiPhieu.HOAN_THANH || dao.coHoaDonHieuLuc(ma)) {
                         d.loi = "Phiếu " + ma + " chưa hoàn thành hoặc đã có hóa đơn.";
                         return d;
                     }
@@ -141,7 +144,7 @@ public class ChiTietHoaDonController {
                             : hoaDon.getNgayLap().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
                     "Hình thức: " + (hoaDon == null ? "—" : hoaDon.getHinhThucThanhToan()),
                     "Mã khuyến mãi: " + (hoaDon == null ? "—" : rong(hoaDon.getMaKM()))},
-                hoaDon == null ? null : hoaDon.getTrangThaiThanhToan());
+                hoaDon == null ? null : hoaDon.getTrangThaiThanhToan().getText());
         view.setChiTiet(dongDichVu(d.dichVu), dongPhuTung(d.phuTung));
         if (hoaDon == null) {
             hienCheDoLap(d);
@@ -189,10 +192,10 @@ public class ChiTietHoaDonController {
                 view.getCboThue().setSelectedItem(t);
             }
         }
-        view.getCboHinhThuc().addItem(HoaDon.TIEN_MAT);
-        view.getCboHinhThuc().addItem(HoaDon.CHUYEN_KHOAN);
+        view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
+        view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
         if (d.phieu.duocGhiNo) {
-            view.getCboHinhThuc().addItem(HoaDon.CONG_NO);
+            view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
         view.getCboThue().addActionListener(e -> tinhLaiXemTruoc());
@@ -209,10 +212,10 @@ public class ChiTietHoaDonController {
         hienTongHop(hoaDon.getTongTienCong(), hoaDon.getTongTienPhuTung(), hoaDon.getTongTienGiam(),
                 hoaDon.getThueSuat(), hoaDon.getTongTienVAT(), hoaDon.getTongThanhToan());
 
-        String trangThai = hoaDon.getTrangThaiThanhToan();
-        if (HoaDon.CONG_NO.equals(trangThai)) {
-            view.getCboHinhThuc().addItem(HoaDon.TIEN_MAT);
-            view.getCboHinhThuc().addItem(HoaDon.CHUYEN_KHOAN);
+        TrangThaiHoaDon trangThai = hoaDon.getTrangThaiThanhToan();
+        if (trangThai == TrangThaiHoaDon.CONG_NO) {
+            view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
+            view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
             ganSuKienThanhToan();
             view.getBtnXacNhan().addActionListener(e -> thuCongNo());
             view.getBtnHuy().addActionListener(e -> huyHoaDon());
@@ -220,7 +223,7 @@ public class ChiTietHoaDonController {
             return;
         }
         // Đã thanh toán hoặc đã hủy: chỉ xem; đã thanh toán vẫn được hủy khi xe chưa bàn giao.
-        boolean daHuy = HoaDon.DA_HUY.equals(trangThai);
+        boolean daHuy = trangThai == TrangThaiHoaDon.DA_HUY;
         view.getCboHinhThuc().addItem(hoaDon.getHinhThucThanhToan());
         view.getCboHinhThuc().setEnabled(false);
         view.hienChuQr("VietQR\n" + tien(tongHienTai));
@@ -246,7 +249,7 @@ public class ChiTietHoaDonController {
         KhuyenMai km = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
         double thueSuat = thue == null ? 0 : thue.getThueSuat();
-        HoaDon.TienHoaDon t = HoaDon.tinhTien(tongTienCong, tongTienPhuTung, km == null ? null : km.getHinhThuc(),
+        HoaDon_Dao.TienHoaDon t = HoaDon_Dao.tinhTien(tongTienCong, tongTienPhuTung, km == null ? null : km.getHinhThuc(),
                 km == null ? 0 : km.getGiaTri(), km == null ? null : km.getPhamViApDung(), thueSuat);
         tongHienTai = t.tong;
         hienTongHop(t.cong, t.phuTung, t.giam, thueSuat, t.vat, t.tong);
@@ -259,12 +262,12 @@ public class ChiTietHoaDonController {
     }
 
     private void capNhatTheoHinhThuc() {
-        String hinhThuc = String.valueOf(view.getCboHinhThuc().getSelectedItem());
-        boolean ghiNo = HoaDon.CONG_NO.equals(hinhThuc);
+        HinhThucThanhToan hinhThuc = (HinhThucThanhToan) view.getCboHinhThuc().getSelectedItem();
+        boolean ghiNo = hinhThuc == HinhThucThanhToan.CONG_NO;
         boolean dangLap = hoaDon == null;
-        view.setHienThi(dangLap, HoaDon.TIEN_MAT.equals(hinhThuc), !dangLap, ghiNo, !dangLap, !ghiNo);
+        view.setHienThi(dangLap, hinhThuc == HinhThucThanhToan.TIEN_MAT, !dangLap, ghiNo, !dangLap, !ghiNo);
         capNhatTienThua();
-        if (HoaDon.CHUYEN_KHOAN.equals(hinhThuc)) {
+        if (hinhThuc == HinhThucThanhToan.CHUYEN_KHOAN) {
             taiQr();
         } else {
             phienBanQr++;
@@ -325,14 +328,14 @@ public class ChiTietHoaDonController {
     }
 
     private void luuHoaDon() {
-        String hinhThuc = String.valueOf(view.getCboHinhThuc().getSelectedItem());
+        HinhThucThanhToan hinhThuc = (HinhThucThanhToan) view.getCboHinhThuc().getSelectedItem();
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
         if (thue == null) {
             view.hienLoi("Vui lòng chọn loại thuế.");
             return;
         }
         Double dua = null;
-        if (HoaDon.TIEN_MAT.equals(hinhThuc)) {
+        if (hinhThuc == HinhThucThanhToan.TIEN_MAT) {
             dua = docTienKhachDua();
             if (dua == null) {
                 return;
@@ -343,7 +346,7 @@ public class ChiTietHoaDonController {
             String ma = dao.lapHoaDon(maPhieu, km == null ? null : km.getMaKM(), thue.getMaThue(), hinhThuc, dua,
                     PhienDangNhap.getHienTai().getMaNV());
             String thongBao = "Đã lập hóa đơn " + ma + ".";
-            if (HoaDon.CHUYEN_KHOAN.equals(hinhThuc) && !ma.equals(maQr)) {
+            if (hinhThuc == HinhThucThanhToan.CHUYEN_KHOAN && !ma.equals(maQr)) {
                 thongBao += "\nNội dung trên mã QR ghi " + maQr + " vì máy khác vừa lập hóa đơn trước; hãy đối soát theo " + ma + ".";
             }
             JOptionPane.showMessageDialog(view, thongBao);
@@ -355,9 +358,9 @@ public class ChiTietHoaDonController {
     }
 
     private void thuCongNo() {
-        String hinhThuc = String.valueOf(view.getCboHinhThuc().getSelectedItem());
+        HinhThucThanhToan hinhThuc = (HinhThucThanhToan) view.getCboHinhThuc().getSelectedItem();
         Double dua = null;
-        if (HoaDon.TIEN_MAT.equals(hinhThuc)) {
+        if (hinhThuc == HinhThucThanhToan.TIEN_MAT) {
             dua = docTienKhachDua();
             if (dua == null) {
                 return;

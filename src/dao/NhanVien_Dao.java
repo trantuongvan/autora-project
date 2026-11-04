@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.NhanVien;
+import entity.VaiTro;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,12 +20,12 @@ public class NhanVien_Dao {
             "FROM NhanVien n LEFT JOIN TaiKhoan t ON t.maNV = n.maNV ";
 
     public List<NhanVien> findAll() throws SQLException {
-        return search("", "");
+        return search("", null);
     }
 
-    public List<NhanVien> search(String keyword, String viTri) throws SQLException {
+    public List<NhanVien> search(String keyword, VaiTro viTri) throws SQLException {
         String searchText = keyword == null ? "" : keyword.trim();
-        String position = viTri == null ? "" : viTri;
+        String position = viTri == null ? "" : viTri.getText();
         String sql = SELECT_COLUMNS + FROM
                 + "WHERE (? = '' OR n.maNV LIKE ? OR n.hoTen LIKE ? OR n.soDienThoai LIKE ?) "
                 + "AND (? = '' OR n.viTriLamViec = ?) ORDER BY n.maNV";
@@ -48,12 +49,12 @@ public class NhanVien_Dao {
     }
 
     /** Nhân viên theo vị trí để chọn người phụ trách ở các nghiệp vụ khác. */
-    public List<NhanVien> findByViTri(String viTri) throws SQLException {
+    public List<NhanVien> findByViTri(VaiTro viTri) throws SQLException {
         String sql = SELECT_COLUMNS + FROM + "WHERE n.viTriLamViec = ? ORDER BY n.hoTen";
         List<NhanVien> employees = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, viTri);
+            statement.setString(1, viTri.getText());
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
                     employees.add(mapNhanVien(result));
@@ -112,7 +113,7 @@ public class NhanVien_Dao {
                 statement.setString(2, employee.getHoTen());
                 statement.setString(3, employee.getSoDienThoai());
                 statement.setString(4, employee.getDiaChi());
-                statement.setString(5, employee.getViTriLamViec());
+                statement.setString(5, employee.getViTriLamViec().getText());
                 if (statement.executeUpdate() != 1) {
                     connection.rollback();
                     return false;
@@ -159,7 +160,7 @@ public class NhanVien_Dao {
                     statement.setString(1, employee.getHoTen());
                     statement.setString(2, employee.getSoDienThoai());
                     statement.setString(3, employee.getDiaChi());
-                    statement.setString(4, employee.getViTriLamViec());
+                    statement.setString(4, employee.getViTriLamViec().getText());
                     statement.setString(5, employee.getMaNV());
                     if (statement.executeUpdate() != 1) {
                         connection.rollback();
@@ -179,7 +180,7 @@ public class NhanVien_Dao {
 
     private String giaTri(NhanVien employee) {
         return giaTri(employee.getHoTen(), employee.getSoDienThoai(),
-                employee.getDiaChi(), employee.getViTriLamViec());
+                employee.getDiaChi(), employee.getViTriLamViec().getText());
     }
 
     private String giaTri(String hoTen, String soDienThoai, String diaChi, String viTri) {
@@ -202,7 +203,7 @@ public class NhanVien_Dao {
                 result.getString("hoTen"),
                 result.getString("soDienThoai"),
                 result.getString("diaChi"),
-                result.getString("viTriLamViec"));
+                VaiTro.fromDb(result.getString("viTriLamViec")));
         employee.setTenDangNhap(result.getString("tenDangNhap"));
         return employee;
     }

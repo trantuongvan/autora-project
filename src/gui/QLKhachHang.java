@@ -1,7 +1,7 @@
 package gui;
 
 import controller.QLKhachHangController;
-import entity.KhachHang;
+import entity.LoaiKhachHang;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -23,7 +23,7 @@ public class QLKhachHang extends JPanel {
     public static final int ICON_XOA = 1;
 
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocLoai = new JComboBox<>();
+    private final JComboBox<Object> cboLocLoai = new JComboBox<>();
     private final JComboBox<String> cboLocGhiNo = new JComboBox<>(new String[] {TAT_CA, DUOC_PHEP, KHONG});
     private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
     private final JButton btnThem = UIComponents.nutChinh("+  Thêm khách hàng", UIConstants.PRIMARY);
@@ -38,7 +38,7 @@ public class QLKhachHang extends JPanel {
     private final JTextField txtDiaChi = new JTextField();
     private final JTextField txtEmail = new JTextField();
     private final JTextField txtMaSoThue = new JTextField();
-    private final JComboBox<String> cboLoai = new JComboBox<>(KhachHang.LOAI_KHACH_HANG);
+    private final JComboBox<LoaiKhachHang> cboLoai = new JComboBox<>(LoaiKhachHang.values());
     private final JComboBox<String> cboGhiNo = new JComboBox<>(new String[] {KHONG, DUOC_PHEP});
     private final JLabel lblLoiHoTen = UIComponents.errorLabel();
     private final JLabel lblLoiSoDienThoai = UIComponents.errorLabel();
@@ -82,7 +82,7 @@ public class QLKhachHang extends JPanel {
 
     private JPanel taoTheDanhSach(IconField timKiem) {
         cboLocLoai.addItem(TAT_CA);
-        for (String loai : KhachHang.LOAI_KHACH_HANG) {
+        for (LoaiKhachHang loai : LoaiKhachHang.values()) {
             cboLocLoai.addItem(loai);
         }
         UIComponents.styleCombo(cboLocLoai);
@@ -185,14 +185,13 @@ public class QLKhachHang extends JPanel {
     }
 
     private static Color mauLoai(String loai) {
-        switch (loai) {
-            case "VIP":
-                return UIConstants.ROLE_TECH_STOCK_LIGHT;
-            case "Thành viên":
-                return UIConstants.PRIMARY_LIGHT;
-            default:
-                return UIConstants.TEXT_MUTED;
+        if (LoaiKhachHang.VIP.getText().equals(loai)) {
+            return UIConstants.ROLE_TECH_STOCK_LIGHT;
         }
+        if (LoaiKhachHang.THANH_VIEN.getText().equals(loai)) {
+            return UIConstants.PRIMARY_LIGHT;
+        }
+        return UIConstants.TEXT_MUTED;
     }
 
     private static Color mauGhiNo(String ghiNo) {
@@ -238,7 +237,7 @@ public class QLKhachHang extends JPanel {
     }
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocLoai() { return cboLocLoai; }
+    public JComboBox<Object> getCboLocLoai() { return cboLocLoai; }
     public JComboBox<String> getCboLocGhiNo() { return cboLocGhiNo; }
     public JButton getBtnTim() { return btnTim; }
     public JButton getBtnThem() { return btnThem; }
@@ -250,7 +249,7 @@ public class QLKhachHang extends JPanel {
     public JTextField getTxtDiaChi() { return txtDiaChi; }
     public JTextField getTxtEmail() { return txtEmail; }
     public JTextField getTxtMaSoThue() { return txtMaSoThue; }
-    public JComboBox<String> getCboLoai() { return cboLoai; }
+    public JComboBox<LoaiKhachHang> getCboLoai() { return cboLoai; }
     public JComboBox<String> getCboGhiNo() { return cboGhiNo; }
     public JLabel getLblLoiHoTen() { return lblLoiHoTen; }
     public JLabel getLblLoiSoDienThoai() { return lblLoiSoDienThoai; }

@@ -9,7 +9,7 @@ public class NhanVien {
     private String hoTen;
     private String soDienThoai;
     private String diaChi;
-    private String viTriLamViec;
+    private VaiTro viTriLamViec;
     private String tenDangNhap;
 
     public NhanVien() {
@@ -19,7 +19,7 @@ public class NhanVien {
         setMaNV(maNV);
     }
 
-    public NhanVien(String maNV, String hoTen, String soDienThoai, String diaChi, String viTriLamViec) {
+    public NhanVien(String maNV, String hoTen, String soDienThoai, String diaChi, VaiTro viTriLamViec) {
         setMaNV(maNV);
         setHoTen(hoTen);
         setSoDienThoai(soDienThoai);
@@ -69,15 +69,15 @@ public class NhanVien {
         this.diaChi = diaChi == null ? "" : diaChi.trim();
     }
 
-    public String getViTriLamViec() {
+    public VaiTro getViTriLamViec() {
         return viTriLamViec;
     }
 
-    public void setViTriLamViec(String viTriLamViec) {
-        if (viTriLamViec == null || viTriLamViec.trim().isEmpty()) {
+    public void setViTriLamViec(VaiTro viTriLamViec) {
+        if (viTriLamViec == null) {
             throw new IllegalArgumentException("Vị trí làm việc không được để trống.");
         }
-        this.viTriLamViec = viTriLamViec.trim();
+        this.viTriLamViec = viTriLamViec;
     }
 
     public String getTenDangNhap() {

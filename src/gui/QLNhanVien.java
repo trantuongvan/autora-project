@@ -1,5 +1,6 @@
 package gui;
 
+import entity.VaiTro;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -24,12 +25,11 @@ public class QLNhanVien extends JPanel {
     public static final int COT_THAO_TAC = 6;
     public static final int ICON_XOA = 1;
 
-    public static final String[] VI_TRI = {"Chủ cửa hàng", "Lễ tân", "Kỹ thuật viên", "Thủ kho"};
 
     // --- Danh sách ---
     private final JButton btnThemNhanVien = UIComponents.nutChinh("+  Thêm nhân viên", UIConstants.ROLE_MANAGER);
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocViTri = new JComboBox<>();
+    private final JComboBox<Object> cboLocViTri = new JComboBox<>();
     private final JTable tblDanhSach;
     private final DefaultTableModel tableModel;
     private final RoundedPanel theBang = UIComponents.card();
@@ -41,7 +41,7 @@ public class QLNhanVien extends JPanel {
     private final JTextField txtHoTen = new JTextField();
     private final JTextField txtSoDienThoai = new JTextField();
     private final JTextField txtDiaChi = new JTextField();
-    private final JComboBox<String> cboViTri = new JComboBox<>(VI_TRI);
+    private final JComboBox<VaiTro> cboViTri = new JComboBox<>(VaiTro.values());
     private final JLabel lblLoiHoTen = UIComponents.errorLabel();
     private final JLabel lblLoiSoDienThoai = UIComponents.errorLabel();
     private final JButton btnHuy = UIComponents.nutPhu("Hủy");
@@ -69,7 +69,7 @@ public class QLNhanVien extends JPanel {
         timKiem.setPreferredSize(new Dimension(500, 40));
         txtTimKiem = timKiem.getTextField();
         cboLocViTri.addItem("Tất cả vị trí");
-        for (String v : VI_TRI) cboLocViTri.addItem(v);
+        for (VaiTro v : VaiTro.values()) cboLocViTri.addItem(v);
         UIComponents.styleCombo(cboLocViTri);
         cboLocViTri.setPreferredSize(new Dimension(170, 40));
         JPanel hangTim = UIComponents.trong(new BorderLayout());
@@ -346,14 +346,14 @@ public class QLNhanVien extends JPanel {
     // --- Getter cho Controller ---
     public JButton getBtnThemNhanVien() { return btnThemNhanVien; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocViTri() { return cboLocViTri; }
+    public JComboBox<Object> getCboLocViTri() { return cboLocViTri; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }
     public JTextField getTxtMaNV() { return txtMaNV; }
     public JTextField getTxtHoTen() { return txtHoTen; }
     public JTextField getTxtSoDienThoai() { return txtSoDienThoai; }
     public JTextField getTxtDiaChi() { return txtDiaChi; }
-    public JComboBox<String> getCboViTri() { return cboViTri; }
+    public JComboBox<VaiTro> getCboViTri() { return cboViTri; }
     public JButton getBtnHuy() { return btnHuy; }
     public JButton getBtnLuu() { return btnLuu; }
     public JButton getBtnHuyXoa() { return btnHuyXoa; }
@@ -366,17 +366,17 @@ public class QLNhanVien extends JPanel {
 
     public void napDuLieuMau() {
         List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"NV0001", "Trần Minh Hoàng", "0908888666", "18 Lê Quang Định, TP.HCM", "Chủ cửa hàng", "minhhoang", ""});
-        ds.add(new Object[]{"NV0002", "Nguyễn Lan Anh", "0902345678", "45 Xô Viết Nghệ Tĩnh", "Lễ tân", "lananh", ""});
-        ds.add(new Object[]{"NV0004", "Lê Văn Phúc", "0934567890", "26 Đinh Bộ Lĩnh, TP.HCM", "Thủ kho", "levanphuc", ""});
-        ds.add(new Object[]{"NV0005", "Lê Văn Sĩ", "0934564390", "26 Đinh Bộ Lĩnh, TP.HCM", "Kỹ thuật viên", "levansi", ""});
+        ds.add(new Object[]{"NV0001", "Trần Minh Hoàng", "0908888666", "18 Lê Quang Định, TP.HCM", VaiTro.CHU_CUA_HANG, "minhhoang", ""});
+        ds.add(new Object[]{"NV0002", "Nguyễn Lan Anh", "0902345678", "45 Xô Viết Nghệ Tĩnh", VaiTro.LE_TAN, "lananh", ""});
+        ds.add(new Object[]{"NV0004", "Lê Văn Phúc", "0934567890", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.THU_KHO, "levanphuc", ""});
+        ds.add(new Object[]{"NV0005", "Lê Văn Sĩ", "0934564390", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.KY_THUAT_VIEN, "levansi", ""});
         setDanhSach(ds);
 
         txtMaNV.setText("NV0006");
         txtHoTen.setText("Phạm Đức Long");
         txtSoDienThoai.setText("0912345678");
         txtDiaChi.setText("12 Nguyễn Hữu Cảnh, TP.HCM");
-        cboViTri.setSelectedItem("Kỹ thuật viên");
+        cboViTri.setSelectedItem(VaiTro.KY_THUAT_VIEN);
         hienLoiHoTen(null);
         hienLoiSoDienThoai(null);
         anXacNhanXoa();

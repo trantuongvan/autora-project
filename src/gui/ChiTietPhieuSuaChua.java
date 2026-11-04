@@ -2,9 +2,9 @@ package gui;
 
 import controller.ChiTietPhieuSuaChuaController;
 import controller.DieuHuongPhieu;
-import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
-import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -35,7 +35,8 @@ public class ChiTietPhieuSuaChua extends JPanel {
     private final JTextField txtPhuTungDuKien = new JTextField();
     // Dùng Object vì mục đầu là chuỗi CHO_PHAN_CONG, các mục sau là NhanVien.
     private final JComboBox<Object> cboKtvPhuTrach = new JComboBox<>();
-    private final JComboBox<String> cboTrangThai = new JComboBox<>(PhieuTiepNhanVaSuaChua.TRANG_THAI);
+    private final JComboBox<TrangThaiPhieu> cboTrangThai = new JComboBox<>(new TrangThaiPhieu[] {
+        TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.CHO_PHU_TUNG, TrangThaiPhieu.HOAN_THANH});
     private final JTextArea txtGhiChuKyThuat = new JTextArea(3, 20);
 
     private boolean khoa;
@@ -179,10 +180,10 @@ public class ChiTietPhieuSuaChua extends JPanel {
     }
 
     private static Color mauTienDo(String tienDo) {
-        if ("Hoàn thành".equals(tienDo)) {
+        if (TrangThaiTienDo.HOAN_THANH.getText().equals(tienDo)) {
             return UIConstants.STATUS_SUCCESS;
         }
-        return ChiTietSuaChua_DichVu.TIEN_DO[1].equals(tienDo) ? UIConstants.PRIMARY_LIGHT : UIConstants.STATUS_WARNING;
+        return TrangThaiTienDo.DANG_SUA.getText().equals(tienDo) ? UIConstants.PRIMARY_LIGHT : UIConstants.STATUS_WARNING;
     }
 
     // ==========================================================
@@ -221,7 +222,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
     public JTextField getTxtSoKm() { return txtSoKm; }
     public JTextField getTxtPhuTungDuKien() { return txtPhuTungDuKien; }
     public JComboBox<Object> getCboKtvPhuTrach() { return cboKtvPhuTrach; }
-    public JComboBox<String> getCboTrangThai() { return cboTrangThai; }
+    public JComboBox<TrangThaiPhieu> getCboTrangThai() { return cboTrangThai; }
     public JTextArea getTxtGhiChuKyThuat() { return txtGhiChuKyThuat; }
     public JTable getTblChiTiet() { return tblChiTiet; }
     public DefaultTableModel getTableModel() { return tableModel; }

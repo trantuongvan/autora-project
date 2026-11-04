@@ -1,5 +1,6 @@
 package gui;
 
+import entity.TrangThaiPhieu;
 import controller.TrangChuKyThuatVienController;
 import util.UIComponents;
 import util.UIConstants;
@@ -401,10 +402,10 @@ public class TrangChuKyThuatVien extends JPanel {
 
     private Color mauTrangThai(String s) {
         if (s == null) return UIConstants.TEXT_MUTED;
-        if (s.startsWith("Hoàn thành")) return UIConstants.STATUS_SUCCESS;
-        if (s.startsWith("Đang sửa")) return UIConstants.PRIMARY;
-        if (s.startsWith("Chờ phụ tùng")) return UIConstants.STATUS_WARNING;
-        if (s.startsWith("Chờ sửa") || s.startsWith("Chờ kiểm tra")) return UIConstants.STATUS_DANGER;
+        if (s.startsWith(TrangThaiPhieu.HOAN_THANH.getText())) return UIConstants.STATUS_SUCCESS;
+        if (s.startsWith(TrangThaiPhieu.DANG_SUA.getText())) return UIConstants.PRIMARY;
+        if (s.startsWith(TrangThaiPhieu.CHO_PHU_TUNG.getText())) return UIConstants.STATUS_WARNING;
+        if (s.startsWith("Chờ sửa") || s.startsWith(TrangThaiPhieu.CHO_KIEM_TRA.getText())) return UIConstants.STATUS_DANGER;
         return UIConstants.TEXT_MUTED;
     }
 

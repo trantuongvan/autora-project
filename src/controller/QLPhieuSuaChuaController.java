@@ -3,6 +3,7 @@ package controller;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import gui.QLPhieuSuaChua;
 import util.UIComponents;
 
@@ -126,8 +127,8 @@ public class QLPhieuSuaChuaController {
         view.hienLoiLoc(null);
 
         String tuKhoa = view.getTxtTimKiem().getText();
-        String chon = String.valueOf(view.getCboLocTrangThai().getSelectedItem());
-        String trangThai = QLPhieuSuaChua.TAT_CA_TRANG_THAI.equals(chon) ? "" : chon;
+        Object chon = view.getCboLocTrangThai().getSelectedItem();
+        TrangThaiPhieu trangThai = chon instanceof TrangThaiPhieu ? (TrangThaiPhieu) chon : null;
         int phienBan = ++phienBanTai;
         new SwingWorker<List<PhieuTiepNhanVaSuaChua>, Void>() {
             @Override

@@ -1,6 +1,6 @@
 package gui;
 
-import entity.KhuyenMai;
+import entity.HinhThucKhuyenMai;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -26,8 +26,8 @@ public class QLKhuyenMai extends JPanel {
     private final JButton btnTaoMoi = UIComponents.nutChinh("+  Tạo chương trình mới", UIConstants.PRIMARY);
     private final JComboBox<String> cboLocTinhTrang =
             new JComboBox<>(new String[]{"Tất cả", "Đang áp dụng", "Sắp diễn ra", "Hết hạn", "Ngừng áp dụng"});
-    private final JComboBox<String> cboLocHinhThuc =
-            new JComboBox<>(new String[]{"Tất cả", KhuyenMai.HINH_THUC_PHAN_TRAM, KhuyenMai.HINH_THUC_TIEN_MAT});
+    private final JComboBox<Object> cboLocHinhThuc =
+            new JComboBox<>(new Object[]{"Tất cả", HinhThucKhuyenMai.PHAN_TRAM, HinhThucKhuyenMai.TIEN_MAT});
     private final JButton btnXuatExcel = UIComponents.nutPhu("Xuất file Excel");
     private final RoundedPanel theBang = UIComponents.card();
 
@@ -205,7 +205,7 @@ public class QLKhuyenMai extends JPanel {
         return cboLocTinhTrang;
     }
 
-    public JComboBox<String> getCboLocHinhThuc() {
+    public JComboBox<Object> getCboLocHinhThuc() {
         return cboLocHinhThuc;
     }
 

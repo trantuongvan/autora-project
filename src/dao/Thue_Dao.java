@@ -23,4 +23,9 @@ public class Thue_Dao {
         }
         return ketQua;
     }
+
+    /** Tiền thuế trên số tiền cơ sở theo thuế suất của loại thuế. */
+    public static double tinhTienThue(Thue thue, double tongTienCoSo) {
+        return HoaDon_Dao.phanTram(tongTienCoSo, thue.getThueSuat());
+    }
 }

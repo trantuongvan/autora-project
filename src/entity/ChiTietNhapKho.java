@@ -57,10 +57,6 @@ public class ChiTietNhapKho {
         this.giaNhapThucTe = giaNhapThucTe;
     }
 
-    public double getThanhTien() {
-        return soLuongNhap * giaNhapThucTe;
-    }
-
     public String getTenPhuTung() {
         return tenPhuTung;
     }
