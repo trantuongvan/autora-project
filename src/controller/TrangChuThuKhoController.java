@@ -131,9 +131,6 @@ public class TrangChuThuKhoController {
 
     public void loadData() {
         try {
-            nhapKhoDao.ensureSampleDataIfEmpty();
-            yeuCauDao.ensureSampleDataIfEmpty();
-
             int soCanhBao = phuTungDao.countDuoiNguongCanhBao();
             int soChoXuat = yeuCauDao.countByTrangThai("Chờ xuất");
             int soPhieuNhap = nhapKhoDao.countPhieuNhapHomNay();

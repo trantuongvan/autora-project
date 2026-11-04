@@ -55,6 +55,8 @@ public class QLTaiKhoanController {
             @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
             @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
         });
+        view.getCboLocVaiTro().addActionListener(e -> taiDanhSach());
+        view.getCboLocTrangThai().addActionListener(e -> taiDanhSach());
         view.getCboNhanVien().addActionListener(e -> theoViTriNhanVien());
         view.getBtnDong().addActionListener(e -> moFormTao());
         view.getBtnLuu().addActionListener(e -> luu());
@@ -108,11 +110,16 @@ public class QLTaiKhoanController {
 
     private void taiDanhSach() {
         String tuKhoa = view.getTxtTimKiem().getText();
+        String vaiTro = QLTaiKhoan.TAT_CA_VAI_TRO.equals(view.getCboLocVaiTro().getSelectedItem())
+                ? "" : String.valueOf(view.getCboLocVaiTro().getSelectedItem());
+        Object chonTrangThai = view.getCboLocTrangThai().getSelectedItem();
+        Boolean trangThai = QLTaiKhoan.TAT_CA_TRANG_THAI.equals(chonTrangThai)
+                ? null : Boolean.valueOf(TaiKhoan.DANG_HOAT_DONG.equals(chonTrangThai));
         int phienBan = ++phienBanDanhSach;
         new SwingWorker<List<TaiKhoan>, Void>() {
             @Override
             protected List<TaiKhoan> doInBackground() throws Exception {
-                return dao.search(tuKhoa);
+                return dao.search(tuKhoa, vaiTro, trangThai);
             }
 
             @Override

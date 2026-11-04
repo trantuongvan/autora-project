@@ -21,10 +21,17 @@ public class TaiKhoan_Dao {
     private static final String CHU_CUOI = "Không thể thực hiện: đây là tài khoản Chủ cửa hàng đang hoạt động cuối cùng.";
 
     public List<TaiKhoan> search(String tuKhoa) throws SQLException {
+        return search(tuKhoa, "", null);
+    }
+
+    /** vaiTro rỗng và trangThai null nghĩa là không lọc theo tiêu chí đó. */
+    public List<TaiKhoan> search(String tuKhoa, String vaiTro, Boolean trangThai) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
         String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen "
                 + "FROM TaiKhoan t JOIN NhanVien n ON n.maNV = t.maNV "
                 + "WHERE (? = N'' OR t.tenDangNhap LIKE ? OR n.hoTen LIKE ? OR t.maNV LIKE ? OR t.vaiTro LIKE ?) "
+                + "AND (? = N'' OR t.vaiTro = ?) "
+                + (trangThai == null ? "" : "AND t.trangThai = " + (trangThai ? 1 : 0) + " ")
                 + "ORDER BY t.maNV";
         List<TaiKhoan> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
@@ -33,6 +40,8 @@ public class TaiKhoan_Dao {
             for (int i = 2; i <= 5; i++) {
                 statement.setString(i, "%" + key + "%");
             }
+            statement.setString(6, vaiTro);
+            statement.setString(7, vaiTro);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     ketQua.add(new TaiKhoan(rs.getString(1), rs.getString(2), rs.getBoolean(3), rs.getString(4),

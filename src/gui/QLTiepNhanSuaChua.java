@@ -58,7 +58,7 @@ public class QLTiepNhanSuaChua extends JPanel {
     private final JComboBox<String> cboTrangThai = new JComboBox<>(PhieuTiepNhanVaSuaChua.TRANG_THAI);
     private final JRadioButton radThuong = new JRadioButton("Thường", true);
     private final JRadioButton radKhan = new JRadioButton("Khẩn");
-    private final JTextField txtDuKien = new PlaceholderField("dd/MM/yyyy HH:mm");
+    private final JTextField txtDuKien = new PlaceholderField("Chọn ngày giờ");
 
     // --- Thanh hành động ---
     private final JLabel lblLoi = UIComponents.errorLabel();
@@ -90,6 +90,7 @@ public class QLTiepNhanSuaChua extends JPanel {
                 txtPhuTungDuKien, txtDuKien}) {
             UIComponents.styleInput(o);
         }
+        util.ChonNgay.ganNgayGio(txtDuKien);
         UIComponents.styleCombo(cboTrangThai);
         // Phiếu mới luôn bắt đầu ở "Chờ kiểm tra"; đổi trạng thái tại Chi tiết phiếu.
         cboTrangThai.setEnabled(false);

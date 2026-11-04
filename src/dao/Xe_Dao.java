@@ -15,6 +15,11 @@ public class Xe_Dao {
     }
 
     public List<Object[]> search(String keyword) throws SQLException {
+        return search(keyword, "");
+    }
+
+    /** hang rỗng nghĩa là không lọc theo hãng xe. */
+    public List<Object[]> search(String keyword, String hang) throws SQLException {
         String q = keyword == null ? "" : keyword.trim();
         List<Object[]> ds = new ArrayList<>();
         try (Connection c = ConnectDB.getConnection()) {
@@ -29,12 +34,15 @@ public class Xe_Dao {
                     + "FROM Xe x JOIN KhachHang k ON k.maKH = x.[" + owner + "] "
                     + "WHERE (? = '' OR x.bienSo LIKE ? OR x.[" + vin + "] LIKE ? "
                     + "OR k.hoTen LIKE ? OR k.soDienThoai LIKE ?) "
+                    + "AND (? = '' OR x.[" + brand + "] = ?) "
                     + "ORDER BY x.bienSo";
             try (PreparedStatement p = c.prepareStatement(sql)) {
                 p.setString(1, q);
                 for (int i = 2; i <= 5; i++) {
                     p.setString(i, "%" + q + "%");
                 }
+                p.setString(6, hang);
+                p.setString(7, hang);
                 try (ResultSet r = p.executeQuery()) {
                     while (r.next()) {
                         ds.add(new Object[]{

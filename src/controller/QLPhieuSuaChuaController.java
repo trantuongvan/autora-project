@@ -94,8 +94,8 @@ public class QLPhieuSuaChuaController {
             return;
         }
         String ma = maTaiDong(dong);
-        int icon = UIComponents.viTriBieuTuong(bang, e, QLPhieuSuaChua.COT_THAO_TAC, 3);
-        if (icon == QLPhieuSuaChua.ICON_XEM || (icon < 0 && e.getClickCount() == 2)) {
+        int icon = UIComponents.viTriBieuTuong(bang, e, QLPhieuSuaChua.COT_THAO_TAC, 2);
+        if (icon < 0 && e.getClickCount() == 2) {
             dieuHuong.moChiTiet(ma);
         } else if (icon == QLPhieuSuaChua.ICON_SUA) {
             dieuHuong.suaPhieu(ma);
