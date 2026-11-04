@@ -6,8 +6,6 @@ public class Thue {
     private String maThue;
     private String tenLoaiThue;
     private double thueSuat;
-    // Không có cột trong CSDL: chỉ giữ số tiền thuế vừa tính.
-    private double giaTriThue;
 
     public Thue() {
     }
@@ -16,15 +14,10 @@ public class Thue {
         setMaThue(maThue);
     }
 
-    public Thue(String maThue, String tenLoaiThue, double thueSuat, double giaTriThue) {
+    public Thue(String maThue, String tenLoaiThue, double thueSuat) {
         setMaThue(maThue);
         setTenLoaiThue(tenLoaiThue);
         setThueSuat(thueSuat);
-        setGiaTriThue(giaTriThue);
-    }
-
-    public double tinhTienThue(double tongTienCoSo) {
-        return HoaDon.phanTram(tongTienCoSo, thueSuat);
     }
 
     public String getMaThue() {
@@ -58,17 +51,6 @@ public class Thue {
             throw new IllegalArgumentException("Thuế suất phải từ 0% đến 100%");
         }
         this.thueSuat = thueSuat;
-    }
-
-    public double getGiaTriThue() {
-        return giaTriThue;
-    }
-
-    public void setGiaTriThue(double giaTriThue) {
-        if (giaTriThue < 0) {
-            throw new IllegalArgumentException("Giá trị thuế không được âm");
-        }
-        this.giaTriThue = giaTriThue;
     }
 
     @Override

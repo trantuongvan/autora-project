@@ -133,3 +133,11 @@ Hệ thống được thiết kế phục vụ người dùng nội bộ của g
 
 ---
 *AUTORA Garage Management System © 2026 - Nhóm 13 (IUH)*
+
+---
+
+## ⚙️ Cấu hình kết nối CSDL
+
+1. Chạy `database/GaraAUTORA_Database.sql` để tạo CSDL và dữ liệu mẫu.
+2. Đổi mật khẩu trong `database/TaoLoginUngDung.sql` rồi chạy script này bằng tài khoản quản trị (chỉ cần một lần trên mỗi máy chủ). Ứng dụng dùng tài khoản `autora_app` chỉ có quyền đọc và ghi dữ liệu, không dùng `sa`.
+3. Sao chép `database.properties.example` thành `database.properties` ở thư mục gốc dự án và điền cùng mật khẩu đó. Tệp này không đưa lên git.

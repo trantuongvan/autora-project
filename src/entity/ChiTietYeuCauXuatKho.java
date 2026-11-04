@@ -3,16 +3,9 @@ package entity;
 import java.util.Objects;
 
 public class ChiTietYeuCauXuatKho {
-    private String maPhieuYC;
-    private String maSKU;
+    private PhieuYeuCauXuatKho phieuYeuCau;
+    private PhuTung phuTung;
     private int soLuong;
-
-    // Thuộc tính phụ hỗ trợ hiển thị JOIN từ bảng PhuTung
-    private String tenPhuTung;
-    private String hangSanXuat;
-    private String viTriKho;
-    private int soLuongTon;
-    private int nguongCanhBao;
 
     public ChiTietYeuCauXuatKho() {}
 
@@ -20,27 +13,27 @@ public class ChiTietYeuCauXuatKho {
         setSoLuong(soLuong);
     }
 
-    public ChiTietYeuCauXuatKho(String maPhieuYC, String maSKU, int soLuong) {
-        this.maPhieuYC = maPhieuYC;
-        this.maSKU = maSKU;
+    public ChiTietYeuCauXuatKho(PhieuYeuCauXuatKho phieuYeuCau, PhuTung phuTung, int soLuong) {
+        this.phieuYeuCau = phieuYeuCau;
+        this.phuTung = phuTung;
         setSoLuong(soLuong);
     }
 
-    public String getMaPhieuYC() {
-        return maPhieuYC;
+    public PhieuYeuCauXuatKho getPhieuYeuCau() {
+        return phieuYeuCau;
     }
-    public void setMaPhieuYC(String maPhieuYC) {
-        this.maPhieuYC = maPhieuYC;
+    public void setPhieuYeuCau(PhieuYeuCauXuatKho phieuYeuCau) {
+        this.phieuYeuCau = phieuYeuCau;
     }
 
-    public String getMaSKU() {
-        return maSKU;
+    public PhuTung getPhuTung() {
+        return phuTung;
     }
-    public void setMaSKU(String maSKU) {
-        if (maSKU == null || maSKU.trim().isEmpty()) {
+    public void setPhuTung(PhuTung phuTung) {
+        if (phuTung == null) {
             throw new IllegalArgumentException("Mã SKU không được để trống.");
         }
-        this.maSKU = maSKU.trim();
+        this.phuTung = phuTung;
     }
 
     public int getSoLuong() {
@@ -53,56 +46,22 @@ public class ChiTietYeuCauXuatKho {
         this.soLuong = soLuong;
     }
 
-    public String getTenPhuTung() {
-        return tenPhuTung;
-    }
-    public void setTenPhuTung(String tenPhuTung) {
-        this.tenPhuTung = tenPhuTung;
-    }
-
-    public String getHangSanXuat() {
-        return hangSanXuat;
-    }
-    public void setHangSanXuat(String hangSanXuat) {
-        this.hangSanXuat = hangSanXuat;
-    }
-
-    public String getViTriKho() {
-        return viTriKho;
-    }
-    public void setViTriKho(String viTriKho) {
-        this.viTriKho = viTriKho;
-    }
-
-    public int getSoLuongTon() {
-        return soLuongTon;
-    }
-    public void setSoLuongTon(int soLuongTon) {
-        this.soLuongTon = soLuongTon;
-    }
-
-    public int getNguongCanhBao() {
-        return nguongCanhBao;
-    }
-    public void setNguongCanhBao(int nguongCanhBao) {
-        this.nguongCanhBao = nguongCanhBao;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ChiTietYeuCauXuatKho)) return false;
         ChiTietYeuCauXuatKho that = (ChiTietYeuCauXuatKho) o;
-        return Objects.equals(maPhieuYC, that.maPhieuYC) && Objects.equals(maSKU, that.maSKU);
+        return Objects.equals(phieuYeuCau, that.phieuYeuCau) && Objects.equals(phuTung, that.phuTung);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maPhieuYC, maSKU);
+        return Objects.hash(phieuYeuCau, phuTung);
     }
 
     @Override
     public String toString() {
-        return maPhieuYC + " - " + maSKU + " (SL: " + soLuong + ")";
+        return (phieuYeuCau == null ? null : phieuYeuCau.getMaPhieuYC()) + " - "
+                + (phuTung == null ? null : phuTung.getMaSKU()) + " (SL: " + soLuong + ")";
     }
 }

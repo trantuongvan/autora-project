@@ -3,7 +3,10 @@ package dao;
 import connection.ConnectDB;
 import entity.ChiTietNhapKho;
 import entity.NhanVien;
+import entity.VaiTro;
+import entity.NhaCungCap;
 import entity.PhieuNhapKho;
+import entity.PhuTung;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -28,7 +31,7 @@ public class PhieuNhapKho_Dao {
                                 r.getString("hoTen"),
                                 r.getString("soDienThoai"),
                                 r.getString("diaChi"),
-                                r.getString("viTriLamViec")
+                                VaiTro.fromDb(r.getString("viTriLamViec"))
                         );
                     }
                 }
@@ -45,7 +48,7 @@ public class PhieuNhapKho_Dao {
                         r.getString("hoTen"),
                         r.getString("soDienThoai"),
                         r.getString("diaChi"),
-                        r.getString("viTriLamViec")
+                        VaiTro.fromDb(r.getString("viTriLamViec"))
                 );
             }
         }
@@ -113,21 +116,43 @@ public class PhieuNhapKho_Dao {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Timestamp ts = rs.getTimestamp("ngayNhap");
+                    NhaCungCap nhaCungCap = new NhaCungCap(rs.getString("maNCC"));
+                    nhaCungCap.setTenNCC(rs.getString("tenNCC"));
+                    NhanVien thuKho = new NhanVien(rs.getString("maNV_ThuKho"));
+                    thuKho.setHoTen(rs.getString("tenThuKho"));
                     PhieuNhapKho pn = new PhieuNhapKho(
                             rs.getString("maPhieuNhap"),
                             ts != null ? ts.toLocalDateTime() : LocalDateTime.now(),
                             rs.getDouble("tongTienNhap"),
-                            rs.getString("maNCC"),
-                            rs.getString("maNV_ThuKho")
+                            nhaCungCap,
+                            thuKho
                     );
-                    pn.setTenNCC(rs.getString("tenNCC"));
-                    pn.setTenThuKho(rs.getString("tenThuKho"));
                     pn.setSoMatHang(rs.getInt("soMatHang"));
                     list.add(pn);
                 }
             }
         }
         return list;
+    }
+
+    /** Nhà cung cấp của lần nhập gần nhất có phụ tùng này; null nếu chưa từng nhập. */
+    public NhaCungCap findNhaCungCapGanNhat(String maSKU) throws SQLException {
+        String sql = "SELECT TOP 1 ncc.maNCC, ncc.tenNCC FROM ChiTietNhapKho ct "
+                + "JOIN PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap "
+                + "JOIN NhaCungCap ncc ON ncc.maNCC = pn.maNCC "
+                + "WHERE ct.maSKU = ? ORDER BY pn.ngayNhap DESC, pn.maPhieuNhap DESC";
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, maSKU);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                NhaCungCap ncc = new NhaCungCap(rs.getString("maNCC"));
+                ncc.setTenNCC(rs.getString("tenNCC"));
+                return ncc;
+            }
+        }
     }
 
     public List<ChiTietNhapKho> findChiTietByMaPhieu(String maPhieuNhap) throws SQLException {
@@ -141,14 +166,14 @@ public class PhieuNhapKho_Dao {
             ps.setString(1, maPhieuNhap);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ChiTietNhapKho ct = new ChiTietNhapKho(
-                            rs.getString("maPhieuNhap"),
-                            rs.getString("maSKU"),
+                    PhuTung phuTung = new PhuTung(rs.getString("maSKU"));
+                    phuTung.setTenPhuTung(rs.getString("tenPhuTung"));
+                    list.add(new ChiTietNhapKho(
+                            new PhieuNhapKho(rs.getString("maPhieuNhap")),
+                            phuTung,
                             rs.getInt("soLuongNhap"),
                             rs.getDouble("giaNhapThucTe")
-                    );
-                    ct.setTenPhuTung(rs.getString("tenPhuTung"));
-                    list.add(ct);
+                    ));
                 }
             }
         }
@@ -171,20 +196,20 @@ public class PhieuNhapKho_Dao {
                 psPhieu.setString(1, phieu.getMaPhieuNhap());
                 psPhieu.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
                 psPhieu.setDouble(3, phieu.getTongTienNhap());
-                psPhieu.setString(4, phieu.getMaNCC());
-                psPhieu.setString(5, phieu.getMaNVThuKho());
+                psPhieu.setString(4, phieu.getNhaCungCap().getMaNCC());
+                psPhieu.setString(5, phieu.getThuKho().getMaNV());
                 psPhieu.executeUpdate();
 
                 for (ChiTietNhapKho ct : chiTietList) {
                     psCT.setString(1, phieu.getMaPhieuNhap());
-                    psCT.setString(2, ct.getMaSKU());
+                    psCT.setString(2, ct.getPhuTung().getMaSKU());
                     psCT.setInt(3, ct.getSoLuongNhap());
                     psCT.setDouble(4, ct.getGiaNhapThucTe());
                     psCT.addBatch();
 
                     psTon.setInt(1, ct.getSoLuongNhap());
                     psTon.setDouble(2, ct.getGiaNhapThucTe());
-                    psTon.setString(3, ct.getMaSKU());
+                    psTon.setString(3, ct.getPhuTung().getMaSKU());
                     psTon.addBatch();
                 }
                 psCT.executeBatch();

@@ -3,25 +3,26 @@ package controller;
 import dao.NhatKy_Dao;
 import dao.TaiKhoan_Dao;
 import entity.NhanVien;
+import entity.NhatKyHoatDong;
 import entity.PhienDangNhap;
 import entity.TaiKhoan;
+import entity.VaiTro;
 import gui.QLTaiKhoan;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.text.Normalizer;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /** Điều phối tạo, sửa, khóa và xóa tài khoản; các quy tắc giữ Chủ cửa hàng cuối cùng nằm trong DAO. */
 public class QLTaiKhoanController {
@@ -38,25 +39,22 @@ public class QLTaiKhoanController {
     /** Cùng thứ tự với bảng tài khoản. */
     private List<TaiKhoan> dsTaiKhoan = new ArrayList<>();
     private TaiKhoan dangSua;
+    private String tenGoiY = "";
     private int phienBanDanhSach;
     private int phienBanNhanVien;
+    private boolean daTai;
 
     public QLTaiKhoanController(QLTaiKhoan view) {
         this.view = view;
         initController();
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.goiYChuaTai(view.getTblNhatKy(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
-        });
-        view.getCboLocVaiTro().addActionListener(e -> taiDanhSach());
-        view.getCboLocTrangThai().addActionListener(e -> taiDanhSach());
+        view.getTxtTimKiem().addActionListener(e -> taiTatCa());
+        view.getBtnTaiDuLieu().addActionListener(e -> taiTatCa());
         view.getCboNhanVien().addActionListener(e -> theoViTriNhanVien());
         view.getBtnDong().addActionListener(e -> moFormTao());
         view.getBtnLuu().addActionListener(e -> luu());
@@ -67,8 +65,7 @@ public class QLTaiKhoanController {
             }
         });
         ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", () -> {
-            taiDanhSach();
-            taiNhatKy();
+            taiTatCa();
             if (dangSua == null) {
                 taiNhanVien();
             }
@@ -108,10 +105,27 @@ public class QLTaiKhoanController {
     // Tải dữ liệu
     // ==========================================================
 
+    /** Nút Tải dữ liệu: danh sách tài khoản và nhật ký là danh sách nên chỉ tải khi bấm. */
+    private void taiTatCa() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
+        UIComponents.goiYChuaTai(view.getTblNhatKy(), false);
+        taiDanhSach();
+        taiNhatKy();
+    }
+
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi đã tải. */
+    private void taiLai() {
+        if (daTai) {
+            taiDanhSach();
+            taiNhatKy();
+        }
+    }
+
     private void taiDanhSach() {
         String tuKhoa = view.getTxtTimKiem().getText();
-        String vaiTro = QLTaiKhoan.TAT_CA_VAI_TRO.equals(view.getCboLocVaiTro().getSelectedItem())
-                ? "" : String.valueOf(view.getCboLocVaiTro().getSelectedItem());
+        Object chonVaiTro = view.getCboLocVaiTro().getSelectedItem();
+        VaiTro vaiTro = chonVaiTro instanceof VaiTro ? (VaiTro) chonVaiTro : null;
         Object chonTrangThai = view.getCboLocTrangThai().getSelectedItem();
         Boolean trangThai = QLTaiKhoan.TAT_CA_TRANG_THAI.equals(chonTrangThai)
                 ? null : Boolean.valueOf(TaiKhoan.DANG_HOAT_DONG.equals(chonTrangThai));
@@ -136,7 +150,7 @@ public class QLTaiKhoanController {
                 }
                 List<Object[]> dong = new ArrayList<>();
                 for (TaiKhoan t : dsTaiKhoan) {
-                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getMaNV() + " — " + t.getHoTen()), xuongDong(t.getVaiTro()),
+                    dong.add(new Object[] {t.getTenDangNhap(), xuongDong(t.getNhanVien().getMaNV() + " — " + t.getNhanVien().getHoTen()), xuongDong(t.getVaiTro().getText()),
                         t.getTrangThaiHienThi(), ""});
                 }
                 view.setDanhSach(dong);
@@ -145,9 +159,9 @@ public class QLTaiKhoanController {
     }
 
     private void taiNhatKy() {
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<NhatKyHoatDong>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<NhatKyHoatDong> doInBackground() throws Exception {
                 return nhatKyDao.search("");
             }
 
@@ -155,12 +169,13 @@ public class QLTaiKhoanController {
             protected void done() {
                 try {
                     List<Object[]> dong = new ArrayList<>();
-                    for (Object[] r : get()) {
+                    for (NhatKyHoatDong r : get()) {
                         if (dong.size() == SO_DONG_NHAT_KY) {
                             break;
                         }
-                        dong.add(new Object[] {r[1], xuongDong(((LocalDateTime) r[0]).format(DINH_DANG_GIO)), xuongDong(r[2] + " " + r[3]),
-                            xuongDong(truocSau((String) r[4], (String) r[5]))});
+                        dong.add(new Object[] {r.getTenDangNhap(), xuongDong(r.getThoiGian().format(DINH_DANG_GIO)),
+                            xuongDong(r.getHanhDong() + " " + r.getDoiTuong()),
+                            xuongDong(truocSau(r.getGiaTriCu(), r.getGiaTriMoi()))});
                     }
                     view.setNhatKy(dong);
                 } catch (Exception ex) {
@@ -215,10 +230,39 @@ public class QLTaiKhoanController {
 
     private void theoViTriNhanVien() {
         int chon = view.getCboNhanVien().getSelectedIndex();
-        if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()
-                && Arrays.asList(TaiKhoan.VAI_TRO).contains(dsNhanVien.get(chon).getViTriLamViec())) {
+        if (dangSua == null && chon >= 0 && chon < dsNhanVien.size()) {
             view.getCboVaiTro().setSelectedItem(dsNhanVien.get(chon).getViTriLamViec());
+            goiYTenDangNhap(dsNhanVien.get(chon));
         }
+    }
+
+    /** Chỉ thay ô tên đăng nhập khi trống hoặc còn đúng giá trị tự gợi ý lần trước, để không đè tên người dùng đã gõ. */
+    private void goiYTenDangNhap(NhanVien nv) {
+        String hienTai = view.getTxtTenDangNhap().getText();
+        if (!hienTai.isEmpty() && !hienTai.equals(tenGoiY)) {
+            return;
+        }
+        try {
+            String goc = taoTenDangNhap(nv.getHoTen());
+            tenGoiY = goc.isEmpty() ? "" : dao.tenDangNhapConTrong(goc);
+            view.getTxtTenDangNhap().setText(tenGoiY);
+        } catch (SQLException ex) {
+            baoLoi("Không thể gợi ý tên đăng nhập.", ex);
+        }
+    }
+
+    /** "Nguyễn Tuấn Vũ" -> "vunt": tên gọi cộng chữ cái đầu các từ còn lại, chữ thường, không dấu. */
+    public static String taoTenDangNhap(String hoTen) {
+        if (hoTen == null) {
+            return "";
+        }
+        String[] tu = Normalizer.normalize(hoTen.replace('đ', 'd').replace('Đ', 'D'), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", "").trim().split("\\s+");
+        StringBuilder ten = new StringBuilder(tu[tu.length - 1]);
+        for (int i = 0; i < tu.length - 1; i++) {
+            ten.append(tu[i].charAt(0));
+        }
+        return ten.toString();
     }
 
     // ==========================================================
@@ -233,6 +277,7 @@ public class QLTaiKhoanController {
         dsNhanVien = new ArrayList<>();
         view.getCboNhanVien().removeAllItems();
         view.getTxtTenDangNhap().setText("");
+        tenGoiY = "";
         view.getPwdMatKhau().setText("");
         view.getCboTrangThai().setSelectedItem(TaiKhoan.DANG_HOAT_DONG);
         taiNhanVien();
@@ -243,7 +288,7 @@ public class QLTaiKhoanController {
         view.xoaLoi();
         view.setCheDoSua(true);
         view.getCboNhanVien().removeAllItems();
-        view.getCboNhanVien().addItem(taiKhoan.getMaNV() + " — " + taiKhoan.getHoTen());
+        view.getCboNhanVien().addItem(taiKhoan.getNhanVien().getMaNV() + " — " + taiKhoan.getNhanVien().getHoTen());
         view.getTxtTenDangNhap().setText(taiKhoan.getTenDangNhap());
         view.getPwdMatKhau().setText("");
         view.getCboVaiTro().setSelectedItem(taiKhoan.getVaiTro());
@@ -252,7 +297,7 @@ public class QLTaiKhoanController {
 
     private void luu() {
         view.xoaLoi();
-        String vaiTro = String.valueOf(view.getCboVaiTro().getSelectedItem());
+        VaiTro vaiTro = (VaiTro) view.getCboVaiTro().getSelectedItem();
         boolean hoatDong = TaiKhoan.DANG_HOAT_DONG.equals(view.getCboTrangThai().getSelectedItem());
         String matKhau = new String(view.getPwdMatKhau().getPassword());
         try {
@@ -276,12 +321,11 @@ public class QLTaiKhoanController {
         }
         JOptionPane.showMessageDialog(view, "Thành công", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        taiLai();
     }
 
     /** Trả về false khi dữ liệu nhập sai và đã được đánh dấu trên form. */
-    private boolean luuMoi(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+    private boolean luuMoi(VaiTro vaiTro, boolean hoatDong, String matKhau) throws SQLException {
         String ten = view.getTxtTenDangNhap().getText();
         int chonNhanVien = view.getCboNhanVien().getSelectedIndex();
         boolean thieu = false;
@@ -306,14 +350,13 @@ public class QLTaiKhoanController {
         NhanVien nv = dsNhanVien.get(chonNhanVien);
         taiKhoan.setVaiTro(vaiTro);
         taiKhoan.setTrangThai(hoatDong);
-        taiKhoan.setMaNV(nv.getMaNV());
-        taiKhoan.setHoTen(nv.getHoTen());
+        taiKhoan.setNhanVien(nv);
         dao.insert(taiKhoan, matKhau, nguoiThucHien());
         return true;
     }
 
     /** Trả về false khi đã báo lý do cho người dùng và không cần báo thành công. */
-    private boolean luuSua(String vaiTro, boolean hoatDong, String matKhau) throws SQLException {
+    private boolean luuSua(VaiTro vaiTro, boolean hoatDong, String matKhau) throws SQLException {
         if (!matKhau.isEmpty() && !kiemTraMatKhau(matKhau)) {
             return false;
         }
@@ -324,7 +367,7 @@ public class QLTaiKhoanController {
         if (!dao.capNhat(dangSua.getTenDangNhap(), vaiTro, matKhau.isEmpty() ? null : matKhau, hoatDong, nguoiThucHien())) {
             JOptionPane.showMessageDialog(view, "Tài khoản này không còn tồn tại.", "Không thể lưu", JOptionPane.WARNING_MESSAGE);
             moFormTao();
-            taiDanhSach();
+            taiLai();
             return false;
         }
         return true;
@@ -398,8 +441,7 @@ public class QLTaiKhoanController {
             baoLoi("Không thể thực hiện: " + ten + ".", ex);
         }
         moFormTao();
-        taiDanhSach();
-        taiNhatKy();
+        taiLai();
     }
 
     private boolean xacNhan(String cauHoi) {

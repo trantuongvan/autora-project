@@ -1,6 +1,6 @@
 package gui;
 
-import entity.KhuyenMai;
+import entity.HinhThucKhuyenMai;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -26,8 +26,9 @@ public class QLKhuyenMai extends JPanel {
     private final JButton btnTaoMoi = UIComponents.nutChinh("+  Tạo chương trình mới", UIConstants.PRIMARY);
     private final JComboBox<String> cboLocTinhTrang =
             new JComboBox<>(new String[]{"Tất cả", "Đang áp dụng", "Sắp diễn ra", "Hết hạn", "Ngừng áp dụng"});
-    private final JComboBox<String> cboLocHinhThuc =
-            new JComboBox<>(new String[]{"Tất cả", KhuyenMai.HINH_THUC_PHAN_TRAM, KhuyenMai.HINH_THUC_TIEN_MAT});
+    private final JComboBox<Object> cboLocHinhThuc =
+            new JComboBox<>(new Object[]{"Tất cả", HinhThucKhuyenMai.PHAN_TRAM, HinhThucKhuyenMai.TIEN_MAT});
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton btnXuatExcel = UIComponents.nutPhu("Xuất file Excel");
     private final RoundedPanel theBang = UIComponents.card();
 
@@ -134,6 +135,7 @@ public class QLKhuyenMai extends JPanel {
         phai.add(cboLocTinhTrang);
         phai.add(UIComponents.label("Hình thức", UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK));
         phai.add(cboLocHinhThuc);
+        phai.add(btnTaiDuLieu);
         phai.add(btnTaoMoi);
 
         JPanel hang = UIComponents.trong(new BorderLayout(16, 0));
@@ -151,7 +153,7 @@ public class QLKhuyenMai extends JPanel {
     }
 
     private static JLabel taoSoLon() {
-        JLabel l = UIComponents.label("0", UIConstants.FONT_PAGE_TITLE.deriveFont(26f), UIConstants.TEXT_DARK);
+        JLabel l = UIComponents.label("—", UIConstants.FONT_PAGE_TITLE.deriveFont(26f), UIConstants.TEXT_DARK);
         l.setHorizontalAlignment(SwingConstants.RIGHT);
         return l;
     }
@@ -205,7 +207,7 @@ public class QLKhuyenMai extends JPanel {
         return cboLocTinhTrang;
     }
 
-    public JComboBox<String> getCboLocHinhThuc() {
+    public JComboBox<Object> getCboLocHinhThuc() {
         return cboLocHinhThuc;
     }
 
@@ -215,6 +217,10 @@ public class QLKhuyenMai extends JPanel {
 
     public DefaultTableModel getTableModel() {
         return tableModel;
+    }
+
+    public JButton getBtnTaiDuLieu() {
+        return btnTaiDuLieu;
     }
 
     public JButton getBtnXuatExcel() {

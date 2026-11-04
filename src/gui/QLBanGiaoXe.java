@@ -36,6 +36,7 @@ public class QLBanGiaoXe extends JPanel {
 
     // --- Danh sách ---
     private final JTextField txtTimKiem;
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JComboBox<String> cboLoc = new JComboBox<>(new String[]{"Chờ bàn giao", "Đã bàn giao", "Tất cả"});
     private final JTable tblDanhSach;
     private final DefaultTableModel tableModel;
@@ -86,8 +87,9 @@ public class QLBanGiaoXe extends JPanel {
         JPanel hangTim = UIComponents.trong(new BorderLayout());
         JPanel trai = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 0, 0));
         trai.add(timKiem);
-        JPanel phai = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel phai = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         phai.add(cboLoc);
+        phai.add(btnTaiDuLieu);
         hangTim.add(trai, BorderLayout.WEST);
         hangTim.add(phai, BorderLayout.EAST);
         noiDung.them(hangTim, 18);
@@ -373,6 +375,7 @@ public class QLBanGiaoXe extends JPanel {
 
     // --- Getter cho Controller ---
     public JTextField getTxtTimKiem() { return txtTimKiem; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public JComboBox<String> getCboLoc() { return cboLoc; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }
@@ -385,30 +388,8 @@ public class QLBanGiaoXe extends JPanel {
     // ==========================================================
 
     public void napDuLieuMau() {
-        List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"SC-261012-021", "51H-123.45", "Nguyễn Văn Minh", "Toyota Vios", "100%", "Đã thanh toán", "2.970.000 đ", "Đủ điều kiện \u2022 Bàn giao"});
-        ds.add(new Object[]{"SC-261012-020", "51G-678.90", "Trần Thị Hương", "Honda City", "80%", "Chưa thanh toán", "4.400.000 đ", "Chưa đủ điều kiện"});
-        ds.add(new Object[]{"SC-261012-019", "59A-246.80", "Lê Hoàng Nam", "Mazda 3", "100%", "Công nợ hợp lệ", "1.650.000 đ", "Đủ điều kiện \u2022 Bàn giao"});
-        ds.add(new Object[]{"SC-261012-019", "59A-246.80", "Lê Hoàng Nam", "Mazda 3", "100%", "Công nợ hợp lệ", "1.650.000 đ", "Đủ điều kiện \u2022 Bàn giao"});
-        ds.add(new Object[]{"SC-261012-019", "59A-246.80", "Lê Hoàng Nam", "Mazda 3", "100%", "Công nợ hợp lệ", "1.650.000 đ", "Đủ điều kiện \u2022 Bàn giao"});
-        setDanhSach(ds);
-        tblDanhSach.setRowSelectionInterval(0, 0);
-
-        ChiTietBanGiao ct = new ChiTietBanGiao();
-        ct.xe = "51H-123.45 \u2022 Toyota Vios";
-        ct.chuXeVaPhieu = "Nguyễn Văn Minh \u2022 SC-261012-021";
-        ct.nhanTienDo = "Hoàn tất 100%";
-        ct.hoanTat100 = true;
-        ct.tienCong = "800.000 đ";
-        ct.phuTung = "2.000.000 đ";
-        ct.giamGia = "\u2013 100.000 đ";
-        ct.nhanVAT = "VAT (10% \u00D7 2.700.000)";
-        ct.vat = "270.000 đ";
-        ct.tongThanhToan = "2.970.000 đ";
-        ct.duDieuKien = true;
-        ct.thongBao = "HD-261012-021 đã thanh toán đủ. Đủ điều kiện bàn giao.";
-        hienChiTiet(ct);
-
+        setDanhSach(new ArrayList<>());
+        anChiTiet();
         anThongBaoThanhCong();
         setCanhBaoDieuKien(null);
     }

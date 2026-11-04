@@ -2,8 +2,8 @@ package dao;
 
 import connection.ConnectDB;
 import entity.NhanVien;
-import entity.PhienDangNhap;
 import entity.TaiKhoan;
+import entity.VaiTro;
 import util.MatKhauUtil;
 
 import java.sql.Connection;
@@ -12,7 +12,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 
 /** Tài khoản và nhật ký đi cùng. Không bao giờ ghi giá trị mật khẩu vào nhật ký. */
 public class TaiKhoan_Dao {
@@ -21,13 +24,13 @@ public class TaiKhoan_Dao {
     private static final String CHU_CUOI = "Không thể thực hiện: đây là tài khoản Chủ cửa hàng đang hoạt động cuối cùng.";
 
     public List<TaiKhoan> search(String tuKhoa) throws SQLException {
-        return search(tuKhoa, "", null);
+        return search(tuKhoa, null, null);
     }
 
-    /** vaiTro rỗng và trangThai null nghĩa là không lọc theo tiêu chí đó. */
-    public List<TaiKhoan> search(String tuKhoa, String vaiTro, Boolean trangThai) throws SQLException {
+    /** vaiTro null và trangThai null nghĩa là không lọc theo tiêu chí đó. */
+    public List<TaiKhoan> search(String tuKhoa, VaiTro vaiTro, Boolean trangThai) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
-        String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen "
+        String sql = "SELECT t.tenDangNhap, t.vaiTro, t.trangThai, t.maNV, n.hoTen, n.soDienThoai, n.diaChi, n.viTriLamViec "
                 + "FROM TaiKhoan t JOIN NhanVien n ON n.maNV = t.maNV "
                 + "WHERE (? = N'' OR t.tenDangNhap LIKE ? OR n.hoTen LIKE ? OR t.maNV LIKE ? OR t.vaiTro LIKE ?) "
                 + "AND (? = N'' OR t.vaiTro = ?) "
@@ -40,12 +43,17 @@ public class TaiKhoan_Dao {
             for (int i = 2; i <= 5; i++) {
                 statement.setString(i, "%" + key + "%");
             }
-            statement.setString(6, vaiTro);
-            statement.setString(7, vaiTro);
+            String chuoiVaiTro = vaiTro == null ? "" : vaiTro.getText();
+            statement.setString(6, chuoiVaiTro);
+            statement.setString(7, chuoiVaiTro);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new TaiKhoan(rs.getString(1), rs.getString(2), rs.getBoolean(3), rs.getString(4),
-                            rs.getString(5)));
+                    NhanVien nhanVien = new NhanVien(rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7),
+                            VaiTro.fromDb(rs.getString(8)));
+                    TaiKhoan taiKhoan = new TaiKhoan(rs.getString(1), VaiTro.fromDb(rs.getString(2)), rs.getBoolean(3),
+                            nhanVien);
+                    nhanVien.setTaiKhoan(taiKhoan);
+                    ketQua.add(taiKhoan);
                 }
             }
         }
@@ -61,10 +69,30 @@ public class TaiKhoan_Dao {
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
                 ketQua.add(new NhanVien(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
-                        rs.getString(5)));
+                        VaiTro.fromDb(rs.getString(5))));
             }
         }
         return ketQua;
+    }
+
+    /** Tên gốc nếu còn trống, nếu không thì thêm số nhỏ nhất từ 2; một truy vấn, cắt gốc để không vượt VARCHAR(50). */
+    public String tenDangNhapConTrong(String goc) throws SQLException {
+        Set<String> daCo = new HashSet<>();
+        try (Connection connection = ConnectDB.getConnection();
+                PreparedStatement statement = connection.prepareStatement("SELECT tenDangNhap FROM TaiKhoan WHERE tenDangNhap LIKE ?")) {
+            statement.setString(1, goc + "%");
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) {
+                    daCo.add(rs.getString(1).toLowerCase(Locale.ROOT));
+                }
+            }
+        }
+        String ung = goc;
+        for (int n = 2; daCo.contains(ung.toLowerCase(Locale.ROOT)); n++) {
+            String duoi = String.valueOf(n);
+            ung = goc.substring(0, Math.min(goc.length(), 50 - duoi.length())) + duoi;
+        }
+        return ung;
     }
 
     public boolean exists(String tenDangNhap) throws SQLException {
@@ -84,15 +112,15 @@ public class TaiKhoan_Dao {
                 if (tonTai(connection, "tenDangNhap", taiKhoan.getTenDangNhap())) {
                     throw new SQLIntegrityConstraintViolationException(TRUNG_TEN_DANG_NHAP);
                 }
-                if (tonTai(connection, "maNV", taiKhoan.getMaNV())) {
+                if (tonTai(connection, "maNV", taiKhoan.getNhanVien().getMaNV())) {
                     throw new SQLIntegrityConstraintViolationException(NHAN_VIEN_DA_CO_TAI_KHOAN);
                 }
                 try (PreparedStatement statement = connection.prepareStatement(sql)) {
                     statement.setString(1, taiKhoan.getTenDangNhap());
                     statement.setString(2, giaTriBam);
-                    statement.setString(3, taiKhoan.getVaiTro());
+                    statement.setString(3, taiKhoan.getVaiTro().getText());
                     statement.setBoolean(4, taiKhoan.isTrangThai());
-                    statement.setString(5, taiKhoan.getMaNV());
+                    statement.setString(5, taiKhoan.getNhanVien().getMaNV());
                     statement.executeUpdate();
                 }
                 new NhatKy_Dao().ghi(connection, nguoiThucHien, "Tạo tài khoản", taiKhoan.getTenDangNhap(), null,
@@ -105,7 +133,7 @@ public class TaiKhoan_Dao {
         }
     }
 
-    public boolean doiVaiTro(String tenDangNhap, String vaiTroMoi, String nguoiThucHien) throws SQLException {
+    public boolean doiVaiTro(String tenDangNhap, VaiTro vaiTroMoi, String nguoiThucHien) throws SQLException {
         return capNhat(tenDangNhap, vaiTroMoi, null, null, nguoiThucHien);
     }
 
@@ -122,11 +150,8 @@ public class TaiKhoan_Dao {
      * Trả về false khi không có tài khoản này.
      * Ném IllegalStateException khi việc đổi làm mất Chủ cửa hàng đang hoạt động cuối cùng.
      */
-    public boolean capNhat(String tenDangNhap, String vaiTroMoi, String matKhauMoi, Boolean trangThaiMoi,
+    public boolean capNhat(String tenDangNhap, VaiTro vaiTroMoi, String matKhauMoi, Boolean trangThaiMoi,
             String nguoiThucHien) throws SQLException {
-        if (vaiTroMoi != null) {
-            new TaiKhoan().setVaiTro(vaiTroMoi);
-        }
         String giaTriBam = null;
         if (matKhauMoi != null) {
             TaiKhoan.kiemTraMatKhau(matKhauMoi);
@@ -141,15 +166,15 @@ public class TaiKhoan_Dao {
                     connection.rollback();
                     return false;
                 }
-                boolean doiVaiTro = vaiTroMoi != null && !vaiTroMoi.equals(cu.getVaiTro());
+                boolean doiVaiTro = vaiTroMoi != null && vaiTroMoi != cu.getVaiTro();
                 boolean doiTrangThai = trangThaiMoi != null && trangThaiMoi != cu.isTrangThai();
                 if (doiVaiTro || (doiTrangThai && !trangThaiMoi)) {
                     chanChuCuoi(cu, soChu);
                 }
                 NhatKy_Dao nhatKy = new NhatKy_Dao();
                 if (doiVaiTro) {
-                    capNhatCot(connection, "vaiTro", vaiTroMoi, tenDangNhap);
-                    nhatKy.ghi(connection, nguoiThucHien, "Đổi vai trò", tenDangNhap, cu.getVaiTro(), vaiTroMoi);
+                    capNhatCot(connection, "vaiTro", vaiTroMoi.getText(), tenDangNhap);
+                    nhatKy.ghi(connection, nguoiThucHien, "Đổi vai trò", tenDangNhap, cu.getVaiTro().getText(), vaiTroMoi.getText());
                 }
                 if (giaTriBam != null) {
                     capNhatCot(connection, "matKhau", giaTriBam, tenDangNhap);
@@ -202,7 +227,7 @@ public class TaiKhoan_Dao {
     private int demChuDangHoatDong(Connection connection) throws SQLException {
         String sql = "SELECT COUNT(*) FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE vaiTro = ? AND trangThai = 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, PhienDangNhap.VAI_TRO_CHU_CUA_HANG);
+            statement.setString(1, VaiTro.CHU_CUA_HANG.getText());
             try (ResultSet rs = statement.executeQuery()) {
                 rs.next();
                 return rs.getInt(1);
@@ -210,8 +235,25 @@ public class TaiKhoan_Dao {
         }
     }
 
+    /** Gọi đầu transaction xóa nhân viên: tài khoản bị xóa theo (ON DELETE CASCADE) nên cũng phải giữ Chủ cửa hàng cuối. */
+    void chanChuCuoiCuaNhanVien(Connection connection, String maNV) throws SQLException {
+        int soChu = demChuDangHoatDong(connection);
+        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maNV);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    TaiKhoan taiKhoan = new TaiKhoan();
+                    taiKhoan.setVaiTro(VaiTro.fromDb(rs.getString(1)));
+                    taiKhoan.setTrangThai(rs.getBoolean(2));
+                    chanChuCuoi(taiKhoan, soChu);
+                }
+            }
+        }
+    }
+
     private void chanChuCuoi(TaiKhoan taiKhoan, int soChuDangHoatDong) {
-        if (PhienDangNhap.VAI_TRO_CHU_CUA_HANG.equals(taiKhoan.getVaiTro()) && taiKhoan.isTrangThai()
+        if (taiKhoan.getVaiTro() == VaiTro.CHU_CUA_HANG && taiKhoan.isTrangThai()
                 && soChuDangHoatDong <= 1) {
             throw new IllegalStateException(CHU_CUOI);
         }
@@ -226,7 +268,7 @@ public class TaiKhoan_Dao {
                     return null;
                 }
                 TaiKhoan taiKhoan = new TaiKhoan();
-                taiKhoan.setVaiTro(rs.getString(1));
+                taiKhoan.setVaiTro(VaiTro.fromDb(rs.getString(1)));
                 taiKhoan.setTrangThai(rs.getBoolean(2));
                 return taiKhoan;
             }

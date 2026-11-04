@@ -9,6 +9,7 @@ import entity.NhaCungCap;
 import entity.NhanVien;
 import entity.PhieuNhapKho;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLNhapKho;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -49,6 +50,7 @@ public class QLNhapKhoController {
 
     private NhanVien thuKhoHienTai;
     private List<PhieuNhapKho> danhSachPhieuNhap = new ArrayList<>();
+    private boolean daTai;
 
     private final List<ChiTietNhapKho> dsChiTietModal = new ArrayList<>();
     private final List<JTextField> dsInputSoLuong = new ArrayList<>();
@@ -59,6 +61,39 @@ public class QLNhapKhoController {
     private static final DateTimeFormatter DATE_PARSE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
+    /** Thủ kho đã tự chọn nhà cung cấp trên phiếu đang mở: ngừng tự gợi ý theo lịch sử nhập. */
+    private boolean nccDoNguoiChon;
+    private boolean dangTuChonNcc;
+
+    /** Đưa tồn kho lên gấp đôi ngưỡng cảnh báo, tối thiểu bằng ngưỡng và không dưới 1. */
+    public static int soLuongNhapMacDinh(int nguongCanhBao, int soLuongTon) {
+        return Math.max(1, Math.max(nguongCanhBao * 2 - soLuongTon, nguongCanhBao));
+    }
+
+    private static int soLuongNhapMacDinh(PhuTung pt) {
+        return soLuongNhapMacDinh(pt.getNguongCanhBao(), pt.getSoLuongTon());
+    }
+
+    private void goiYNhaCungCap() {
+        if (nccDoNguoiChon || dsChiTietModal.isEmpty()) {
+            return;
+        }
+        try {
+            NhaCungCap ncc = nhapKhoDao.findNhaCungCapGanNhat(dsChiTietModal.get(0).getPhuTung().getMaSKU());
+            if (ncc != null) {
+                dangTuChonNcc = true;
+                view.getCboModalNCC().setSelectedItem(ncc);
+                dangTuChonNcc = false;
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private static double thanhTien(ChiTietNhapKho ct) {
+        return ct.getSoLuongNhap() * ct.getGiaNhapThucTe();
+    }
+
     public QLNhapKhoController(QLNhapKho view) {
         this.view = view;
         this.nhapKhoDao = new PhieuNhapKho_Dao();
@@ -68,7 +103,7 @@ public class QLNhapKhoController {
 
         initHeaderAndNCC();
         initController();
-        loadData();
+        UIComponents.goiYChuaTai(view.getTblPhieuNhap(), true);
     }
 
     private void initHeaderAndNCC() {
@@ -79,7 +114,7 @@ public class QLNhapKhoController {
                 view.getLblThuKhoModal().setText(thuKhoHienTai.getHoTen());
             }
 
-            int soCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int soCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(soCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(soCho > 0);
 
@@ -97,6 +132,11 @@ public class QLNhapKhoController {
     }
 
     private void initController() {
+        view.getCboModalNCC().addActionListener(e -> {
+            if (!dangTuChonNcc) {
+                nccDoNguoiChon = true;
+            }
+        });
         view.getBtnMenuTrangChu().addActionListener(e -> TrangChuThuKho.chuyenManHinhThuKho(view, MenuThuKho.TRANG_CHU, null));
         view.getBtnMenuPhuTung().addActionListener(e -> TrangChuThuKho.chuyenManHinhThuKho(view, MenuThuKho.PHU_TUNG, null));
         view.getBtnMenuNhapKho().addActionListener(e -> loadData());
@@ -111,22 +151,9 @@ public class QLNhapKhoController {
             }
         });
 
-        DocumentListener docFilter = new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadData();
-            }
-        };
-        view.getTxtTimPhieu().getDocument().addDocumentListener(docFilter);
-        view.getTxtTuNgay().getDocument().addDocumentListener(docFilter);
-        view.getTxtDenNgay().getDocument().addDocumentListener(docFilter);
-        view.getCboLocNCC().addActionListener(e -> loadData());
-        view.getBtnLamMoi().addActionListener(e -> loadData());
+        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
+        view.getTxtTimPhieu().addActionListener(e -> loadData());
+        view.getBtnTaiDuLieu().addActionListener(e -> loadData());
 
         view.getBtnTaoPhieuMoi().addActionListener(e -> moPopupLapPhieuNhap(null));
         view.getBtnNhapExcel().addActionListener(e -> nhapTuExcel());
@@ -148,7 +175,16 @@ public class QLNhapKhoController {
         });
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadData();
+        }
+    }
+
     public void loadData() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblPhieuNhap(), false);
         try {
             List<PhieuNhapKho> all = nhapKhoDao.search("", "Tất cả", null, null);
             String kw = view.getTxtTimPhieu().getText();
@@ -165,10 +201,10 @@ public class QLNhapKhoController {
                 view.getTableModel().addRow(new Object[]{
                         pn.getMaPhieuNhap(),
                         pn.getNgayNhap().format(DT_FMT),
-                        pn.getTenNCC(),
+                        pn.getNhaCungCap().getTenNCC(),
                         pn.getSoMatHang(),
                         FormatUtil.formatCurrency(pn.getTongTienNhap()),
-                        pn.getTenThuKho(),
+                        pn.getThuKho().getHoTen(),
                         "Xem chi tiết →"
                 });
             }
@@ -201,14 +237,13 @@ public class QLNhapKhoController {
         UIComponents.showError(view.getLblLoiModal(), null);
 
         dsChiTietModal.clear();
+        nccDoNguoiChon = false;
         try {
             String maPhieu = view.getLblMaPhieuNhapModal().getText();
             if (maSKUMacDinh != null && !maSKUMacDinh.isEmpty()) {
                 PhuTung pt = phuTungDao.findById(maSKUMacDinh);
                 if (pt != null) {
-                    ChiTietNhapKho ct = new ChiTietNhapKho(maPhieu, pt.getMaSKU(), 10, pt.getGiaNhap());
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    dsChiTietModal.add(ct);
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapMacDinh(pt), pt.getGiaNhap()));
                 }
             } else {
                 List<PhuTung> dsCanNhap = phuTungDao.findDuoiNguongCanhBao("");
@@ -216,9 +251,7 @@ public class QLNhapKhoController {
                 int count = 0;
                 for (PhuTung pt : dsCanNhap) {
                     if (count >= 2) break;
-                    ChiTietNhapKho ct = new ChiTietNhapKho(maPhieu, pt.getMaSKU(), 10, pt.getGiaNhap());
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    dsChiTietModal.add(ct);
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapMacDinh(pt), pt.getGiaNhap()));
                     count++;
                 }
             }
@@ -254,6 +287,7 @@ public class QLNhapKhoController {
         }
         container.revalidate();
         container.repaint();
+        goiYNhaCungCap();
     }
 
     private JPanel taoDongChiTietModal(ChiTietNhapKho ct, int idx) {
@@ -265,9 +299,9 @@ public class QLNhapKhoController {
         ));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
 
-        row.add(UIComponents.label(ct.getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(ct.getPhuTung().getMaSKU(), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK),
                 QLNhapKho.cotModal(0, 0.16));
-        row.add(UIComponents.label(ct.getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_DARK),
+        row.add(UIComponents.label(ct.getPhuTung().getTenPhuTung(), UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_DARK),
                 QLNhapKho.cotModal(1, 0.34));
 
         JTextField txtSL = new JTextField(String.valueOf(ct.getSoLuongNhap()), 4);
@@ -282,7 +316,7 @@ public class QLNhapKhoController {
         dsInputDonGia.add(txtGia);
         row.add(txtGia, QLNhapKho.cotModal(3, 0.14));
 
-        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(ct.getThanhTien()), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
+        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(thanhTien(ct)), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
         dsLabelThanhTien.add(lblThanhTien);
         row.add(lblThanhTien, QLNhapKho.cotModal(4, 0.16));
 
@@ -352,7 +386,7 @@ public class QLNhapKhoController {
             if (!loiSL && !loiGia) {
                 ct.setSoLuongNhap(sl);
                 ct.setGiaNhapThucTe(gia);
-                double tt = ct.getThanhTien();
+                double tt = thanhTien(ct);
                 tongTien += tt;
                 lblTT.setText(FormatUtil.formatCurrency(tt));
             } else {
@@ -446,7 +480,7 @@ public class QLNhapKhoController {
 
                 for (int i = 0; i < dsChiTietModal.size(); i++) {
                     ChiTietNhapKho existing = dsChiTietModal.get(i);
-                    if (existing.getMaSKU().equalsIgnoreCase(ptChon.getMaSKU())) {
+                    if (existing.getPhuTung().getMaSKU().equalsIgnoreCase(ptChon.getMaSKU())) {
                         int slMoi = existing.getSoLuongNhap() + 5;
                         dsInputSoLuong.get(i).setText(String.valueOf(slMoi));
                         tinhVaKiemTraChiTietModal();
@@ -455,14 +489,12 @@ public class QLNhapKhoController {
                     }
                 }
 
-                ChiTietNhapKho ctMoi = new ChiTietNhapKho(
-                        view.getLblMaPhieuNhapModal().getText(),
-                        ptChon.getMaSKU(),
-                        10,
+                dsChiTietModal.add(new ChiTietNhapKho(
+                        new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()),
+                        ptChon,
+                        soLuongNhapMacDinh(ptChon),
                         ptChon.getGiaNhap()
-                );
-                ctMoi.setTenPhuTung(ptChon.getTenPhuTung());
-                dsChiTietModal.add(ctMoi);
+                ));
                 veBangChiTietModal();
                 tinhVaKiemTraChiTietModal();
                 view.getTxtTimPhuTungModal().setText("");
@@ -554,15 +586,13 @@ public class QLNhapKhoController {
         }
         maTrongFile.add(pt.getMaSKU());
         for (ChiTietNhapKho daCo : dsChiTietModal) {
-            if (daCo.getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
+            if (daCo.getPhuTung().getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
                 daCo.setSoLuongNhap(sl);
                 daCo.setGiaNhapThucTe(gia);
                 return null;
             }
         }
-        ChiTietNhapKho ct = new ChiTietNhapKho(view.getLblMaPhieuNhapModal().getText(), pt.getMaSKU(), sl, gia);
-        ct.setTenPhuTung(pt.getTenPhuTung());
-        dsChiTietModal.add(ct);
+        dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()), pt, sl, gia));
         return null;
     }
 
@@ -578,13 +608,13 @@ public class QLNhapKhoController {
 
         double tongTien = 0;
         for (ChiTietNhapKho ct : dsChiTietModal) {
-            tongTien += ct.getThanhTien();
+            tongTien += thanhTien(ct);
         }
 
         try {
             String maPN = nhapKhoDao.nextId();
-            String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
-            PhieuNhapKho phieu = new PhieuNhapKho(maPN, LocalDateTime.now(), tongTien, ncc.getMaNCC(), maThuKho);
+            NhanVien thuKho = thuKhoHienTai != null ? thuKhoHienTai : new NhanVien("NV0004");
+            PhieuNhapKho phieu = new PhieuNhapKho(maPN, LocalDateTime.now(), tongTien, ncc, thuKho);
 
             nhapKhoDao.insertWithDetails(phieu, dsChiTietModal);
             JOptionPane.showMessageDialog(view,
@@ -592,7 +622,7 @@ public class QLNhapKhoController {
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
 
             view.hienThiModalLapPhieu(false);
-            loadData();
+            taiLai();
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu nhập kho: " + ex.getMessage(),
@@ -608,11 +638,11 @@ public class QLNhapKhoController {
             );
             for (ChiTietNhapKho ct : dsCT) {
                 modelCT.addRow(new Object[]{
-                        ct.getMaSKU(),
-                        ct.getTenPhuTung(),
+                        ct.getPhuTung().getMaSKU(),
+                        ct.getPhuTung().getTenPhuTung(),
                         ct.getSoLuongNhap(),
                         FormatUtil.formatCurrency(ct.getGiaNhapThucTe()),
-                        FormatUtil.formatCurrency(ct.getThanhTien())
+                        FormatUtil.formatCurrency(thanhTien(ct))
                 });
             }
             JTable tblCT = new JTable(modelCT);
@@ -623,7 +653,7 @@ public class QLNhapKhoController {
 
             JPanel pnl = new JPanel(new BorderLayout(0, 10));
             pnl.add(UIComponents.label(
-                    "Phiếu nhập: " + pn.getMaPhieuNhap() + "  •  NCC: " + pn.getTenNCC()
+                    "Phiếu nhập: " + pn.getMaPhieuNhap() + "  •  NCC: " + pn.getNhaCungCap().getTenNCC()
                             + "  •  Tổng tiền: " + FormatUtil.formatCurrency(pn.getTongTienNhap()),
                     UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK
             ), BorderLayout.NORTH);

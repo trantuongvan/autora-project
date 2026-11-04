@@ -28,3 +28,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Tài khoản CSDL trên từng máy ###
+database.properties

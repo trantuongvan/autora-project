@@ -4,12 +4,16 @@ import com.itextpdf.text.DocumentException;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DichVu_Dao;
 import dao.NhanVien_Dao;
+import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
 import entity.NhanVien;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
+import entity.VaiTro;
 import gui.ChiTietPhieuSuaChua;
 import util.PdfExporter;
 
@@ -19,14 +23,14 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 /** Điều phối chi tiết phiếu: dòng dịch vụ, chỉ định thợ, KTV phụ trách, trạng thái, hủy và in phiếu. */
 public class ChiTietPhieuSuaChuaController {
-    private static final String HOAN_THANH = "Hoàn thành";
-
     private final ChiTietPhieuSuaChua view;
     private final String maPhieu;
     private final DieuHuongPhieu dieuHuong;
@@ -34,6 +38,7 @@ public class ChiTietPhieuSuaChuaController {
     private final ChiTietSuaChua_DichVu_Dao chiTietDao = new ChiTietSuaChua_DichVu_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
     private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
+    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     private List<ChiTietSuaChua_DichVu> danhSach = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieu;
@@ -52,7 +57,7 @@ public class ChiTietPhieuSuaChuaController {
             return false;
         }
         for (ChiTietSuaChua_DichVu d : dong) {
-            if (!HOAN_THANH.equals(d.getTrangThaiTienDo())) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
                 return false;
             }
         }
@@ -62,6 +67,7 @@ public class ChiTietPhieuSuaChuaController {
     private void initController() {
         view.getBtnThemDichVu().addActionListener(e -> themDong());
         view.getBtnXoaDichVu().addActionListener(e -> xoaDong());
+        view.getBtnTuDongPhanCong().addActionListener(e -> tuDongPhanCong());
         view.getBtnLuuPhanCong().addActionListener(e -> luuPhanCong());
         view.getBtnCapNhatTienDo().addActionListener(e -> capNhatTienDo());
         view.getBtnHuyPhieu().addActionListener(e -> huyPhieu());
@@ -80,20 +86,20 @@ public class ChiTietPhieuSuaChuaController {
                 return;
             }
             taiDanhMuc();
-            view.getTxtBienSo().setText(phieu.getBienSo());
-            view.getTxtXe().setText(phieu.getThongTinXe());
-            view.getTxtKhachHang().setText(phieu.getTenKhachHang());
-            view.getTxtSoDienThoai().setText(phieu.getSdtKhachHang());
+            view.getTxtBienSo().setText(phieu.getXe().getBienSo());
+            view.getTxtXe().setText(phieu.getTenXe());
+            view.getTxtKhachHang().setText(phieu.getXe().getKhachHang().getHoTen());
+            view.getTxtSoDienThoai().setText(phieu.getXe().getKhachHang().getSoDienThoai());
             view.getTxtSoKm().setText(dinhDangTien.format(phieu.getSoKm()) + " km");
             view.getTxtPhuTungDuKien().setText(phieu.getPhuTungDuKien());
             view.getTxtGhiChuKyThuat().setText(phieu.getGhiChuKyThuat());
-            if (PhieuTiepNhanVaSuaChua.DA_HUY.equals(phieu.getTrangThai())
-                    && ((DefaultComboBoxModel<String>) view.getCboTrangThai().getModel())
-                            .getIndexOf(PhieuTiepNhanVaSuaChua.DA_HUY) < 0) {
-                view.getCboTrangThai().addItem(PhieuTiepNhanVaSuaChua.DA_HUY);
+            if (phieu.getTrangThai() == TrangThaiPhieu.DA_HUY
+                    && ((DefaultComboBoxModel<TrangThaiPhieu>) view.getCboTrangThai().getModel())
+                            .getIndexOf(TrangThaiPhieu.DA_HUY) < 0) {
+                view.getCboTrangThai().addItem(TrangThaiPhieu.DA_HUY);
             }
             view.getCboTrangThai().setSelectedItem(phieu.getTrangThai());
-            view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getMaNVPhuTrach()));
+            view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getNhanVienPhuTrach()));
             view.getThanhTienTrinh().setHienTai(phieuDao.buocHienTai(maPhieu));
             hienDanhSach();
             view.setKhoa(phieuDao.isKhoa(maPhieu));
@@ -111,19 +117,19 @@ public class ChiTietPhieuSuaChuaController {
         }
         view.getCboKtvPhuTrach().addItem(ChiTietPhieuSuaChua.CHO_PHAN_CONG);
         view.getCboThoTrongBang().addItem(ChiTietPhieuSuaChua.CHO_PHAN_CONG);
-        for (NhanVien nv : nhanVienDao.findByViTri("Kỹ thuật viên")) {
+        for (NhanVien nv : nhanVienDao.findByViTri(VaiTro.KY_THUAT_VIEN)) {
             view.getCboKtvPhuTrach().addItem(nv);
             view.getCboThoTrongBang().addItem(nv);
         }
     }
 
     /** Tìm mục đúng trong danh sách thợ để bảng hiển thị họ tên thay vì chỉ mã. */
-    private Object thoHienThi(String maNV) {
-        if (maNV != null) {
+    private Object thoHienThi(NhanVien tho) {
+        if (tho != null) {
             JComboBox<Object> cbo = view.getCboThoTrongBang();
             for (int i = 0; i < cbo.getItemCount(); i++) {
                 Object muc = cbo.getItemAt(i);
-                if (muc instanceof NhanVien && maNV.equals(((NhanVien) muc).getMaNV())) {
+                if (muc instanceof NhanVien && tho.getMaNV().equals(((NhanVien) muc).getMaNV())) {
                     return muc;
                 }
             }
@@ -137,7 +143,7 @@ public class ChiTietPhieuSuaChuaController {
         double tong = 0;
         int stt = 1;
         for (ChiTietSuaChua_DichVu d : danhSach) {
-            view.getTableModel().addRow(new Object[] {stt++, d.getTenDichVu(), thoHienThi(d.getMaNVKyThuat()),
+            view.getTableModel().addRow(new Object[] {stt++, d.getDichVu().getTenDichVu(), thoHienThi(d.getKyThuatVien()),
                 d.getTrangThaiTienDo(), dinhDangTien.format(d.getTienCongThucTe())});
             tong += d.getTienCongThucTe();
         }
@@ -152,17 +158,63 @@ public class ChiTietPhieuSuaChuaController {
             return;
         }
         for (ChiTietSuaChua_DichVu d : danhSach) {
-            if (d.getMaDichVu().equals(dv.getMaDichVu())) {
+            if (d.getDichVu().equals(dv)) {
                 view.hienLoi("Dịch vụ này đã có trong phiếu.");
                 return;
             }
         }
         ChiTietSuaChua_DichVu moi = new ChiTietSuaChua_DichVu();
-        moi.setMaPhieuTNSC(maPhieu);
-        moi.setMaDichVu(dv.getMaDichVu());
-        moi.setTrangThaiTienDo(ChiTietSuaChua_DichVu.TIEN_DO[0]);
+        moi.setPhieu(phieu);
+        moi.setDichVu(dv);
+        moi.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
         moi.setTienCongThucTe(dv.getTienCong());
         ghi(() -> chiTietDao.insert(moi));
+        for (int i = 0; i < danhSach.size(); i++) {
+            if (danhSach.get(i).getDichVu().equals(dv)) {
+                tuChonTho(Collections.singletonList(i), false);
+            }
+        }
+    }
+
+    /** Điền thợ vào các dòng chưa có thợ (và KTV phụ trách nếu còn trống); chỉ điền lên bảng, chưa lưu. */
+    private void tuDongPhanCong() {
+        if (view.getTblChiTiet().isEditing()) {
+            view.getTblChiTiet().getCellEditor().stopCellEditing();
+        }
+        List<Integer> dongTrong = new ArrayList<>();
+        for (int i = 0; i < danhSach.size(); i++) {
+            if (!(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO) instanceof NhanVien)) {
+                dongTrong.add(i);
+            }
+        }
+        if (dongTrong.isEmpty()) {
+            view.hienLoi("Mọi dịch vụ đã có thợ phụ trách.");
+            return;
+        }
+        tuChonTho(dongTrong, true);
+    }
+
+    private void tuChonTho(List<Integer> dong, boolean dienPhuTrach) {
+        List<DichVu> dichVu = new ArrayList<>();
+        for (int i : dong) {
+            dichVu.add(danhSach.get(i).getDichVu());
+        }
+        try {
+            PhanCong_Dao.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
+            for (int i : dong) {
+                NhanVien tho = ketQua.getPhanCong().get(danhSach.get(i).getDichVu());
+                if (tho != null) {
+                    view.getTableModel().setValueAt(thoHienThi(tho), i, ChiTietPhieuSuaChua.COT_THO);
+                }
+            }
+            if (dienPhuTrach && ketQua.getPhuTrach() != null
+                    && !(view.getCboKtvPhuTrach().getSelectedItem() instanceof NhanVien)) {
+                view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(ketQua.getPhuTrach()));
+            }
+            view.hienLoi(ketQua.getGhiChu().isEmpty() ? null : String.join(" ", ketQua.getGhiChu()));
+        } catch (SQLException ex) {
+            hienLoiDuLieu(ex);
+        }
     }
 
     private void xoaDong() {
@@ -172,11 +224,11 @@ public class ChiTietPhieuSuaChuaController {
             return;
         }
         ChiTietSuaChua_DichVu dang = danhSach.get(view.getTblChiTiet().convertRowIndexToModel(dong));
-        if (HOAN_THANH.equals(dang.getTrangThaiTienDo())) {
+        if (dang.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
             view.hienLoi("Không thể xóa dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> chiTietDao.delete(maPhieu, dang.getMaDichVu()));
+        ghi(() -> chiTietDao.delete(maPhieu, dang.getDichVu().getMaDichVu()));
     }
 
     private void luuPhanCong() {
@@ -187,7 +239,7 @@ public class ChiTietPhieuSuaChuaController {
             for (int i = 0; i < danhSach.size(); i++) {
                 ChiTietSuaChua_DichVu d = danhSach.get(i);
                 Object tho = view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO);
-                d.setMaNVKyThuat(tho instanceof NhanVien ? ((NhanVien) tho).getMaNV() : null);
+                d.setKyThuatVien(tho instanceof NhanVien ? (NhanVien) tho : null);
                 d.setTienCongThucTe(Double.parseDouble(
                         String.valueOf(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_TIEN_CONG))
                                 .replace(".", "").trim()));
@@ -199,9 +251,9 @@ public class ChiTietPhieuSuaChuaController {
     }
 
     private void capNhatTienDo() {
-        String trangThai = String.valueOf(view.getCboTrangThai().getSelectedItem());
-        String hienTai = phieu.getTrangThai();
-        if (trangThai.equals(hienTai)) {
+        TrangThaiPhieu trangThai = (TrangThaiPhieu) view.getCboTrangThai().getSelectedItem();
+        TrangThaiPhieu hienTai = phieu.getTrangThai();
+        if (trangThai == hienTai) {
             view.hienLoi(null);
             return;
         }
@@ -209,11 +261,11 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
-        if (HOAN_THANH.equals(trangThai) && !coTheHoanThanh(danhSach)) {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !coTheHoanThanh(danhSach)) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> phieuDao.capNhatTrangThai(maPhieu, hienTai, trangThai));
+        ghi(() -> phieuDao.capNhatTrangThai(maPhieu, hienTai, trangThai, PhienDangNhap.getHienTai().getTenDangNhap()));
     }
 
     private void huyPhieu() {
@@ -260,7 +312,7 @@ public class ChiTietPhieuSuaChuaController {
         try {
             view.hienLoi(null);
             if (!thaoTac.chay()) {
-                view.hienLoi("Không thực hiện được: phiếu đã có hóa đơn hoặc dữ liệu đã thay đổi.");
+                view.hienLoi("Không thực hiện được: phiếu đã hoàn thành, đã có hóa đơn hoặc dữ liệu đã thay đổi.");
             }
             taiDuLieu();
         } catch (NumberFormatException ex) {

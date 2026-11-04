@@ -11,7 +11,7 @@ import java.util.List;
 
 public class DichVu_Dao {
     public List<DichVu> findAll() throws SQLException {
-        String sql = "SELECT maDichVu, tenDichVu, tienCong "
+        String sql = "SELECT maDichVu, tenDichVu, tienCong, thoiGianChuan "
                 + "FROM DichVu ORDER BY maDichVu";
         List<DichVu> result = new ArrayList<>();
 
@@ -19,10 +19,12 @@ public class DichVu_Dao {
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
-                result.add(new DichVu(
+                DichVu dv = new DichVu(
                         rs.getString("maDichVu"),
                         rs.getString("tenDichVu"),
-                        rs.getDouble("tienCong")));
+                        rs.getDouble("tienCong"));
+                dv.setThoiGianChuan(rs.getInt("thoiGianChuan"));
+                result.add(dv);
             }
         }
         return result;

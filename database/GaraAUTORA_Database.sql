@@ -22,13 +22,24 @@ GO
 -- 1. TẠO CÁC BẢNG DANH MỤC ĐỘC LẬP (BÊN 1)
 -- ==============================================================
 
+-- 1.0. Bảng Ca làm việc (ca cố định, áp dụng mọi ngày)
+CREATE TABLE CaLamViec (
+    maCa VARCHAR(20) PRIMARY KEY,
+    tenCa NVARCHAR(50) NOT NULL,
+    gioBatDau TIME NOT NULL,
+    gioKetThuc TIME NOT NULL
+);
+GO
+
 -- 1.1. Bảng Nhân viên
 CREATE TABLE NhanVien (
     maNV VARCHAR(20) PRIMARY KEY,
     hoTen NVARCHAR(100) NOT NULL,
     soDienThoai VARCHAR(15) NOT NULL UNIQUE,
     diaChi NVARCHAR(255),
-    viTriLamViec NVARCHAR(50) NOT NULL -- 'Chủ cửa hàng', 'Lễ tân', 'Kỹ thuật viên', 'Thủ kho'
+    viTriLamViec NVARCHAR(50) NOT NULL, -- 'Chủ cửa hàng', 'Lễ tân', 'Kỹ thuật viên', 'Thủ kho'
+    maCa VARCHAR(20) NULL,
+    CONSTRAINT FK_NhanVien_CaLamViec FOREIGN KEY (maCa) REFERENCES CaLamViec(maCa)
 );
 GO
 
@@ -49,7 +60,8 @@ GO
 CREATE TABLE DichVu (
     maDichVu VARCHAR(20) PRIMARY KEY,
     tenDichVu NVARCHAR(150) NOT NULL,
-    tienCong FLOAT NOT NULL DEFAULT 0
+    tienCong FLOAT NOT NULL DEFAULT 0,
+    thoiGianChuan INT NOT NULL DEFAULT 60 -- Số phút chuẩn để làm xong dịch vụ
 );
 GO
 
@@ -113,6 +125,17 @@ CREATE TABLE TaiKhoan (
 );
 GO
 
+-- 2.1b. Kỹ năng của kỹ thuật viên: một dòng là KTV làm được dịch vụ đó trong thoiGianPhut phút
+CREATE TABLE NhanVien_DichVu (
+    maNV VARCHAR(20) NOT NULL,
+    maDichVu VARCHAR(20) NOT NULL,
+    thoiGianPhut INT NOT NULL,
+    PRIMARY KEY (maNV, maDichVu),
+    CONSTRAINT FK_NVDV_NhanVien FOREIGN KEY (maNV) REFERENCES NhanVien(maNV) ON DELETE CASCADE,
+    CONSTRAINT FK_NVDV_DichVu FOREIGN KEY (maDichVu) REFERENCES DichVu(maDichVu)
+);
+GO
+
 -- 2.2. Bảng Xe
 CREATE TABLE Xe (
     bienSo VARCHAR(20) PRIMARY KEY,
@@ -123,6 +146,19 @@ CREATE TABLE Xe (
     mauSon NVARCHAR(50), -- Màu sơn xe
     maKH VARCHAR(20) NOT NULL,
     CONSTRAINT FK_Xe_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH)
+);
+GO
+
+-- 2.3. Bảng Lịch hẹn (xóa khách thì xóa lịch hẹn; xóa xe thì lịch hẹn còn lại nhưng không gắn xe)
+CREATE TABLE LichHen (
+    maLichHen VARCHAR(20) PRIMARY KEY, -- LH00001
+    thoiGianHen DATETIME NOT NULL,
+    ghiChu NVARCHAR(255) NULL,
+    trangThai NVARCHAR(30) NOT NULL DEFAULT N'Đang hẹn', -- 'Đang hẹn', 'Đã đến', 'Đã hủy'
+    maKH VARCHAR(20) NOT NULL,
+    bienSo VARCHAR(20) NULL,
+    CONSTRAINT FK_LichHen_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH) ON DELETE CASCADE,
+    CONSTRAINT FK_LichHen_Xe FOREIGN KEY (bienSo) REFERENCES Xe(bienSo) ON DELETE SET NULL
 );
 GO
 
@@ -149,7 +185,9 @@ CREATE TABLE PhieuTiepNhanVaSuaChua (
     bienSo VARCHAR(20) NOT NULL,
     maNV_LapPhieu VARCHAR(20) NOT NULL,
     maNV_PhuTrach VARCHAR(20) NULL,
+    maKH VARCHAR(20) NOT NULL, -- Chủ xe lúc tiếp nhận: xe đổi chủ về sau thì phiếu và hóa đơn cũ vẫn đúng người
     CONSTRAINT FK_PTNSC_Xe FOREIGN KEY (bienSo) REFERENCES Xe(bienSo),
+    CONSTRAINT FK_PTNSC_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH),
     CONSTRAINT FK_PTNSC_NhanVien FOREIGN KEY (maNV_LapPhieu) REFERENCES NhanVien(maNV),
     CONSTRAINT FK_PTNSC_PhuTrach FOREIGN KEY (maNV_PhuTrach) REFERENCES NhanVien(maNV)
 );
@@ -194,6 +232,7 @@ CREATE TABLE HoaDon (
     trangThaiThanhToan NVARCHAR(50) DEFAULT N'Đã thanh toán', -- 'Đã thanh toán', 'Công nợ', 'Đã hủy'
     lyDoHuy NVARCHAR(255),
     ngayLap DATETIME DEFAULT GETDATE(),
+    ngayThanhToan DATETIME NULL, -- Ngày thu tiền; doanh thu tính theo ngày này. NULL: công nợ chưa thu
     maPhieuTNSC VARCHAR(30) NOT NULL,
     maNV_Lap VARCHAR(20) NOT NULL,
     maKM VARCHAR(20) NULL,
@@ -292,14 +331,21 @@ GO
 -- 5. BỘ DỮ LIỆU MẪU ĐẦY ĐỦ ĐỂ TEST CHỨC NĂNG (SAMPLE DATA)
 -- ==============================================================
 
+-- 5.0. Thêm Ca làm việc
+INSERT INTO CaLamViec (maCa, tenCa, gioBatDau, gioKetThuc) VALUES
+('CA01', N'Ca sáng', '08:00', '12:00'),
+('CA02', N'Ca chiều', '13:00', '17:00'),
+('CA03', N'Ca hành chính', '08:00', '17:00');
+GO
+
 -- 5.1. Thêm Nhân viên
-INSERT INTO NhanVien (maNV, hoTen, soDienThoai, diaChi, viTriLamViec) VALUES
-('NV0001', N'Trần Thị Tường Vân', '0901234567', N'Gò Vấp, TP.HCM', N'Chủ cửa hàng'),
-('NV0002', N'Nguyễn Tuấn Vũ', '0912345678', N'Bình Thạnh, TP.HCM', N'Lễ tân'),
-('NV0003', N'Nguyễn Xuân Việt Anh', '0923456789', N'Quận 12, TP.HCM', N'Lễ tân'),
-('NV0004', N'Bùi Thái Vy', '0934567890', N'Thủ Đức, TP.HCM', N'Thủ kho'),
-('NV0005', N'Lê Văn Thợ Máy', '0945678901', N'Tân Bình, TP.HCM', N'Kỹ thuật viên'),
-('NV0006', N'Trần Văn Điện Lạnh', '0956789012', N'Phú Nhuận, TP.HCM', N'Kỹ thuật viên');
+INSERT INTO NhanVien (maNV, hoTen, soDienThoai, diaChi, viTriLamViec, maCa) VALUES
+('NV0001', N'Trần Thị Tường Vân', '0901234567', N'Gò Vấp, TP.HCM', N'Chủ cửa hàng', 'CA03'),
+('NV0002', N'Nguyễn Tuấn Vũ', '0912345678', N'Bình Thạnh, TP.HCM', N'Lễ tân', 'CA03'),
+('NV0003', N'Nguyễn Xuân Việt Anh', '0923456789', N'Quận 12, TP.HCM', N'Lễ tân', 'CA03'),
+('NV0004', N'Bùi Thái Vy', '0934567890', N'Thủ Đức, TP.HCM', N'Thủ kho', 'CA03'),
+('NV0005', N'Lê Văn Thợ Máy', '0945678901', N'Tân Bình, TP.HCM', N'Kỹ thuật viên', 'CA03'),
+('NV0006', N'Trần Văn Điện Lạnh', '0956789012', N'Phú Nhuận, TP.HCM', N'Kỹ thuật viên', 'CA02');
 GO
 
 -- 5.2. Thêm Tài khoản (mật khẩu băm PBKDF2 bằng util.MatKhauUtil; mật khẩu mẫu: admin123 và 123456)
@@ -328,13 +374,25 @@ INSERT INTO Xe (bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, maKH) VALUES
 GO
 
 -- 5.5. Thêm Danh mục Dịch vụ
-INSERT INTO DichVu (maDichVu, tenDichVu, tienCong) VALUES
-('DV0001', N'Bảo dưỡng định kỳ cấp 1 (5.000 km)', 250000),
-('DV0002', N'Thay dầu động cơ & lọc nhớt', 150000),
-('DV0003', N'Vệ sinh kim phun buồng đốt', 450000),
-('DV0004', N'Cân chỉnh thước lái góc đặt bánh xe', 500000),
-('DV0005', N'Bảo dưỡng hệ thống phanh 4 bánh', 350000),
-('DV0006', N'Nạp gas & bảo dưỡng điều hòa', 400000);
+INSERT INTO DichVu (maDichVu, tenDichVu, tienCong, thoiGianChuan) VALUES
+('DV0001', N'Bảo dưỡng định kỳ cấp 1 (5.000 km)', 250000, 120),
+('DV0002', N'Thay dầu động cơ & lọc nhớt', 150000, 45),
+('DV0003', N'Vệ sinh kim phun buồng đốt', 450000, 90),
+('DV0004', N'Cân chỉnh thước lái góc đặt bánh xe', 500000, 60),
+('DV0005', N'Bảo dưỡng hệ thống phanh 4 bánh', 350000, 120),
+('DV0006', N'Nạp gas & bảo dưỡng điều hòa', 400000, 90);
+GO
+
+-- 5.5b. Kỹ năng kỹ thuật viên (NV0006 làm phanh nhanh hơn thời gian chuẩn)
+INSERT INTO NhanVien_DichVu (maNV, maDichVu, thoiGianPhut) VALUES
+('NV0005', 'DV0001', 120),
+('NV0005', 'DV0002', 45),
+('NV0005', 'DV0004', 60),
+('NV0005', 'DV0005', 120),
+('NV0006', 'DV0001', 120),
+('NV0006', 'DV0003', 90),
+('NV0006', 'DV0005', 90),
+('NV0006', 'DV0006', 90);
 GO
 
 -- 5.6. Thêm Danh mục Phụ tùng
@@ -366,9 +424,9 @@ INSERT INTO Thue (maThue, tenLoaiThue, thueSuat) VALUES
 GO
 
 -- 5.9. Thêm Phiếu tiếp nhận mẫu & Chi tiết
-INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maNV_LapPhieu, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, trangThai) VALUES
-('PTNSC00001', '51H-123.45', 'NV0002', N'Bảo dưỡng định kỳ mốc 4 vạn km, thay nhớt lọc và kiểm tra phanh', 40250, 65.0, N'Trầy nhẹ cản sau', N'Ví tiền lẻ trong hộc, 1 cặp kính râm', '2026-10-20 08:30:00', '2026-10-20 16:30:00', N'Hoàn thành'),
-('PTNSC00002', '50E-999.12', 'NV0003', N'Xe có tiếng kêu lục cục ở bánh trước khi qua gờ giảm tốc', 68000, 45.0, N'Không trầy xước', N'Không gửi tài sản', '2026-10-23 09:15:00', '2026-10-23 17:00:00', N'Đang sửa');
+INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, yeuCauBanDau, soKm, mucNhienLieu, trayXuoc, taiSanTrenXe, thoiGianTiepNhan, thoiGianDuKien, trangThai) VALUES
+('PTNSC00001', '51H-123.45', 'KH0001', 'NV0002', N'Bảo dưỡng định kỳ mốc 4 vạn km, thay nhớt lọc và kiểm tra phanh', 40250, 65.0, N'Trầy nhẹ cản sau', N'Ví tiền lẻ trong hộc, 1 cặp kính râm', '2026-10-20 08:30:00', '2026-10-20 16:30:00', N'Hoàn thành'),
+('PTNSC00002', '50E-999.12', 'KH0002', 'NV0003', N'Xe có tiếng kêu lục cục ở bánh trước khi qua gờ giảm tốc', 68000, 45.0, N'Không trầy xước', N'Không gửi tài sản', '2026-10-23 09:15:00', '2026-10-23 17:00:00', N'Đang sửa');
 GO
 
 INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, maNV_KyThuat, tienCongThucTe, trangThaiTienDo) VALUES
@@ -390,13 +448,29 @@ GO
 -- Giảm 10% (KM0001): 155.000đ -> Còn 1.395.000đ
 -- VAT 8%: 111.600đ
 -- Tổng thanh toán: 1.506.600đ
-INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan) VALUES
-('HD000001', 'PTNSC00001', 'NV0002', 'KM0001', 'VAT08', '2026-10-20 16:45:00', 750000, 800000, 155000, 111600, 1506600, N'Chuyển khoản', N'Đã thanh toán');
+INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan, ngayThanhToan) VALUES
+('HD000001', 'PTNSC00001', 'NV0002', 'KM0001', 'VAT08', '2026-10-20 16:45:00', 750000, 800000, 155000, 111600, 1506600, N'Chuyển khoản', N'Đã thanh toán', '2026-10-20 16:45:00');
 GO
 
 -- 5.11. Thêm Phiếu bàn giao xe mẫu (cho PTNSC00001)
 INSERT INTO PhieuBanGiao (maPhieuBG, maPhieuTNSC, maNV_BanGiao, ngayBanGiao, xacNhanHoanTat, xacNhanThanhToan, chuKyKhachHang) VALUES
 ('PBG00001', 'PTNSC00001', 'NV0002', '2026-10-20 17:00:00', 1, 1, N'Phạm Minh Hoàng');
+GO
+
+-- 5.12. Thêm Lịch hẹn mẫu (tính theo ngày chạy script; khách và xe không có phiếu đang mở)
+INSERT INTO LichHen (maLichHen, thoiGianHen, ghiChu, trangThai, maKH, bienSo) VALUES
+('LH00001', DATEADD(HOUR, 15, CAST(CAST(GETDATE() AS DATE) AS DATETIME)), N'Bảo dưỡng định kỳ', N'Đang hẹn', 'KH0001', '51K-888.88'),
+('LH00002', DATEADD(HOUR, 9, DATEADD(DAY, 3, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Kiểm tra điều hòa', N'Đang hẹn', 'KH0003', '60A-456.78'),
+('LH00003', DATEADD(HOUR, 14, DATEADD(DAY, 7, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Thay lốp', N'Đang hẹn', 'KH0001', NULL);
+GO
+
+-- Tài khoản ứng dụng chỉ đọc/ghi dữ liệu. Login do database/TaoLoginUngDung.sql tạo, nên chạy lại script này vẫn giữ quyền.
+IF SUSER_ID(N'autora_app') IS NOT NULL
+BEGIN
+    CREATE USER autora_app FOR LOGIN autora_app;
+    ALTER ROLE db_datareader ADD MEMBER autora_app;
+    ALTER ROLE db_datawriter ADD MEMBER autora_app;
+END
 GO
 
 PRINT N'==============================================================';

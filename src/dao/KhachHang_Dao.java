@@ -2,6 +2,9 @@ package dao;
 
 import connection.ConnectDB;
 import entity.KhachHang;
+import entity.LichHen;
+import entity.LoaiKhachHang;
+import entity.Xe;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,24 +19,53 @@ import java.util.List;
 public class KhachHang_Dao {
     public static final String TRUNG_SO_DIEN_THOAI = "Số điện thoại này đã thuộc về một khách hàng khác.";
     private static final int LOI_VI_PHAM_KHOA_NGOAI = 547;
+    /** Các cột khách hàng (bảng đặt bí danh k) mà docKhachHang đọc theo tên. */
+    static final String COT_KHACH_HANG =
+            "k.maKH, k.hoTen, k.soDienThoai, k.diaChi, k.email, k.maSoThue, k.loaiKhachHang, k.duocGhiNo";
+
+    static KhachHang docKhachHang(ResultSet rs) throws SQLException {
+        KhachHang kh = new KhachHang(rs.getString("maKH"));
+        kh.setHoTen(rs.getString("hoTen"));
+        kh.setSoDienThoai(rs.getString("soDienThoai"));
+        String diaChi = rs.getString("diaChi");
+        // Cột diaChi cho phép NULL còn setDiaChi thì không.
+        if (diaChi != null && !diaChi.trim().isEmpty()) {
+            kh.setDiaChi(diaChi);
+        }
+        kh.setEmail(rs.getString("email"));
+        kh.setMaSoThue(rs.getString("maSoThue"));
+        kh.setLoaiKhachHang(LoaiKhachHang.fromDb(rs.getString("loaiKhachHang")));
+        kh.setDuocGhiNo(rs.getBoolean("duocGhiNo"));
+        return kh;
+    }
 
     /**
-     * duocGhiNo null là không lọc.
-     * Mỗi dòng: {maKH, hoTen, soDienThoai, diaChi, email, maSoThue, loaiKhachHang, Boolean duocGhiNo, danhSachXe}.
+     * duocGhiNo null là không lọc. getDanhSachXe() của mỗi khách chứa mọi xe của khách, chỉ có biển số.
      */
-    public List<Object[]> search(String tuKhoa, String loaiKhachHang, Boolean duocGhiNo) throws SQLException {
+    public List<KhachHang> search(String tuKhoa, LoaiKhachHang loaiKhachHang, Boolean duocGhiNo) throws SQLException {
+        return search(tuKhoa, loaiKhachHang, duocGhiNo, null);
+    }
+
+    /**
+     * coLichHen null là không lọc; true chỉ lấy khách có lịch Đang hẹn từ hôm nay trở đi, false là khách không có.
+     * getLichHenGanNhat() của mỗi khách là lịch Đang hẹn gần nhất đó (chỉ có thời gian), null nếu không có.
+     */
+    public List<KhachHang> search(String tuKhoa, LoaiKhachHang loaiKhachHang, Boolean duocGhiNo, Boolean coLichHen)
+            throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
-        String loai = loaiKhachHang == null ? "" : loaiKhachHang;
-        String sql = "SELECT k.maKH, k.hoTen, k.soDienThoai, k.diaChi, k.email, k.maSoThue, k.loaiKhachHang, k.duocGhiNo, "
-                + "STUFF((SELECT ', ' + x.bienSo FROM Xe x WHERE x.maKH = k.maKH ORDER BY x.bienSo "
-                + "FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS danhSachXe "
-                + "FROM KhachHang k "
+        String loai = loaiKhachHang == null ? "" : loaiKhachHang.getText();
+        String sql = "SELECT " + COT_KHACH_HANG + ", xe.bienSo, lh.gan "
+                + "FROM KhachHang k LEFT JOIN Xe xe ON xe.maKH = k.maKH "
+                + "LEFT JOIN (SELECT maKH, MIN(thoiGianHen) AS gan FROM LichHen WHERE trangThai = N'Đang hẹn' "
+                + "AND thoiGianHen >= " + LichHen_Dao.DAU_NGAY + " GROUP BY maKH) lh ON lh.maKH = k.maKH "
                 + "WHERE (? = N'' OR k.hoTen LIKE ? OR k.soDienThoai LIKE ? "
                 + "OR EXISTS (SELECT 1 FROM Xe x WHERE x.maKH = k.maKH AND x.bienSo LIKE ?)) "
                 + "AND (? = N'' OR k.loaiKhachHang = ?) AND (? = -1 OR k.duocGhiNo = ?) "
-                + "ORDER BY k.maKH";
+                + "AND (? = -1 OR (? = 1 AND lh.gan IS NOT NULL) OR (? = 0 AND lh.gan IS NULL)) "
+                + "ORDER BY k.maKH, xe.bienSo";
         int ghiNo = duocGhiNo == null ? -1 : duocGhiNo ? 1 : 0;
-        List<Object[]> ketQua = new ArrayList<>();
+        int lich = coLichHen == null ? -1 : coLichHen ? 1 : 0;
+        List<KhachHang> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, key);
@@ -44,11 +76,26 @@ public class KhachHang_Dao {
             statement.setString(6, loai);
             statement.setInt(7, ghiNo);
             statement.setInt(8, ghiNo);
+            statement.setInt(9, lich);
+            statement.setInt(10, lich);
+            statement.setInt(11, lich);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new Object[] {rs.getString(1), rs.getString(2), rs.getString(3), rong(rs.getString(4)),
-                        rong(rs.getString(5)), rong(rs.getString(6)), rs.getString(7), rs.getBoolean(8),
-                        rong(rs.getString(9))});
+                    String maKH = rs.getString("maKH");
+                    if (ketQua.isEmpty() || !ketQua.get(ketQua.size() - 1).getMaKH().equals(maKH)) {
+                        KhachHang kh = docKhachHang(rs);
+                        Timestamp gan = rs.getTimestamp("gan");
+                        if (gan != null) {
+                            LichHen lh = new LichHen();
+                            lh.setThoiGianHen(gan.toLocalDateTime());
+                            kh.setLichHenGanNhat(lh);
+                        }
+                        ketQua.add(kh);
+                    }
+                    String bienSo = rs.getString("bienSo");
+                    if (bienSo != null) {
+                        ketQua.get(ketQua.size() - 1).getDanhSachXe().add(new Xe(bienSo));
+                    }
                 }
             }
         }
@@ -71,7 +118,7 @@ public class KhachHang_Dao {
                     statement.setString(4, kh.getDiaChi());
                     statement.setString(5, kh.getEmail());
                     statement.setString(6, kh.getMaSoThue());
-                    statement.setString(7, kh.getLoaiKhachHang());
+                    statement.setString(7, kh.getLoaiKhachHang().getText());
                     statement.setBoolean(8, kh.isDuocGhiNo());
                     statement.executeUpdate();
                 }
@@ -99,7 +146,7 @@ public class KhachHang_Dao {
                     statement.setString(3, kh.getDiaChi());
                     statement.setString(4, kh.getEmail());
                     statement.setString(5, kh.getMaSoThue());
-                    statement.setString(6, kh.getLoaiKhachHang());
+                    statement.setString(6, kh.getLoaiKhachHang().getText());
                     statement.setBoolean(7, kh.isDuocGhiNo());
                     statement.setString(8, kh.getMaKH());
                     thanhCong = statement.executeUpdate() == 1;
@@ -113,7 +160,7 @@ public class KhachHang_Dao {
         }
     }
 
-    /** Trả về false khi khách hàng còn xe liên kết hoặc không còn tồn tại. */
+    /** Trả về false khi khách hàng còn xe liên kết, đã có phiếu sửa chữa hoặc không còn tồn tại. */
     public boolean delete(String maKH) throws SQLException {
         String sql = "DELETE FROM KhachHang WHERE maKH = ? AND NOT EXISTS (SELECT 1 FROM Xe WHERE maKH = ?)";
         try (Connection connection = ConnectDB.getConnection();
@@ -122,7 +169,7 @@ public class KhachHang_Dao {
             statement.setString(2, maKH);
             return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            // Xe vừa được thêm ngay giữa lúc xóa.
+            // Khách đã có phiếu sửa chữa, hoặc xe vừa được thêm ngay giữa lúc xóa.
             if (ex.getErrorCode() == LOI_VI_PHAM_KHOA_NGOAI) {
                 return false;
             }
@@ -130,17 +177,17 @@ public class KhachHang_Dao {
         }
     }
 
-    /** Mỗi dòng: {bienSo, soVIN, hangXe, dongXe, doiXe, mauSon}. */
-    public List<Object[]> xeLienKet(String maKH) throws SQLException {
+    public List<Xe> xeLienKet(String maKH) throws SQLException {
         String sql = "SELECT bienSo, soVIN, hangXe, dongXe, doiXe, mauSon FROM Xe WHERE maKH = ? ORDER BY bienSo";
-        List<Object[]> ketQua = new ArrayList<>();
+        List<Xe> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maKH);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new Object[] {rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
-                        rs.getObject(5), rs.getString(6)});
+                    int doiXe = rs.getInt(5);
+                    ketQua.add(new Xe(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4),
+                        rs.wasNull() ? null : doiXe, rs.getString(6), new KhachHang(maKH)));
                 }
             }
         }
@@ -158,9 +205,9 @@ public class KhachHang_Dao {
                 + "JOIN DichVu d ON d.maDichVu = ct.maDichVu WHERE ct.maPhieuTNSC = p.maPhieuTNSC "
                 + "ORDER BY d.tenDichVu FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS hangMuc, "
                 + "hd.tongThanhToan "
-                + "FROM PhieuTiepNhanVaSuaChua p JOIN Xe x ON x.bienSo = p.bienSo "
+                + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon hd ON hd.maPhieuTNSC = p.maPhieuTNSC AND hd.trangThaiThanhToan <> N'Đã hủy' "
-                + "WHERE x.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
+                + "WHERE p.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
         List<Object[]> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -197,9 +244,5 @@ public class KhachHang_Dao {
             rs.next();
             return String.format("KH%04d", rs.getInt(1));
         }
-    }
-
-    private static String rong(String giaTri) {
-        return giaTri == null ? "" : giaTri;
     }
 }

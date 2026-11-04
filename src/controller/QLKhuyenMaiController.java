@@ -1,14 +1,13 @@
 package controller;
 
 import dao.KhuyenMai_Dao;
+import entity.HinhThucKhuyenMai;
 import entity.KhuyenMai;
 import gui.KhuyenMaiFormDialog;
 import gui.QLKhuyenMai;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -36,34 +35,19 @@ public class QLKhuyenMaiController {
     private List<KhuyenMai> ketQuaTimKiem = new ArrayList<>();
     // Đánh số phiên tải để bỏ qua kết quả của lần tìm kiếm đã cũ
     private int phienBan = 0;
+    private boolean daTai;
 
     public QLKhuyenMaiController(QLKhuyenMai view) {
         this.view = view;
         initController();
-        taiDuLieu();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
         view.getBtnTaoMoi().addActionListener(e -> moFormThem());
         view.getBtnXuatExcel().addActionListener(e -> xuatExcel());
-        view.getCboLocTinhTrang().addActionListener(e -> hienThiBang());
-        view.getCboLocHinhThuc().addActionListener(e -> taiDuLieu());
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                taiDuLieu();
-            }
-        });
+        view.getBtnTaiDuLieu().addActionListener(e -> taiDuLieu());
+        view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -112,17 +96,26 @@ public class QLKhuyenMaiController {
     // Tải dữ liệu
     // ==========================================================
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            taiDuLieu();
+        }
+    }
+
     private void taiDuLieu() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int phien = ++phienBan;
         final String tuKhoa = view.getTxtTimKiem().getText().trim();
-        final String hinhThuc = view.getCboLocHinhThuc().getSelectedIndex() <= 0
-                ? "" : String.valueOf(view.getCboLocHinhThuc().getSelectedItem());
+        final Object chonHinhThuc = view.getCboLocHinhThuc().getSelectedItem();
+        final HinhThucKhuyenMai hinhThuc = chonHinhThuc instanceof HinhThucKhuyenMai ? (HinhThucKhuyenMai) chonHinhThuc : null;
 
         new SwingWorker<List<KhuyenMai>[], Void>() {
             @Override
             protected List<KhuyenMai>[] doInBackground() throws Exception {
                 List<KhuyenMai> timKiem = dao.search(tuKhoa, hinhThuc);
-                List<KhuyenMai> tatCa = dao.search("", "");
+                List<KhuyenMai> tatCa = dao.search("", null);
                 @SuppressWarnings("unchecked")
                 List<KhuyenMai>[] ketQua = new List[]{timKiem, tatCa};
                 return ketQua;
@@ -306,7 +299,7 @@ public class QLKhuyenMaiController {
                 try {
                     get();
                     JOptionPane.showMessageDialog(view, "Thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -329,7 +322,7 @@ public class QLKhuyenMaiController {
                 try {
                     get();
                     JOptionPane.showMessageDialog(view, "Thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -373,7 +366,7 @@ public class QLKhuyenMaiController {
                     get();
                     hopThoai.dispose();
                     JOptionPane.showMessageDialog(view, "Lưu chương trình khuyến mãi thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -417,7 +410,7 @@ public class QLKhuyenMaiController {
                     get();
                     hopThoai.dispose();
                     JOptionPane.showMessageDialog(view, "Lưu chương trình khuyến mãi thành công.");
-                    taiDuLieu();
+                    taiLai();
                 } catch (InterruptedException ex) {
                     Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
@@ -432,8 +425,8 @@ public class QLKhuyenMaiController {
         if (ten.isEmpty()) {
             throw new IllegalArgumentException("Tên chương trình không được để trống.");
         }
-        String hinhThuc = hopThoai.getRadTienMat().isSelected()
-                ? KhuyenMai.HINH_THUC_TIEN_MAT : KhuyenMai.HINH_THUC_PHAN_TRAM;
+        HinhThucKhuyenMai hinhThuc = hopThoai.getRadTienMat().isSelected()
+                ? HinhThucKhuyenMai.TIEN_MAT : HinhThucKhuyenMai.PHAN_TRAM;
         double giaTri = docGiaTri(hopThoai.getTxtGiaTri().getText(), hinhThuc);
         LocalDate batDau = docNgay(hopThoai.getTxtBatDau().getText(), "Thời gian bắt đầu");
         LocalDate ketThuc = docNgay(hopThoai.getTxtKetThuc().getText(), "Thời gian kết thúc");
@@ -454,13 +447,13 @@ public class QLKhuyenMaiController {
     // Hàm phân tích dùng chung (public để kiểm thử)
     // ==========================================================
 
-    public static double docGiaTri(String nhap, String hinhThuc) {
+    public static double docGiaTri(String nhap, HinhThucKhuyenMai hinhThuc) {
         String s = nhap == null ? "" : nhap.trim();
         if (s.isEmpty()) {
             throw new IllegalArgumentException("Giá trị giảm không được để trống.");
         }
         try {
-            if (KhuyenMai.HINH_THUC_TIEN_MAT.equals(hinhThuc)) {
+            if (hinhThuc == HinhThucKhuyenMai.TIEN_MAT) {
                 double giaTri = Double.parseDouble(s.replace(".", "").replace(" ", ""));
                 if (giaTri <= 0) {
                     throw new IllegalArgumentException("Giá trị giảm phải lớn hơn 0.");

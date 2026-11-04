@@ -8,7 +8,9 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import dao.HoaDon_Dao;
 import entity.ChiTietSuaChua_DichVu;
+import entity.ChiTietSuaChua_PhuTung;
 import entity.HoaDon;
 import entity.PhieuTiepNhanVaSuaChua;
 
@@ -49,10 +51,11 @@ public final class PdfExporter {
             PdfPTable thongTin = new PdfPTable(new float[] {1, 2});
             thongTin.setWidthPercentage(100);
             String[][] truong = {
-                {"Khách hàng", p.getTenKhachHang()}, {"Số điện thoại", p.getSdtKhachHang()},
-                {"Biển số", p.getBienSo()}, {"Xe", p.getThongTinXe()},
+                {"Khách hàng", p.getXe().getKhachHang().getHoTen()},
+                {"Số điện thoại", p.getXe().getKhachHang().getSoDienThoai()},
+                {"Biển số", p.getXe().getBienSo()}, {"Xe", p.getTenXe()},
                 {"Số km", String.valueOf(p.getSoKm())}, {"Mức nhiên liệu", p.getMucNhienLieu() + "%"},
-                {"Trạng thái", p.getTrangThai()}, {"Ưu tiên", p.getUuTien()},
+                {"Trạng thái", p.getTrangThai().getText()}, {"Ưu tiên", p.getUuTien().getText()},
                 {"Thời gian tiếp nhận", p.getThoiGianTiepNhan() == null ? "" : p.getThoiGianTiepNhan().format(DINH_DANG_GIO)},
                 {"Dự kiến hoàn thành", p.getThoiGianDuKien() == null ? "" : p.getThoiGianDuKien().format(DINH_DANG_GIO)},
                 {"Yêu cầu của khách", p.getYeuCauBanDau()}, {"Đánh giá ngoại thất", p.getTrayXuoc()},
@@ -75,9 +78,9 @@ public final class PdfExporter {
             int stt = 1;
             for (ChiTietSuaChua_DichVu d : dong) {
                 dichVu.addCell(new Phrase(String.valueOf(stt++), thuong));
-                dichVu.addCell(new Phrase(d.getTenDichVu(), thuong));
-                dichVu.addCell(new Phrase(d.getTenKyThuatVien() == null ? "Chờ phân công" : d.getTenKyThuatVien(), thuong));
-                dichVu.addCell(new Phrase(d.getTrangThaiTienDo(), thuong));
+                dichVu.addCell(new Phrase(d.getDichVu().getTenDichVu(), thuong));
+                dichVu.addCell(new Phrase(d.getKyThuatVien() == null ? "Chờ phân công" : d.getKyThuatVien().getHoTen(), thuong));
+                dichVu.addCell(new Phrase(d.getTrangThaiTienDo().getText(), thuong));
                 dichVu.addCell(new Phrase(tien.format(d.getTienCongThucTe()), thuong));
                 tong += d.getTienCongThucTe();
             }
@@ -87,8 +90,9 @@ public final class PdfExporter {
         }
     }
 
-    /** dichVu: {tên, mã, thợ, trạng thái, tiền công}; phuTung: {tên, SKU, số lượng, giá bán, thành tiền}. */
-    public static void xuatHoaDon(File tep, HoaDon hd, HoaDon.ThongTinPhieu tt, List<Object[]> dichVu, List<Object[]> phuTung)
+    /** tt là phiếu có xe và chủ xe; thành tiền phụ tùng tính từ số lượng và giá bán thực tế. */
+    public static void xuatHoaDon(File tep, HoaDon hd, PhieuTiepNhanVaSuaChua tt, List<ChiTietSuaChua_DichVu> dichVu,
+            List<ChiTietSuaChua_PhuTung> phuTung)
             throws IOException, DocumentException {
         BaseFont goc = BaseFont.createFont(DUONG_DAN_FONT, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
         Font thuong = new Font(goc, 11);
@@ -108,11 +112,13 @@ public final class PdfExporter {
             tai.add(new Paragraph(" ", thuong));
 
             String[][] truong = {
-                {"Khách hàng", tt.hoTen + " (" + tt.maKH + ")"}, {"Số điện thoại", tt.soDienThoai},
-                {"Địa chỉ", tt.diaChi}, {"Email", tt.email},
-                {"Biển số", tt.bienSo}, {"Xe", tt.xe}, {"Số VIN", tt.soVIN}, {"Mã phiếu", tt.maPhieu},
+                {"Khách hàng", tt.getXe().getKhachHang().getHoTen() + " (" + tt.getXe().getKhachHang().getMaKH() + ")"},
+                {"Số điện thoại", tt.getXe().getKhachHang().getSoDienThoai()},
+                {"Địa chỉ", tt.getXe().getKhachHang().getDiaChi()}, {"Email", tt.getXe().getKhachHang().getEmail()},
+                {"Biển số", tt.getXe().getBienSo()}, {"Xe", FormatUtil.moTaXeDayDu(tt.getXe())},
+                {"Số VIN", tt.getXe().getSoVIN()}, {"Mã phiếu", tt.getMaPhieuTNSC()},
                 {"Ngày lập", hd.getNgayLap() == null ? "" : hd.getNgayLap().format(DINH_DANG_GIO)},
-                {"Hình thức thanh toán", hd.getHinhThucThanhToan()}
+                {"Hình thức thanh toán", hd.getHinhThucThanhToan().getText()}
             };
             PdfPTable thongTin = new PdfPTable(new float[] {1, 2});
             thongTin.setWidthPercentage(100);
@@ -128,11 +134,12 @@ public final class PdfExporter {
             for (String cot : new String[] {"Tên dịch vụ", "Mã DV", "Kỹ thuật viên", "Trạng thái", "Tiền công (đ)"}) {
                 bangDichVu.addCell(new Phrase(cot, dam));
             }
-            for (Object[] d : dichVu) {
-                for (int i = 0; i < 4; i++) {
-                    bangDichVu.addCell(new Phrase(String.valueOf(d[i]), thuong));
-                }
-                bangDichVu.addCell(new Phrase(tien.format(d[4]), thuong));
+            for (ChiTietSuaChua_DichVu d : dichVu) {
+                bangDichVu.addCell(new Phrase(d.getDichVu().getTenDichVu(), thuong));
+                bangDichVu.addCell(new Phrase(d.getDichVu().getMaDichVu(), thuong));
+                bangDichVu.addCell(new Phrase(d.getThoHienThi(), thuong));
+                bangDichVu.addCell(new Phrase(d.getTrangThaiTienDo().getText(), thuong));
+                bangDichVu.addCell(new Phrase(tien.format(d.getTienCongThucTe()), thuong));
             }
             tai.add(bangDichVu);
 
@@ -142,12 +149,12 @@ public final class PdfExporter {
             for (String cot : new String[] {"Tên phụ tùng", "Mã SKU", "Số lượng", "Giá bán (đ)", "Thành tiền (đ)"}) {
                 bangPhuTung.addCell(new Phrase(cot, dam));
             }
-            for (Object[] d : phuTung) {
-                bangPhuTung.addCell(new Phrase(String.valueOf(d[0]), thuong));
-                bangPhuTung.addCell(new Phrase(String.valueOf(d[1]), thuong));
-                bangPhuTung.addCell(new Phrase(String.valueOf(d[2]), thuong));
-                bangPhuTung.addCell(new Phrase(tien.format(d[3]), thuong));
-                bangPhuTung.addCell(new Phrase(tien.format(d[4]), thuong));
+            for (ChiTietSuaChua_PhuTung d : phuTung) {
+                bangPhuTung.addCell(new Phrase(d.getPhuTung().getTenPhuTung(), thuong));
+                bangPhuTung.addCell(new Phrase(d.getPhuTung().getMaSKU(), thuong));
+                bangPhuTung.addCell(new Phrase(String.valueOf(d.getSoLuongSuDung()), thuong));
+                bangPhuTung.addCell(new Phrase(tien.format(d.getGiaBanThucTe()), thuong));
+                bangPhuTung.addCell(new Phrase(tien.format(HoaDon_Dao.thanhTien(d)), thuong));
             }
             tai.add(bangPhuTung);
             tai.add(new Paragraph(" ", thuong));
@@ -155,8 +162,8 @@ public final class PdfExporter {
             String[][] tong = {
                 {"Tổng tiền công", tien.format(hd.getTongTienCong()) + " đ"},
                 {"Tổng tiền phụ tùng", tien.format(hd.getTongTienPhuTung()) + " đ"},
-                {"Giảm giá" + (hd.getMaKM() == null ? "" : " (" + hd.getMaKM() + ")"), tien.format(hd.getTongTienGiam()) + " đ"},
-                {"VAT (" + tien.format(hd.getThueSuat()) + "%)", tien.format(hd.getTongTienVAT()) + " đ"},
+                {"Giảm giá" + (hd.getKhuyenMai() == null ? "" : " (" + hd.getKhuyenMai().getMaKM() + ")"), tien.format(hd.getTongTienGiam()) + " đ"},
+                {"VAT (" + tien.format(hd.getThue() == null ? 0 : hd.getThue().getThueSuat()) + "%)", tien.format(hd.getTongTienVAT()) + " đ"},
                 {"Tổng thanh toán", tien.format(hd.getTongThanhToan()) + " đ"}
             };
             PdfPTable bangTong = new PdfPTable(new float[] {2, 1});

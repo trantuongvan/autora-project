@@ -1,14 +1,17 @@
 package controller;
 
+import dao.DichVu_Dao;
 import dao.NhanVien_Dao;
+import entity.CaLamViec;
+import entity.DichVu;
+import entity.KyNang;
 import entity.NhanVien;
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import gui.QLNhanVien;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -21,10 +24,12 @@ public class QLNhanVienController {
 
     private final QLNhanVien view;
     private final NhanVien_Dao dao = new NhanVien_Dao();
+    private List<DichVu> dichVu = new ArrayList<>();
     private final String tenDangNhap;
     private String selectedId;
     private int loadVersion;
     private boolean loadErrorShown;
+    private boolean daTai;
 
     public QLNhanVienController(QLNhanVien view) {
         this(view, tenDangNhapHienTai());
@@ -34,8 +39,20 @@ public class QLNhanVienController {
         this.view = view;
         this.tenDangNhap = tenDangNhap == null || tenDangNhap.trim().isEmpty()
                 ? "system" : tenDangNhap.trim();
+        taiDanhMuc();
         initController();
-        load();
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+    }
+
+    private void taiDanhMuc() {
+        try {
+            view.napDanhSachCa(dao.findAllCa());
+            dichVu = new DichVu_Dao().findAll();
+            view.napDichVuKyNang(dichVu);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(view, "Không thể tải ca làm việc và dịch vụ.\n" + ex.getMessage(),
+                    "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static String tenDangNhapHienTai() {
@@ -44,24 +61,19 @@ public class QLNhanVienController {
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                load();
+        view.getTxtTimKiem().addActionListener(e -> load());
+        view.getBtnTaiDuLieu().addActionListener(e -> load());
+        view.getBtnLuu().addActionListener(e -> save());
+        // Tick "Làm được" thì điền sẵn số phút chuẩn của dịch vụ.
+        view.getKyNangModel().addTableModelListener(e -> {
+            int dong = e.getFirstRow();
+            if (e.getType() == javax.swing.event.TableModelEvent.UPDATE && e.getColumn() == 0
+                    && dong >= 0 && dong < dichVu.size()
+                    && Boolean.TRUE.equals(view.getKyNangModel().getValueAt(dong, 0))
+                    && String.valueOf(view.getKyNangModel().getValueAt(dong, 2)).trim().isEmpty()) {
+                view.getKyNangModel().setValueAt(dichVu.get(dong).getThoiGianChuan(), dong, 2);
             }
         });
-        view.getCboLocViTri().addActionListener(e -> load());
-        view.getBtnLuu().addActionListener(e -> save());
         view.getBtnThemNhanVien().addActionListener(e -> {
             selectedId = null;
             view.getTxtMaNV().setText("");
@@ -96,10 +108,12 @@ public class QLNhanVienController {
     }
 
     private void load() {
+        daTai = true;
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int version = ++loadVersion;
         final String keyword = view.getTxtTimKiem().getText();
-        final String position = "Tất cả vị trí".equals(view.getCboLocViTri().getSelectedItem())
-                ? "" : String.valueOf(view.getCboLocViTri().getSelectedItem());
+        final Object chonViTri = view.getCboLocViTri().getSelectedItem();
+        final VaiTro position = chonViTri instanceof VaiTro ? (VaiTro) chonViTri : null;
         new SwingWorker<List<NhanVien>, Void>() {
             @Override
             protected List<NhanVien> doInBackground() throws Exception {
@@ -118,7 +132,7 @@ public class QLNhanVienController {
                         rows.add(new Object[]{
                                 employee.getMaNV(), employee.getHoTen(), employee.getSoDienThoai(),
                                 employee.getDiaChi(), employee.getViTriLamViec(),
-                                employee.getTenDangNhap() == null ? "—" : employee.getTenDangNhap(), ""
+                                employee.getTaiKhoan() == null ? "—" : employee.getTaiKhoan().getTenDangNhap(), ""
                         });
                     }
                     view.setDanhSach(rows);
@@ -161,8 +175,54 @@ public class QLNhanVienController {
         NhanVien employee = find(selectedId);
         if (employee != null) {
             view.dienForm(employee);
+            dienKyNang(selectedId);
             view.setCheDoSua(true);
         }
+    }
+
+    private void dienKyNang(String maNV) {
+        try {
+            view.hienLoiCa(null);
+            view.hienLoiKyNang(null);
+            javax.swing.table.DefaultTableModel model = view.getKyNangModel();
+            for (int i = 0; i < model.getRowCount(); i++) {
+                model.setValueAt("", i, 2);
+                model.setValueAt(false, i, 0);
+            }
+            for (KyNang kyNang : dao.findKyNang(maNV)) {
+                for (int i = 0; i < dichVu.size(); i++) {
+                    if (dichVu.get(i).equals(kyNang.getDichVu())) {
+                        // Điền số phút trước khi tick để không bị thay bằng số phút chuẩn.
+                        model.setValueAt(kyNang.getThoiGianPhut(), i, 2);
+                        model.setValueAt(true, i, 0);
+                    }
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(view, "Không thể tải kỹ năng: " + ex.getMessage(),
+                    "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /** Đọc các dòng đã tick; trả về null và báo lỗi lên form khi số phút không hợp lệ. */
+    private List<KyNang> docKyNang(NhanVien employee) {
+        if (view.getTblKyNang().isEditing()) {
+            view.getTblKyNang().getCellEditor().stopCellEditing();
+        }
+        List<KyNang> ketQua = new ArrayList<>();
+        for (int i = 0; i < dichVu.size(); i++) {
+            if (!Boolean.TRUE.equals(view.getKyNangModel().getValueAt(i, 0))) {
+                continue;
+            }
+            try {
+                ketQua.add(new KyNang(employee, dichVu.get(i),
+                        Integer.parseInt(String.valueOf(view.getKyNangModel().getValueAt(i, 2)).trim())));
+            } catch (IllegalArgumentException ex) {
+                view.hienLoiKyNang("Số phút của \"" + dichVu.get(i).getTenDichVu() + "\" phải là số nguyên lớn hơn 0.");
+                return null;
+            }
+        }
+        return ketQua;
     }
 
     private void save() {
@@ -191,7 +251,23 @@ public class QLNhanVienController {
                     view.getTxtHoTen().getText(),
                     phone,
                     view.getTxtDiaChi().getText(),
-                    String.valueOf(view.getCboViTri().getSelectedItem()));
+                    (VaiTro) view.getCboViTri().getSelectedItem());
+            Object chonCa = view.getCboCa().getSelectedItem();
+            employee.setCaLamViec(chonCa instanceof CaLamViec ? (CaLamViec) chonCa : null);
+            view.hienLoiCa(null);
+            view.hienLoiKyNang(null);
+            // Đổi khỏi Kỹ thuật viên thì không ghi kỹ năng nào, nên các dòng cũ bị xóa theo.
+            if (employee.getViTriLamViec() == VaiTro.KY_THUAT_VIEN) {
+                List<KyNang> kyNang = docKyNang(employee);
+                if (kyNang == null) {
+                    return;
+                }
+                if (!kyNang.isEmpty() && employee.getCaLamViec() == null) {
+                    view.hienLoiCa("Kỹ thuật viên có kỹ năng phải được xếp ca làm việc.");
+                    return;
+                }
+                employee.setDanhSachKyNang(kyNang);
+            }
             boolean saved = editing
                     ? dao.update(employee, tenDangNhap)
                     : dao.insert(employee, tenDangNhap);
@@ -203,7 +279,7 @@ public class QLNhanVienController {
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
             selectedId = null;
-            load();
+            if (daTai) load();
         } catch (IllegalArgumentException ex) {
             if (view.getTxtHoTen().getText().trim().isEmpty()) {
                 view.hienLoiHoTen(ex.getMessage());
@@ -223,7 +299,7 @@ public class QLNhanVienController {
             return;
         }
         try {
-            if (!dao.delete(selectedId)) {
+            if (!dao.delete(selectedId, PhienDangNhap.getHienTai().getTenDangNhap())) {
                 throw new SQLException("Không tìm thấy nhân viên.");
             }
             view.anXacNhanXoa();
@@ -232,7 +308,9 @@ public class QLNhanVienController {
             view.xoaTrangForm();
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
-            load();
+            if (daTai) load();
+        } catch (IllegalStateException ex) {
+            JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể xóa", JOptionPane.WARNING_MESSAGE);
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
                     "Không thể xóa nhân viên đang được tham chiếu bởi dữ liệu khác.\n"

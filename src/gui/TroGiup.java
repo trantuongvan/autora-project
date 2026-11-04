@@ -28,6 +28,7 @@ public class TroGiup extends JPanel {
                 "4. Khi phiếu Hoàn thành, lễ tân lập hóa đơn và thu tiền tại Hóa đơn & Thanh toán.",
                 "5. Lễ tân bàn giao xe cho khách tại Bàn giao xe."), 0);
         noiDung.them(the("Thao tác trên danh sách", Loai.CLIPBOARD, UIConstants.PRIMARY,
+                "Danh sách chỉ hiện dữ liệu khi bấm Tải dữ liệu, kể cả sau khi đổi ô tìm kiếm hoặc bộ lọc (nhấn Enter ở ô tìm kiếm cũng tải). Sau khi lưu hoặc xóa, danh sách đã tải sẽ tự cập nhật.",
                 "Khách hàng, Hồ sơ xe, Nhân viên: bấm vào dòng để hiện dữ liệu lên biểu mẫu, sửa rồi bấm lưu.",
                 "Hóa đơn, Phiếu sửa chữa: bấm đúp vào dòng để mở chi tiết.",
                 "Biểu tượng thùng rác dùng để xóa. Xe đã có phiếu sửa chữa không thể xóa."), 16);
@@ -40,9 +41,15 @@ public class TroGiup extends JPanel {
                 "Dòng hợp lệ được đưa lên phiếu để kiểm tra trước khi lưu; mã đã có trên phiếu sẽ lấy số lượng và đơn giá theo file. Dòng sai được liệt kê và không được thêm."), 16);
         noiDung.them(the("Phím tắt", Loai.KEY, UIConstants.PRIMARY,
                 "F1: mở trang Trợ giúp.",
-                "F5: làm mới, Ctrl+F: tới ô tìm kiếm (trên các màn hình có ghi chú ở tiêu đề).",
+                "F5: tải dữ liệu (giống nút Tải dữ liệu), Ctrl+F: tới ô tìm kiếm (trên các màn hình có ghi chú ở tiêu đề).",
                 "Ctrl+1 đến Ctrl+9: mở mục menu theo thứ tự.",
                 "Delete: xóa hồ sơ xe hoặc hủy phiếu đang chọn."), 16);
+        noiDung.them(the("Tự động phân công", Loai.WRENCH, UIConstants.PRIMARY,
+                "Khi lập phiếu, hệ thống tự chọn kỹ thuật viên có kỹ năng và xong sớm nhất cho từng hạng mục; lễ tân chỉ chọn tay khi có ngoại lệ tại Chi tiết phiếu.",
+                "Chủ cửa hàng đặt ca làm việc và kỹ năng (dịch vụ làm được, số phút) của kỹ thuật viên tại Quản lý nhân viên."), 16);
+        noiDung.them(the("Lịch hẹn", Loai.CALENDAR, UIConstants.PRIMARY,
+                "Tại Khách hàng, chọn một khách rồi bấm Thêm lịch hẹn để hẹn ngày đến; chọn một lịch và bấm Hủy lịch hẹn để hủy. Lập phiếu cho xe sẽ tự chuyển lịch hẹn tới hạn sang Đã đến.",
+                "Trang chủ Lễ tân liệt kê lịch hẹn hôm nay: bấm đúp vào dòng để mở Tiếp nhận xe với biển số hoặc SĐT đã điền sẵn."), 16);
         noiDung.ketThuc();
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
     }

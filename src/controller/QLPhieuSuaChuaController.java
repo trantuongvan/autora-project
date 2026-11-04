@@ -3,12 +3,11 @@ package controller;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import gui.QLPhieuSuaChua;
 import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -31,27 +30,23 @@ public class QLPhieuSuaChuaController {
     private final DieuHuongPhieu dieuHuong;
     private final PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
     private int phienBanTai;
+    private boolean daTai;
 
     public QLPhieuSuaChuaController(QLPhieuSuaChua view, DieuHuongPhieu dieuHuong) {
         this.view = view;
         this.dieuHuong = dieuHuong;
         initController();
-        taiDanhSach();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDanhSach(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDanhSach(); }
-        });
+        view.getTxtTimKiem().addActionListener(e -> taiDanhSach());
         view.getBtnLoc().addActionListener(e -> taiDanhSach());
         view.getBtnLamMoi().addActionListener(e -> {
             view.getTxtTimKiem().setText("");
             view.getCboLocTrangThai().setSelectedIndex(0);
             view.getTxtTuNgay().setText("");
             view.getTxtDenNgay().setText("");
-            taiDanhSach();
         });
         view.getBtnTaoPhieu().addActionListener(e -> dieuHuong.moTiepNhanMoi());
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
@@ -109,6 +104,13 @@ public class QLPhieuSuaChuaController {
         return String.valueOf(view.getTableModel().getValueAt(dongModel, 0));
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    public void taiLai() {
+        if (daTai) {
+            taiDanhSach();
+        }
+    }
+
     public void taiDanhSach() {
         LocalDate tuNgay;
         LocalDate denNgay;
@@ -124,10 +126,12 @@ public class QLPhieuSuaChuaController {
             return;
         }
         view.hienLoiLoc(null);
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
 
         String tuKhoa = view.getTxtTimKiem().getText();
-        String chon = String.valueOf(view.getCboLocTrangThai().getSelectedItem());
-        String trangThai = QLPhieuSuaChua.TAT_CA_TRANG_THAI.equals(chon) ? "" : chon;
+        Object chon = view.getCboLocTrangThai().getSelectedItem();
+        TrangThaiPhieu trangThai = chon instanceof TrangThaiPhieu ? (TrangThaiPhieu) chon : null;
         int phienBan = ++phienBanTai;
         new SwingWorker<List<PhieuTiepNhanVaSuaChua>, Void>() {
             @Override
@@ -155,7 +159,7 @@ public class QLPhieuSuaChuaController {
     private List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> danhSach) {
         List<Object[]> dong = new ArrayList<>();
         for (PhieuTiepNhanVaSuaChua p : danhSach) {
-            dong.add(new Object[] {p.getMaPhieuTNSC(), p.getBienSo(), p.getTenKhachHang(), p.getThongTinXe(),
+            dong.add(new Object[] {p.getMaPhieuTNSC(), p.getXe().getBienSo(), p.getXe().getKhachHang().getHoTen(), p.getTenXe(),
                 p.getThoiGianTiepNhan() == null ? "—" : p.getThoiGianTiepNhan().format(DINH_DANG_GIO),
                 p.getUuTien(), p.getTrangThai(), ""});
         }
@@ -180,7 +184,7 @@ public class QLPhieuSuaChuaController {
                         "Không thể hủy", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            taiDanhSach();
+            taiLai();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view, "Không thể hủy phiếu.\n" + ex.getMessage(), "Lỗi dữ liệu",
                     JOptionPane.ERROR_MESSAGE);
