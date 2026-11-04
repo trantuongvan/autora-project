@@ -219,11 +219,25 @@ public class TestPhanCong {
         // 09:00: NV0005 đang có việc, NV0006 ngoài ca: vẫn giao nhưng ghi chú bận.
         kq = chon(D9, "DV0001");
         dung("Ai cũng bận vẫn giao việc", "NV0005".equals(tho(kq, "DV0001")));
-        dung("Ai cũng bận có ghi chú", kq.getGhiChu().size() == 1 && kq.getGhiChu().get(0).contains("bận"));
+        dung("Ai cũng bận có ghi chú", kq.getGhiChu().size() == 1 && kq.getGhiChu().get(0).contains("đang rảnh"));
         kq = chon(D9, "DV0003");
         dung("KTV ngoài ca không phải là rảnh", "NV0006".equals(tho(kq, "DV0003")) && kq.getGhiChu().size() == 1);
         kq = chon(D13, "DV0003");
         dung("KTV trong ca và không có việc là rảnh", kq.getGhiChu().isEmpty());
+
+        // 13:00: NV0006 còn 15 phút việc nên sẽ xong 14:45, NV0005 rảnh nhưng 15:00 mới xong: vẫn ưu tiên người rảnh.
+        thucThi("INSERT INTO DichVu (maDichVu, tenDichVu, tienCong, thoiGianChuan) VALUES ('DVT01', N'Dịch vụ thử', 0, 15)");
+        thucThi("UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = N'Hoàn thành' WHERE maPhieuTNSC = 'PTNSC00002'");
+        try {
+            taoPhieu("Đang sửa", "DVT01", "NV0006", "Chờ sửa");
+            kq = chon(D13, "DV0005");
+            dung("Người rảnh thắng người bận dù người bận xong sớm hơn", "NV0005".equals(tho(kq, "DV0005")));
+            dung("Có người rảnh thì không ghi chú bận", kq.getGhiChu().isEmpty());
+        } finally {
+            thucThi("UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = N'Đang sửa' WHERE maPhieuTNSC = 'PTNSC00002'");
+            xoaDuLieuThu();
+            thucThi("DELETE FROM DichVu WHERE maDichVu = 'DVT01'");
+        }
     }
 
     private static void kiemTraHoaNhau() throws Exception {

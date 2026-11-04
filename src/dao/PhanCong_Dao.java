@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Tự chọn kỹ thuật viên cho từng dịch vụ: người có kỹ năng và xong sớm nhất.
+ * Tự chọn kỹ thuật viên cho từng dịch vụ: người có kỹ năng, ưu tiên người đang rảnh, rồi đến người xong sớm nhất.
  * Thời điểm hiện tại luôn là tham số để kết quả tính lại được.
  */
 public class PhanCong_Dao {
@@ -102,18 +102,22 @@ public class PhanCong_Dao {
             UngVien tot = null;
             LocalDateTime xongTot = null;
             int[] hangTot = null;
+            boolean ranhTot = false;
+            LocalTime gio = hienTai.toLocalTime();
             for (UngVien u : ungVien.getOrDefault(dv.getMaDichVu(), new ArrayList<>())) {
                 CaLamViec ca = u.nhanVien.getCaLamViec();
                 int[] hang = hangDoi.computeIfAbsent(u.nhanVien.getMaNV(), k -> new int[2]);
                 LocalDateTime xong = congPhut(congPhut(hienTai, hang[0], ca.getGioBatDau(), ca.getGioKetThuc()),
                         u.phut, ca.getGioBatDau(), ca.getGioKetThuc());
-                boolean hon = tot == null || xong.isBefore(xongTot)
+                boolean ranh = hang[1] == 0 && !gio.isBefore(ca.getGioBatDau()) && gio.isBefore(ca.getGioKetThuc());
+                boolean hon = tot == null || (ranh && !ranhTot) || (ranh == ranhTot && (xong.isBefore(xongTot)
                         || (xong.equals(xongTot) && (hang[1] < hangTot[1] || (hang[1] == hangTot[1]
-                        && u.nhanVien.getMaNV().compareTo(tot.nhanVien.getMaNV()) < 0)));
+                        && u.nhanVien.getMaNV().compareTo(tot.nhanVien.getMaNV()) < 0)))));
                 if (hon) {
                     tot = u;
                     xongTot = xong;
                     hangTot = hang;
+                    ranhTot = ranh;
                 }
             }
             if (tot == null) {
@@ -121,12 +125,9 @@ public class PhanCong_Dao {
                 ketQua.ghiChu.add("Không có kỹ thuật viên đủ kỹ năng cho \"" + ten(dv) + "\".");
                 continue;
             }
-            CaLamViec ca = tot.nhanVien.getCaLamViec();
-            LocalTime gio = hienTai.toLocalTime();
-            boolean ranh = hangTot[1] == 0 && !gio.isBefore(ca.getGioBatDau()) && gio.isBefore(ca.getGioKetThuc());
-            if (!ranh) {
-                ketQua.ghiChu.add("Mọi kỹ thuật viên đủ kỹ năng cho \"" + ten(dv) + "\" đều đang bận; đã giao cho "
-                        + tot.nhanVien.getHoTen() + ".");
+            if (!ranhTot) {
+                ketQua.ghiChu.add("Không có kỹ thuật viên đủ kỹ năng đang rảnh cho \"" + ten(dv) + "\"; đã giao cho "
+                        + tot.nhanVien.getHoTen() + ", người xong sớm nhất.");
             }
             hangTot[0] += tot.phut;
             hangTot[1]++;
