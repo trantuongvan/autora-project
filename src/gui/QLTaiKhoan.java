@@ -58,7 +58,12 @@ public class QLTaiKhoan extends JPanel {
     private final JButton btnDong = UIComponents.nutPhu("Đóng");
     private final JButton btnLuu = UIComponents.nutChinh("Lưu", UIConstants.PRIMARY);
 
+    public static final String TAT_CA_VAI_TRO = "Tất cả vai trò";
+    public static final String TAT_CA_TRANG_THAI = "Tất cả trạng thái";
     private final JTextField txtTimKiem;
+    private final JComboBox<String> cboLocVaiTro = new JComboBox<>();
+    private final JComboBox<String> cboLocTrangThai = new JComboBox<>(
+            new String[] {TAT_CA_TRANG_THAI, TaiKhoan.DANG_HOAT_DONG, TaiKhoan.BI_KHOA});
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(
             "<html>Tên đăng<br>nhập</html>", "Nhân viên", "Vai trò", "Trạng thái", "Thao tác");
     private final JTable tblDanhSach = new JTable(tableModel);
@@ -154,8 +159,18 @@ public class QLTaiKhoan extends JPanel {
         CotDoc than = new CotDoc();
         JPanel dau = UIComponents.trong(new BorderLayout(12, 0));
         dau.add(UIComponents.label("Danh sách tài khoản", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK), BorderLayout.CENTER);
-        dau.add(timKiem, BorderLayout.EAST);
         than.them(dau, 0);
+        cboLocVaiTro.addItem(TAT_CA_VAI_TRO);
+        for (String vaiTro : TaiKhoan.VAI_TRO) {
+            cboLocVaiTro.addItem(vaiTro);
+        }
+        UIComponents.styleCombo(cboLocVaiTro);
+        UIComponents.styleCombo(cboLocTrangThai);
+        JPanel hangLoc = UIComponents.trong(new GridLayout(1, 3, 8, 0));
+        hangLoc.add(timKiem);
+        hangLoc.add(cboLocVaiTro);
+        hangLoc.add(cboLocTrangThai);
+        than.them(hangLoc, 10);
         than.them(UIComponents.cuonBang(tblDanhSach), 10);
         return bocThe(than);
     }
@@ -263,5 +278,7 @@ public class QLTaiKhoan extends JPanel {
     public JButton getBtnDong() { return btnDong; }
     public JButton getBtnLuu() { return btnLuu; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
+    public JComboBox<String> getCboLocVaiTro() { return cboLocVaiTro; }
+    public JComboBox<String> getCboLocTrangThai() { return cboLocTrangThai; }
     public JTable getTblDanhSach() { return tblDanhSach; }
 }

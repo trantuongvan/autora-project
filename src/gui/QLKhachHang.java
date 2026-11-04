@@ -20,9 +20,7 @@ public class QLKhachHang extends JPanel {
     public static final int COT_LOAI = 5;
     public static final int COT_GHI_NO = 6;
     public static final int COT_THAO_TAC = 8;
-    public static final int ICON_XEM = 0;
-    public static final int ICON_SUA = 1;
-    public static final int ICON_XOA = 2;
+    public static final int ICON_XOA = 1;
 
     private final JTextField txtTimKiem;
     private final JComboBox<String> cboLocLoai = new JComboBox<>();
@@ -66,7 +64,7 @@ public class QLKhachHang extends JPanel {
 
         CotDoc noiDung = new CotDoc();
         noiDung.setBorder(new EmptyBorder(24, 24, 24, 24));
-        noiDung.them(UIComponents.tieuDeTrang("Quản lý khách hàng", "F5 làm mới • Ctrl+F tìm kiếm",
+        noiDung.them(UIComponents.tieuDeTrang("Quản lý khách hàng", "F5 làm mới • Ctrl+F tìm kiếm • Bấm vào dòng để hiện lên biểu mẫu",
                 UIConstants.ROLE_RECEPTION, btnThem), 0);
         noiDung.them(taoTheDanhSach(timKiem), 18);
         noiDung.them(taoTheForm(), 16);
@@ -105,7 +103,6 @@ public class QLKhachHang extends JPanel {
         tblDanhSach.getColumnModel().getColumn(COT_LOAI).setCellRenderer(new BadgeRenderer(QLKhachHang::mauLoai));
         tblDanhSach.getColumnModel().getColumn(COT_GHI_NO).setCellRenderer(new BadgeRenderer(QLKhachHang::mauGhiNo));
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(
-                new LineIcon(Loai.EYE, UIConstants.ROLE_RECEPTION),
                 new LineIcon(Loai.PENCIL, UIConstants.ROLE_RECEPTION),
                 new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT)));
         UIComponents.datDoRong(tblDanhSach, 75, 140, 115, 120, 150, 135, 110, 110, 112);
@@ -229,15 +226,6 @@ public class QLKhachHang extends JPanel {
         for (Object[] r : dong) {
             model.addRow(r);
         }
-    }
-
-    public void setChoPhepSua(boolean choPhep) {
-        for (JTextField o : new JTextField[] {txtHoTen, txtSoDienThoai, txtDiaChi, txtEmail, txtMaSoThue}) {
-            o.setEditable(choPhep);
-        }
-        cboLoai.setEnabled(choPhep);
-        cboGhiNo.setEnabled(choPhep);
-        btnLuu.setEnabled(choPhep);
     }
 
     public void xoaLoi() {

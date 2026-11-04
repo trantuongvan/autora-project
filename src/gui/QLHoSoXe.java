@@ -24,8 +24,7 @@ import java.util.Map;
 public class QLHoSoXe extends JPanel {
 
     public static final int COT_THAO_TAC = 6;
-    public static final int ICON_XEM = 0;
-    public static final int ICON_SUA = 1;
+    public static final int ICON_XOA = 1;
 
     /** Danh sách Hãng -> Dòng xe gợi ý (ô combo cho phép gõ thêm giá trị khác). */
     public static final Map<String, String[]> HANG_DONG = new LinkedHashMap<>();
@@ -41,7 +40,9 @@ public class QLHoSoXe extends JPanel {
 
     // --- Danh sách ---
     private final JButton btnThemHoSo = UIComponents.nutChinh("+  Thêm hồ sơ xe", UIConstants.PRIMARY);
+    public static final String TAT_CA_HANG = "Tất cả hãng xe";
     private final JTextField txtTimKiem;
+    private final JComboBox<String> cboLocHang = new JComboBox<>();
     private final JTable tblDanhSach;
     private final DefaultTableModel tableModel;
     private final JLabel lblThongKeBang = new JLabel();
@@ -84,22 +85,27 @@ public class QLHoSoXe extends JPanel {
         timKiem.setPreferredSize(new Dimension(460, 40));
         txtTimKiem = timKiem.getTextField();
         JPanel hangTim = UIComponents.trong(new BorderLayout());
-        JPanel trai = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel trai = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 8, 0));
         trai.add(timKiem);
+        cboLocHang.addItem(TAT_CA_HANG);
+        for (String hang : HANG_DONG.keySet()) cboLocHang.addItem(hang);
+        UIComponents.styleCombo(cboLocHang);
+        cboLocHang.setPreferredSize(new Dimension(180, 40));
+        trai.add(cboLocHang);
         hangTim.add(trai, BorderLayout.WEST);
-        hangTim.add(UIComponents.label("Xem / Sửa hồ sơ bằng biểu tượng trong bảng", UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_MUTED), BorderLayout.EAST);
+        hangTim.add(UIComponents.label("Bấm vào dòng để hiện hồ sơ lên biểu mẫu", UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_MUTED), BorderLayout.EAST);
         noiDung.them(hangTim, 18);
 
         // --- Bảng ---
         RoundedPanel theBang = UIComponents.card();
         theBang.setLayout(new BorderLayout());
-        tableModel = UIComponents.modelKhongSua("Biển số", "Hãng / Dòng", "Năm", "VIN", "Chủ xe", "SĐT", "Xem / Sửa");
+        tableModel = UIComponents.modelKhongSua("Biển số", "Hãng / Dòng", "Năm", "VIN", "Chủ xe", "SĐT", "Sửa / Xóa");
         tblDanhSach = new JTable(tableModel);
         UIComponents.styleTable(tblDanhSach);
         tblDanhSach.getColumnModel().getColumn(0).setCellRenderer(new CellRenderer(UIConstants.FONT_FORM_LABEL.deriveFont(14f), null));
-        Icon xem = new LineIcon(Loai.EYE, UIConstants.PRIMARY);
         Icon sua = new LineIcon(Loai.PENCIL, UIConstants.PRIMARY);
-        tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(xem, sua));
+        Icon xoa = new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT);
+        tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(sua, xoa));
         UIComponents.datDoRong(tblDanhSach, 120, 160, 70, 190, 190, 130, 110);
         theBang.add(UIComponents.cuonBang(tblDanhSach), BorderLayout.CENTER);
 
@@ -283,6 +289,7 @@ public class QLHoSoXe extends JPanel {
         });
         // Nút "Hủy" đưa form về trạng thái thêm mới (Controller có thể gán thêm listener)
         btnHuy.addActionListener(e -> {
+            tblDanhSach.clearSelection();
             xoaTrangForm();
             setCheDoSua(false);
             anLichSu();
@@ -325,25 +332,6 @@ public class QLHoSoXe extends JPanel {
         cboChuSoHuu.setEnabled(true);
         btnLuu.setEnabled(true);
         btnHuy.setText("Hủy");
-    }
-    /** Chế độ xem thông tin: giữ nguyên form nhưng khóa tất cả trường và nút lưu. */
-    public void setCheDoXem(boolean xem) {
-        if (!xem) {
-            setCheDoSua(false);
-            return;
-        }
-        lblTieuDeForm.setText("Thông tin hồ sơ xe");
-        txtBienSo.setEditable(false);
-        txtBienSo.setEnabled(false);
-        txtVIN.setEnabled(false);
-        txtNam.setEnabled(false);
-        txtMauSon.setEnabled(false);
-        cboHang.setEnabled(false);
-        cboDong.setEnabled(false);
-        cboChuSoHuu.setEnabled(false);
-        btnLuu.setText("Chế độ xem");
-        btnLuu.setEnabled(false);
-        btnHuy.setText("Đóng");
     }
     public void dienForm(entity.Xe xe) {
         maChuSoHuuCanChon = xe.getMaKH();
@@ -486,6 +474,7 @@ public class QLHoSoXe extends JPanel {
 
     // --- Getter cho Controller ---
     public JButton getBtnThemHoSo() { return btnThemHoSo; }
+    public JComboBox<String> getCboLocHang() { return cboLocHang; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }

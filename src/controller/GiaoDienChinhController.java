@@ -17,6 +17,8 @@ import gui.QLTaiKhoan;
 import gui.QLTiepNhanSuaChua;
 import gui.TrangChuLeTan;
 import gui.TrangChuQuanLy;
+import gui.GioiThieu;
+import gui.TroGiup;
 import gui.TrangChuKyThuatVien;
 import gui.TrangChuThuKho;
 import gui.QLDuyetXuatKho;
@@ -27,9 +29,14 @@ import util.UIComponents;
 import util.UIComponents.Loai;
 import util.UIConstants;
 
+import javax.swing.AbstractAction;
+import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +52,8 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     private static final String CARD_PHIEU = "QL_PHIEU";
     private static final String CARD_HOA_DON = "QL_HOA_DON";
     private static final String CARD_CHI_TIET_HOA_DON = "CT_HOA_DON";
+    private static final String CARD_TRO_GIUP = "TRO_GIUP";
+    private static final String CARD_GIOI_THIEU = "GIOI_THIEU";
 
     private static final Map<String, String> TIEU_DE = new HashMap<>();
     private static final Map<String, Loai> ICON = new HashMap<>();
@@ -70,6 +79,8 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         muc("QL_TAI_KHOAN", "Tài khoản & Phân quyền", Loai.LOCK);
         muc("QL_NHAT_KY", "Nhật ký hệ thống", Loai.HISTORY);
         muc("QL_TIEN_DO", "Tiến độ sửa chữa", Loai.WRENCH);
+        muc(CARD_TRO_GIUP, "Trợ giúp", Loai.HELP);
+        muc(CARD_GIOI_THIEU, "Giới thiệu", Loai.INFO);
 
         MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_CHU_CUA_HANG, Arrays.asList(
                 "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
@@ -132,6 +143,9 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
             return manHinhHoaDon;
         });
 
+        nhaMay.put(CARD_TRO_GIUP, TroGiup::createPanel);
+        nhaMay.put(CARD_GIOI_THIEU, GioiThieu::createPanel);
+
         view.getBtnDangXuat().addActionListener(e -> dangXuat());
 
         PhienDangNhap phien = PhienDangNhap.getHienTai();
@@ -142,9 +156,23 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
             return;
         }
         cardDuocPhep.addAll(menu);
+        // Trợ giúp và Giới thiệu dùng chung cho mọi vai trò.
+        cardDuocPhep.add(CARD_TRO_GIUP);
+        cardDuocPhep.add(CARD_GIOI_THIEU);
         for (String card : menu) {
             view.themMenu(card, TIEU_DE.get(card), ICON.get(card)).addActionListener(e -> moManHinh(card));
         }
+        for (String card : Arrays.asList(CARD_TRO_GIUP, CARD_GIOI_THIEU)) {
+            view.themMenu(card, TIEU_DE.get(card), ICON.get(card)).addActionListener(e -> moManHinh(card));
+        }
+        view.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+                .put(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0), CARD_TRO_GIUP);
+        view.getRootPane().getActionMap().put(CARD_TRO_GIUP, new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                moManHinh(CARD_TRO_GIUP);
+            }
+        });
         moManHinh(menu.get(0));
     }
 

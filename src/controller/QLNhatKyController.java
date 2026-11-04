@@ -2,12 +2,14 @@ package controller;
 
 import dao.NhatKy_Dao;
 import gui.QLNhatKy;
+import util.ChonNgay;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ public class QLNhatKyController {
             @Override public void removeUpdate(DocumentEvent e) { taiDuLieu(); }
             @Override public void changedUpdate(DocumentEvent e) { taiDuLieu(); }
         });
+        view.getTxtTuNgay().addActionListener(e -> taiDuLieu());
+        view.getTxtDenNgay().addActionListener(e -> taiDuLieu());
         view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai");
         view.getActionMap().put("taiLai", new AbstractAction() {
             @Override
@@ -44,11 +48,13 @@ public class QLNhatKyController {
 
     private void taiDuLieu() {
         String tuKhoa = view.getTxtTimKiem().getText();
+        LocalDate tuNgay = docNgay(view.getTxtTuNgay().getText());
+        LocalDate denNgay = docNgay(view.getTxtDenNgay().getText());
         int phien = ++phienBan;
         new SwingWorker<List<Object[]>, Void>() {
             @Override
             protected List<Object[]> doInBackground() throws Exception {
-                return dao.search(tuKhoa);
+                return dao.search(tuKhoa, tuNgay, denNgay);
             }
 
             @Override
@@ -70,5 +76,9 @@ public class QLNhatKyController {
                 }
             }
         }.execute();
+    }
+
+    private static LocalDate docNgay(String chuoi) {
+        return chuoi.isEmpty() ? null : LocalDate.parse(chuoi, ChonNgay.NGAY);
     }
 }

@@ -117,6 +117,7 @@ public class TrangChuQuanLy extends JPanel {
         UIComponents.styleCombo(cboKhoangThoiGian);
         UIComponents.styleInput(txtTuNgay);
         UIComponents.styleInput(txtDenNgay);
+        util.ChonNgay.ganNgay(txtTuNgay, txtDenNgay);
         JPanel phai = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         phai.add(oLoc("Khoảng thời gian", cboKhoangThoiGian));
         phai.add(oLoc("Từ ngày", txtTuNgay));
