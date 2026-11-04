@@ -70,7 +70,7 @@ public class TrangChuQuanLyController {
         }
     }
 
-    private void taiDuLieu() {
+    public void taiDuLieu() {
         LocalDate tu;
         LocalDate den;
         try {
@@ -139,7 +139,7 @@ public class TrangChuQuanLyController {
         view.setDoanhThuNgay(tien(s.homNay), moTaXuHuong(s.homNay, s.homQua, "hôm qua"));
         view.setDoanhThuThang("Doanh thu tháng " + thang, tien(s.thangNay), moTaXuHuong(s.thangNay, s.thangTruoc, "tháng " + thangTruoc));
         view.setLuotXe(s.luotXe[0], s.luotXe[1], s.luotXe[2]);
-        view.setHoaDonCho((Integer) s.hoaDonCho[0], tien((Double) s.hoaDonCho[1]));
+        view.setHoaDonCho((Integer) s.hoaDonCho[0], tien((Double) s.hoaDonCho[1]) + " công nợ");
 
         double tong = s.tyTrong[0] + s.tyTrong[1];
         view.setTyTrong("Tỷ trọng doanh thu - Tháng " + thang, s.tyTrong[0], s.tyTrong[1],

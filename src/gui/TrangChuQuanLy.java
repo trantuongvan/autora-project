@@ -73,6 +73,8 @@ public class TrangChuQuanLy extends JPanel {
     private final JTable tblTonKho = new JTable(modelTonKho);
     private final JLabel lblKhongCanhBao = UIComponents.label("Không có phụ tùng dưới ngưỡng.", UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
 
+    private TrangChuQuanLyController controller;
+
     public TrangChuQuanLy() {
         setLayout(new BorderLayout());
         setBackground(UIConstants.APP_BG);
@@ -97,7 +99,7 @@ public class TrangChuQuanLy extends JPanel {
     /** Điểm tạo View theo chuẩn nhóm. */
     public static JPanel createPanel(DieuHuongPhieu dieuHuong) {
         TrangChuQuanLy panel = new TrangChuQuanLy();
-        new TrangChuQuanLyController(panel, dieuHuong);
+        panel.controller = new TrangChuQuanLyController(panel, dieuHuong);
         return panel;
     }
 
@@ -418,5 +420,6 @@ public class TrangChuQuanLy extends JPanel {
     public JButton getBtnTiepNhan() { return btnTiepNhan; }
     public JButton getBtnBaoCao() { return btnBaoCao; }
     public DefaultTableModel getModelDoanhThu() { return modelDoanhThu; }
+    public TrangChuQuanLyController getController() { return controller; }
     public DefaultTableModel getModelTonKho() { return modelTonKho; }
 }

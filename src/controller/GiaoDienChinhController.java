@@ -105,6 +105,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     private QLTiepNhanSuaChua manHinhTiepNhan;
     private QLPhieuSuaChua manHinhPhieu;
     private JPanel manHinhChiTiet;
+    private TrangChuQuanLy manHinhQuanLy;
     private QLHoaDon manHinhHoaDon;
     private JPanel manHinhChiTietHoaDon;
 
@@ -115,7 +116,10 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
 
     private void initController() {
         // Màn hình chưa có ở đây sẽ hiện thông báo tạm; thành viên khác chỉ cần thêm một dòng nhaMay.put.
-        nhaMay.put("TRANG_CHU_QL", () -> TrangChuQuanLy.createPanel(this));
+        nhaMay.put("TRANG_CHU_QL", () -> {
+            manHinhQuanLy = (TrangChuQuanLy) TrangChuQuanLy.createPanel(this);
+            return manHinhQuanLy;
+        });
         nhaMay.put("TRANG_CHU_LT", this::taoTrangChuLeTan);
         nhaMay.put("QL_HO_SO_XE", QLHoSoXe::createPanel);
         nhaMay.put(CARD_TIEP_NHAN, () -> {
@@ -208,6 +212,9 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
 
     private void lamMoiManHinh(String card) {
         switch (card) {
+            case "TRANG_CHU_QL":
+                manHinhQuanLy.getController().taiDuLieu();
+                break;
             case "TRANG_CHU_KTV":
                 if (TrangChuKyThuatVien.getActiveController() != null) {
                     TrangChuKyThuatVien.getActiveController().loadData();
