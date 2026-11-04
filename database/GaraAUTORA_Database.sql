@@ -149,6 +149,19 @@ CREATE TABLE Xe (
 );
 GO
 
+-- 2.3. Bảng Lịch hẹn (xóa khách thì xóa lịch hẹn; xóa xe thì lịch hẹn còn lại nhưng không gắn xe)
+CREATE TABLE LichHen (
+    maLichHen VARCHAR(20) PRIMARY KEY, -- LH00001
+    thoiGianHen DATETIME NOT NULL,
+    ghiChu NVARCHAR(255) NULL,
+    trangThai NVARCHAR(30) NOT NULL DEFAULT N'Đang hẹn', -- 'Đang hẹn', 'Đã đến', 'Đã hủy'
+    maKH VARCHAR(20) NOT NULL,
+    bienSo VARCHAR(20) NULL,
+    CONSTRAINT FK_LichHen_KhachHang FOREIGN KEY (maKH) REFERENCES KhachHang(maKH) ON DELETE CASCADE,
+    CONSTRAINT FK_LichHen_Xe FOREIGN KEY (bienSo) REFERENCES Xe(bienSo) ON DELETE SET NULL
+);
+GO
+
 -- ==============================================================
 -- 3. TẠO CÁC BẢNG NGHIỆP VỤ CHÍNH
 -- ==============================================================
@@ -439,6 +452,13 @@ GO
 -- 5.11. Thêm Phiếu bàn giao xe mẫu (cho PTNSC00001)
 INSERT INTO PhieuBanGiao (maPhieuBG, maPhieuTNSC, maNV_BanGiao, ngayBanGiao, xacNhanHoanTat, xacNhanThanhToan, chuKyKhachHang) VALUES
 ('PBG00001', 'PTNSC00001', 'NV0002', '2026-10-20 17:00:00', 1, 1, N'Phạm Minh Hoàng');
+GO
+
+-- 5.12. Thêm Lịch hẹn mẫu (tính theo ngày chạy script; khách và xe không có phiếu đang mở)
+INSERT INTO LichHen (maLichHen, thoiGianHen, ghiChu, trangThai, maKH, bienSo) VALUES
+('LH00001', DATEADD(HOUR, 15, CAST(CAST(GETDATE() AS DATE) AS DATETIME)), N'Bảo dưỡng định kỳ', N'Đang hẹn', 'KH0001', '51K-888.88'),
+('LH00002', DATEADD(HOUR, 9, DATEADD(DAY, 3, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Kiểm tra điều hòa', N'Đang hẹn', 'KH0003', '60A-456.78'),
+('LH00003', DATEADD(HOUR, 14, DATEADD(DAY, 7, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Thay lốp', N'Đang hẹn', 'KH0001', NULL);
 GO
 
 PRINT N'==============================================================';

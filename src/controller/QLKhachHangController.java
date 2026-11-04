@@ -1,10 +1,15 @@
 package controller;
 
 import dao.KhachHang_Dao;
+import dao.LichHen_Dao;
 import entity.KhachHang;
+import entity.LichHen;
 import entity.LoaiKhachHang;
+import entity.TrangThaiLichHen;
 import entity.Xe;
+import gui.LichHenFormDialog;
 import gui.QLKhachHang;
+import util.ChonNgay;
 import util.UIComponents;
 
 import javax.swing.*;
@@ -17,6 +22,7 @@ import java.awt.event.MouseEvent;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.text.NumberFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,12 +39,16 @@ public class QLKhachHangController {
 
     private final QLKhachHang view;
     private final KhachHang_Dao dao = new KhachHang_Dao();
+    private final LichHen_Dao lichHenDao = new LichHen_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     /** Dữ liệu đầy đủ của từng dòng trong bảng, cùng thứ tự với bảng. */
     private List<KhachHang> dongHienTai = new ArrayList<>();
+    /** Lịch hẹn của khách đang chọn, cùng thứ tự với bảng lịch hẹn. */
+    private List<LichHen> lichHenHienTai = new ArrayList<>();
     private String maDangSua;
     private int phienBanDanhSach;
     private int phienBanLienKet;
+    private int phienBanLichHen;
 
     public QLKhachHangController(QLKhachHang view) {
         this.view = view;
@@ -55,6 +65,14 @@ public class QLKhachHangController {
         });
         view.getCboLocLoai().addActionListener(e -> taiDanhSach());
         view.getCboLocGhiNo().addActionListener(e -> taiDanhSach());
+        view.getCboLocLichHen().addActionListener(e -> taiDanhSach());
+        view.getBtnThemLichHen().addActionListener(e -> themLichHen());
+        view.getBtnHuyLichHen().addActionListener(e -> huyLichHen());
+        view.getTblLichHen().getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                capNhatNutLichHen();
+            }
+        });
         view.getBtnTim().addActionListener(e -> taiDanhSach());
         view.getBtnThem().addActionListener(e -> {
             moFormThem();
@@ -110,12 +128,14 @@ public class QLKhachHangController {
         Object loai = view.getCboLocLoai().getSelectedItem();
         String ghiNo = String.valueOf(view.getCboLocGhiNo().getSelectedItem());
         LoaiKhachHang locLoai = loai instanceof LoaiKhachHang ? (LoaiKhachHang) loai : null;
+        Object lich = view.getCboLocLichHen().getSelectedItem();
+        Boolean locLichHen = QLKhachHang.TAT_CA.equals(lich) ? null : Boolean.valueOf(QLKhachHang.CO_LICH_HEN.equals(lich));
         Boolean locGhiNo = QLKhachHang.TAT_CA.equals(ghiNo) ? null : Boolean.valueOf(QLKhachHang.DUOC_PHEP.equals(ghiNo));
         int phienBan = ++phienBanDanhSach;
         new SwingWorker<List<KhachHang>, Void>() {
             @Override
             protected List<KhachHang> doInBackground() throws Exception {
-                return dao.search(tuKhoa, locLoai, locGhiNo);
+                return dao.search(tuKhoa, locLoai, locGhiNo, locLichHen);
             }
 
             @Override
@@ -142,7 +162,9 @@ public class QLKhachHangController {
             String xe = r.getDanhSachXe().stream().map(Xe::getBienSo).collect(Collectors.joining(", "));
             dong.add(new Object[] {r.getMaKH(), r.getHoTen(), r.getSoDienThoai(), diaChi(r),
                 emailVaMaSoThue(r.getEmail(), r.getMaSoThue()), r.getLoaiKhachHang(),
-                r.isDuocGhiNo() ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG, xe.isEmpty() ? KHONG_CO : xe, ""});
+                r.isDuocGhiNo() ? QLKhachHang.DUOC_PHEP : QLKhachHang.KHONG, xe.isEmpty() ? KHONG_CO : xe,
+                r.getLichHenGanNhat() == null ? KHONG_CO : r.getLichHenGanNhat().getThoiGianHen().format(ChonNgay.NGAY_GIO),
+                ""});
         }
         view.setDanhSach(dong);
         for (int i = 0; i < danhSach.size(); i++) {
@@ -170,6 +192,7 @@ public class QLKhachHangController {
     }
 
     private void taiLienKet() {
+        taiLichHen();
         String ma = maDongChon();
         int phienBan = ++phienBanLienKet;
         if (ma == null) {
@@ -206,6 +229,133 @@ public class QLKhachHangController {
                 }
             }
         }.execute();
+    }
+
+    private void taiLichHen() {
+        String ma = maDongChon();
+        int phienBan = ++phienBanLichHen;
+        if (ma == null) {
+            hienLichHen(new ArrayList<>());
+            return;
+        }
+        new SwingWorker<List<LichHen>, Void>() {
+            @Override
+            protected List<LichHen> doInBackground() throws Exception {
+                return lichHenDao.findByKhachHang(ma);
+            }
+
+            @Override
+            protected void done() {
+                if (phienBan != phienBanLichHen) {
+                    return;
+                }
+                try {
+                    hienLichHen(get());
+                } catch (Exception ex) {
+                    hienLichHen(new ArrayList<>());
+                    baoLoi("Không thể tải lịch hẹn.", ex);
+                }
+            }
+        }.execute();
+    }
+
+    private void hienLichHen(List<LichHen> danhSach) {
+        lichHenHienTai = danhSach;
+        List<Object[]> dong = new ArrayList<>();
+        for (LichHen lh : danhSach) {
+            dong.add(new Object[] {lh.getThoiGianHen().format(ChonNgay.NGAY_GIO),
+                lh.getXe() == null ? KHONG_CO : lh.getXe().toString(),
+                lh.getGhiChu().isEmpty() ? KHONG_CO : lh.getGhiChu(), trangThaiHienThi(lh)});
+        }
+        view.setLichHen(dong);
+        capNhatNutLichHen();
+    }
+
+    /** Đang hẹn mà ngày hẹn đã qua hiện là Quá hẹn (chỉ để hiển thị, không lưu vào CSDL). */
+    private static String trangThaiHienThi(LichHen lh) {
+        boolean quaHen = lh.getTrangThai() == TrangThaiLichHen.DANG_HEN
+                && lh.getThoiGianHen().toLocalDate().isBefore(LocalDate.now());
+        return quaHen ? QLKhachHang.QUA_HEN : lh.getTrangThai().getText();
+    }
+
+    private void capNhatNutLichHen() {
+        int dong = view.getTblLichHen().getSelectedRow();
+        view.getBtnThemLichHen().setEnabled(maDongChon() != null);
+        view.getBtnHuyLichHen().setEnabled(dong >= 0 && dong < lichHenHienTai.size()
+                && lichHenHienTai.get(dong).getTrangThai() == TrangThaiLichHen.DANG_HEN);
+    }
+
+    private void themLichHen() {
+        int dongChon = view.getTblDanhSach().getSelectedRow();
+        if (maDongChon() == null) {
+            JOptionPane.showMessageDialog(view, "Vui lòng chọn một khách hàng trước.", "Thêm lịch hẹn",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        KhachHang khach = dongHienTai.get(dongChon);
+        List<Xe> xeCuaKhach;
+        try {
+            xeCuaKhach = dao.xeLienKet(khach.getMaKH());
+        } catch (SQLException ex) {
+            baoLoi("Không thể tải xe của khách hàng.", ex);
+            return;
+        }
+        LichHenFormDialog hop = new LichHenFormDialog(SwingUtilities.getWindowAncestor(view), khach.getHoTen(), xeCuaKhach);
+        hop.getBtnLuu().addActionListener(e -> {
+            String gio = hop.getTxtThoiGian().getText().trim();
+            if (gio.isEmpty()) {
+                hop.hienLoi("Vui lòng chọn ngày giờ hẹn!");
+                return;
+            }
+            try {
+                LichHen lh = new LichHen();
+                lh.setKhachHang(khach);
+                lh.setXe((Xe) hop.getCboXe().getSelectedItem());
+                lh.setThoiGianHen(LocalDateTime.parse(gio, ChonNgay.NGAY_GIO));
+                lh.setGhiChu(hop.getTxtGhiChu().getText());
+                lichHenDao.insert(lh);
+            } catch (IllegalArgumentException ex) {
+                hop.hienLoi(ex.getMessage());
+                return;
+            } catch (java.time.format.DateTimeParseException ex) {
+                hop.hienLoi("Ngày giờ hẹn không hợp lệ!");
+                return;
+            } catch (SQLException ex) {
+                hop.hienLoi("Không thể lưu lịch hẹn: " + ex.getMessage());
+                return;
+            }
+            hop.dispose();
+            taiLichHen();
+            taiDanhSach();
+        });
+        hop.setVisible(true);
+    }
+
+    private void huyLichHen() {
+        int dong = view.getTblLichHen().getSelectedRow();
+        if (dong < 0 || dong >= lichHenHienTai.size()) {
+            JOptionPane.showMessageDialog(view, "Vui lòng chọn một lịch hẹn trước.", "Hủy lịch hẹn",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        LichHen lh = lichHenHienTai.get(dong);
+        int chon = JOptionPane.showConfirmDialog(view,
+                "Hủy lịch hẹn lúc " + lh.getThoiGianHen().format(ChonNgay.NGAY_GIO) + "?", "Xác nhận hủy",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (chon != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            if (!lichHenDao.huy(lh.getMaLichHen())) {
+                JOptionPane.showMessageDialog(view, "Chỉ hủy được lịch hẹn đang ở trạng thái Đang hẹn.",
+                        "Không thể hủy", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (SQLException ex) {
+            baoLoi("Không thể hủy lịch hẹn.", ex);
+            return;
+        }
+        taiLichHen();
+        taiDanhSach();
     }
 
     private List<Object[]> thanhDongLichSu(List<Object[]> lichSu) {

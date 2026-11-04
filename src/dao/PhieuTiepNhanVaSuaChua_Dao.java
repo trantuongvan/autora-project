@@ -156,6 +156,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                     phieu.setNhanVienPhuTrach(phanCong.getPhuTrach());
                 }
                 insert(connection, phieu);
+                LichHen_Dao.danhDauDaDen(connection, phieu.getXe().getBienSo());
                 insertDichVu(connection, phieu.getMaPhieuTNSC(), dichVu, phanCong);
                 connection.commit();
                 return phanCong;

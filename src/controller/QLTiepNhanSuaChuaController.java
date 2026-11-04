@@ -150,6 +150,13 @@ public class QLTiepNhanSuaChuaController {
         }
     }
 
+    /** Mở form mới, điền ô tra cứu bằng biển số hoặc SĐT rồi tra cứu ngay (dùng khi mở từ lịch hẹn). */
+    public void traCuuTheo(String tuKhoa) {
+        moFormMoi();
+        view.getTxtTraCuu().setText(tuKhoa);
+        traCuu();
+    }
+
     private void traCuu() {
         String nhap = view.getTxtTraCuu().getText().trim().toUpperCase(Locale.ROOT);
         if (nhap.isEmpty()) {

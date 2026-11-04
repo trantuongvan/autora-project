@@ -107,6 +107,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     private QLPhieuSuaChua manHinhPhieu;
     private JPanel manHinhChiTiet;
     private TrangChuQuanLy manHinhQuanLy;
+    private TrangChuLeTan manHinhLeTan;
     private QLHoaDon manHinhHoaDon;
     private JPanel manHinhChiTietHoaDon;
 
@@ -185,6 +186,13 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         TrangChuLeTan panel = (TrangChuLeTan) TrangChuLeTan.createPanel();
         panel.setTenNguoiDung(PhienDangNhap.getHienTai().getHoTen());
         panel.setDieuHuongListener((card, maPhieu) -> moManHinh(card));
+        panel.getController().setMoTiepNhan(tuKhoa -> {
+            moManHinh(CARD_TIEP_NHAN);
+            if (manHinhTiepNhan != null) {
+                manHinhTiepNhan.getController().traCuuTheo(tuKhoa);
+            }
+        });
+        manHinhLeTan = panel;
         return panel;
     }
 
@@ -215,6 +223,9 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         switch (card) {
             case "TRANG_CHU_QL":
                 manHinhQuanLy.getController().taiDuLieu();
+                break;
+            case "TRANG_CHU_LT":
+                manHinhLeTan.getController().load();
                 break;
             case "TRANG_CHU_KTV":
                 if (TrangChuKyThuatVien.getActiveController() != null) {
