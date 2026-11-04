@@ -212,8 +212,7 @@ public class QLTiepNhanSuaChuaController {
         if (xe != null) {
             view.getTxtBienSo().setText(xe.getBienSo());
             view.getTxtSoKhung().setText(xe.getSoVIN());
-            view.getTxtHangXe().setText(xe.getHangXe());
-            view.getTxtDongXe().setText(xe.getDongXe());
+            view.setHangDongXe(xe.getHangXe(), xe.getDongXe());
             view.getTxtDoiXe().setText(xe.getDoiXe() == null ? "" : xe.getDoiXe().toString());
             view.getTxtMauSon().setText(xe.getMauSon());
         }
@@ -259,7 +258,7 @@ public class QLTiepNhanSuaChuaController {
         p.setTaiSanTrenXe(batBuoc(view.getTxtTaiSan().getText(), "Tài sản trên xe"));
         p.setGhiChu(view.getTxtGhiChu().getText());
         p.setYeuCauBanDau(batBuoc(view.getTxtYeuCau().getText(), "Yêu cầu của khách"));
-        p.setPhuTungDuKien(batBuoc(view.getTxtPhuTungDuKien().getText(), "Phụ tùng dự kiến thay thế"));
+        p.setPhuTungDuKien(view.getTxtPhuTungDuKien().getText());
         p.setUuTien(view.getRadKhan().isSelected() ? MucUuTien.KHAN : MucUuTien.THUONG);
         // Phiếu mới chưa tự chọn ngày thì để DAO tính lại, không lấy bản xem trước đã cũ.
         p.setThoiGianDuKien(phieuDangSua == null && !datTay ? null : docDuKien(view.getTxtDuKien().getText()));
@@ -347,8 +346,8 @@ public class QLTiepNhanSuaChuaController {
         Xe xe = new Xe();
         xe.setBienSo(bienSo);
         xe.setSoVIN(soVin);
-        xe.setHangXe(view.getTxtHangXe().getText());
-        xe.setDongXe(batBuoc(view.getTxtDongXe().getText(), "Dòng xe"));
+        xe.setHangXe(view.getHangXe());
+        xe.setDongXe(batBuoc(view.getDongXe(), "Dòng xe"));
         xe.setDoiXe(Integer.valueOf(view.getTxtDoiXe().getText().trim()));
         xe.setMauSon(batBuoc(view.getTxtMauSon().getText(), "Màu sơn"));
         return xe;
