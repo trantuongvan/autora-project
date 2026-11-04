@@ -156,7 +156,7 @@ public class QLPhieuSuaChuaController {
     private List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> danhSach) {
         List<Object[]> dong = new ArrayList<>();
         for (PhieuTiepNhanVaSuaChua p : danhSach) {
-            dong.add(new Object[] {p.getMaPhieuTNSC(), p.getBienSo(), p.getTenKhachHang(), p.getThongTinXe(),
+            dong.add(new Object[] {p.getMaPhieuTNSC(), p.getXe().getBienSo(), p.getXe().getKhachHang().getHoTen(), p.getTenXe(),
                 p.getThoiGianTiepNhan() == null ? "—" : p.getThoiGianTiepNhan().format(DINH_DANG_GIO),
                 p.getUuTien(), p.getTrangThai(), ""});
         }

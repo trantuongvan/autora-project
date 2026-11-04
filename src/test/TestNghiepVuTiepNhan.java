@@ -17,6 +17,7 @@ import entity.KhachHang;
 import entity.KhuyenMai;
 import entity.LoaiKhachHang;
 import entity.MucUuTien;
+import entity.NhanVien;
 import entity.PhamViKhuyenMai;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
@@ -112,8 +113,8 @@ public class TestNghiepVuTiepNhan {
         loi("Trạng thái lạ", () -> p.setTrangThai(TrangThaiPhieu.fromDb("Đã xóa")));
         LocalDateTime gio = LocalDateTime.of(2026, 1, 1, 8, 0);
         PhieuTiepNhanVaSuaChua q = new PhieuTiepNhanVaSuaChua("P2");
-        q.setBienSo("51H-123.45");
-        q.setMaNVLapPhieu("NV0002");
+        q.setXe(new Xe("51H-123.45"));
+        q.setNhanVienLap(new NhanVien("NV0002"));
         q.setThoiGianTiepNhan(gio);
         q.setThoiGianDuKien(gio.minusMinutes(1));
         loi("Dự kiến trước tiếp nhận", q::kiemTraHopLe);
@@ -228,8 +229,11 @@ public class TestNghiepVuTiepNhan {
         dung("Hoàn tác khách khi lỗi bước cuối", dao.findKhachTheoSdt("0911000003") == null);
         dung("Hoàn tác xe khi lỗi bước cuối", dao.findXeDayDu("59A-333.33") == null);
 
+        dung("Phiếu chưa phân công có KTV phụ trách null", dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach() == null);
         dung("Lưu phân công", dao.capNhatPhanCong(p.getMaPhieuTNSC(), "NV0005", "Kiểm tra lại")
-                && "NV0005".equals(dao.findById(p.getMaPhieuTNSC()).getMaNVPhuTrach()));
+                && dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach() != null
+                && "NV0005".equals(dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach().getMaNV())
+                && dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach().getHoTen() != null);
         dung("Phiếu khóa không lưu phân công", !dao.capNhatPhanCong("PTNSC00001", "NV0005", "x"));
         dung("Bước phiếu đã có hóa đơn", dao.buocHienTai("PTNSC00001") == 4);
         dung("Bước phiếu mới", dao.buocHienTai(p.getMaPhieuTNSC()) == 2);
@@ -250,9 +254,12 @@ public class TestNghiepVuTiepNhan {
             java.io.File pdf = java.io.File.createTempFile("autora", ".pdf");
             PhieuTiepNhanVaSuaChua p = phieuMau("59A-111.11");
             p.setMaPhieuTNSC("PTNSC00009");
-            p.setTenKhachHang("Nguyễn Văn Thử");
+            Xe xePdf = new Xe("59A-111.11");
+            xePdf.setKhachHang(khachMau("0911000009"));
+            p.setXe(xePdf);
             ChiTietSuaChua_DichVu d = dong(TrangThaiTienDo.CHO_SUA);
             d.setTienCongThucTe(150000);
+            d.setDichVu(new DichVu("DV0001"));
             PdfExporter.xuatPhieuSuaChua(pdf, p, Arrays.asList(d));
             String chu = com.itextpdf.text.pdf.parser.PdfTextExtractor.getTextFromPage(new com.itextpdf.text.pdf.PdfReader(pdf.getAbsolutePath()), 1);
             dung("PDF có tiếng Việt và mã phiếu", chu.contains("PTNSC00009") && chu.contains("Nguyễn Văn Thử"));
@@ -275,8 +282,8 @@ public class TestNghiepVuTiepNhan {
 
     private static ChiTietSuaChua_DichVu dongMoi(String ma, String maDichVu) {
         ChiTietSuaChua_DichVu d = dong(TrangThaiTienDo.CHO_SUA);
-        d.setMaPhieuTNSC(ma);
-        d.setMaDichVu(maDichVu);
+        d.setPhieu(new PhieuTiepNhanVaSuaChua(ma));
+        d.setDichVu(new DichVu(maDichVu));
         return d;
     }
 
@@ -303,8 +310,8 @@ public class TestNghiepVuTiepNhan {
 
     private static PhieuTiepNhanVaSuaChua phieuMau(String bienSo) {
         PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
-        p.setBienSo(bienSo);
-        p.setMaNVLapPhieu("NV0003");
+        p.setXe(new Xe(bienSo));
+        p.setNhanVienLap(new NhanVien("NV0003"));
         p.setYeuCauBanDau("Kiểm tra");
         p.setSoKm(100);
         p.setMucNhienLieu(50);
@@ -360,8 +367,8 @@ public class TestNghiepVuTiepNhan {
         dung("Không đổi trạng thái phiếu khóa", !dao.capNhatTrangThai(maKhoa, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA));
         dung("Không xóa phiếu có hóa đơn", !dao.huy(maKhoa, "admin"));
         ChiTietSuaChua_DichVu dongKhoa = dong(TrangThaiTienDo.CHO_SUA);
-        dongKhoa.setMaPhieuTNSC(maKhoa);
-        dongKhoa.setMaDichVu("DV0006");
+        dongKhoa.setPhieu(new PhieuTiepNhanVaSuaChua(maKhoa));
+        dongKhoa.setDichVu(new DichVu("DV0006"));
         dung("Không thêm dòng vào phiếu khóa", !chiTietDao.insert(dongKhoa));
         dung("Không xóa dòng phiếu khóa", !chiTietDao.delete(maKhoa, "DV0001"));
 
@@ -369,8 +376,8 @@ public class TestNghiepVuTiepNhan {
         String ma = dao.nextId();
         dung("Sinh mã phiếu kế tiếp", "PTNSC00003".equals(ma));
         PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua(ma);
-        p.setBienSo("60A-456.78");
-        p.setMaNVLapPhieu("NV0003");
+        p.setXe(new Xe("60A-456.78"));
+        p.setNhanVienLap(new NhanVien("NV0003"));
         p.setYeuCauBanDau("Thay nhớt và kiểm tra tiếng ồn");
         p.setSoKm(1000);
         p.setMucNhienLieu(40);
@@ -379,18 +386,25 @@ public class TestNghiepVuTiepNhan {
         dung("Thêm phiếu", dao.insert(p));
         PhieuTiepNhanVaSuaChua doc = dao.findById(ma);
         dung("Đọc lại tiếng Việt nguyên vẹn", doc != null && p.getYeuCauBanDau().equals(doc.getYeuCauBanDau()));
+        dung("Phiếu đọc lại có xe, chủ xe và nhân viên lập", doc.getXe() != null
+                && "60A-456.78".equals(doc.getXe().getBienSo()) && doc.getXe().getHangXe() != null
+                && doc.getXe().getKhachHang() != null && "0966333444".equals(doc.getXe().getKhachHang().getSoDienThoai())
+                && doc.getXe().getKhachHang().getHoTen() != null
+                && doc.getNhanVienLap() != null && "NV0003".equals(doc.getNhanVienLap().getMaNV())
+                && doc.getNhanVienLap().getHoTen() != null);
 
         ChiTietSuaChua_DichVu d = dong(TrangThaiTienDo.CHO_SUA);
-        d.setMaPhieuTNSC(ma);
-        d.setMaDichVu("DV0002");
-        d.setMaNVKyThuat("NV0005");
+        d.setPhieu(new PhieuTiepNhanVaSuaChua(ma));
+        d.setDichVu(new DichVu("DV0002"));
+        d.setKyThuatVien(new NhanVien("NV0005"));
         d.setTienCongThucTe(150000);
         dung("Chỉ định thợ", chiTietDao.insert(d));
-        d.setMaNVKyThuat(null);
+        d.setKyThuatVien(null);
         d.setTienCongThucTe(200000);
         dung("Bỏ chỉ định và đổi tiền công", chiTietDao.update(d));
         List<ChiTietSuaChua_DichVu> ds = chiTietDao.findByPhieu(ma);
-        dung("Đọc dòng dịch vụ", ds.size() == 1 && ds.get(0).getMaNVKyThuat() == null && ds.get(0).getTienCongThucTe() == 200000);
+        dung("Đọc dòng dịch vụ", ds.size() == 1 && ds.get(0).getKyThuatVien() == null && ds.get(0).getTienCongThucTe() == 200000
+                && ds.get(0).getDichVu().getTenDichVu() != null);
         dung("Đổi trạng thái phiếu", dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA));
         dung("Không bỏ qua luồng trạng thái", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH));
         dung("Trạng thái cũ phải khớp", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.CHO_PHU_TUNG));

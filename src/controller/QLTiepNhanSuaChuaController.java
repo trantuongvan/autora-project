@@ -6,6 +6,7 @@ import entity.DichVu;
 import entity.KhachHang;
 import entity.LoaiKhachHang;
 import entity.MucUuTien;
+import entity.NhanVien;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
@@ -100,8 +101,8 @@ public class QLTiepNhanSuaChuaController {
             moFormMoi();
             phieuDangSua = p;
             view.setCheDoSua(true);
-            dienXe(dao.findXeDayDu(p.getBienSo()));
-            dienKhach(dao.findKhachTheoSdt(p.getSdtKhachHang()));
+            dienXe(dao.findXeDayDu(p.getXe().getBienSo()));
+            dienKhach(dao.findKhachTheoSdt(p.getXe().getKhachHang().getSoDienThoai()));
             view.getTxtSoKm().setText(String.valueOf(p.getSoKm()));
             view.getSldNhienLieu().setValue((int) Math.round(p.getMucNhienLieu()));
             view.getTxtNgoaiThat().setText(p.getTrayXuoc());
@@ -258,8 +259,8 @@ public class QLTiepNhanSuaChuaController {
             }
         }
 
-        p.setBienSo(bienSo);
-        p.setMaNVLapPhieu(PhienDangNhap.getHienTai().getMaNV());
+        p.setXe(xeDaCo ? new Xe(bienSo) : xeMoi);
+        p.setNhanVienLap(new NhanVien(PhienDangNhap.getHienTai().getMaNV()));
         p.setThoiGianTiepNhan(LocalDateTime.now());
         p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
         dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu);

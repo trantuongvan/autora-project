@@ -4,6 +4,7 @@ import dao.HoaDon_Dao;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.PhienDangNhap;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiHoaDon;
 import gui.QLHoaDon;
 import util.UIComponents;
@@ -146,7 +147,8 @@ public class QLHoaDonController {
         DateTimeFormatter ngay = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         List<Object[]> dong = new ArrayList<>();
         for (HoaDon h : danhSach) {
-            dong.add(new Object[] {h.getMaHD(), h.getMaPhieuTNSC(), h.getTenKhachHang(), h.getBienSo(),
+            dong.add(new Object[] {h.getMaHD(), h.getPhieu().getMaPhieuTNSC(), h.getPhieu().getXe().getKhachHang().getHoTen(),
+                h.getPhieu().getXe().getBienSo(),
                 h.getNgayLap() == null ? "—" : h.getNgayLap().format(ngay),
                 tien(h.getTongTienCong()), tien(h.getTongTienPhuTung()), tien(h.getTongTienGiam()),
                 tien(h.getTongTienVAT()), tien(h.getTongThanhToan()),
@@ -160,7 +162,7 @@ public class QLHoaDonController {
     }
 
     private void chonPhieuLapHoaDon() {
-        List<String[]> phieu;
+        List<PhieuTiepNhanVaSuaChua> phieu;
         try {
             phieu = dao.findPhieuChoLap();
         } catch (SQLException ex) {
@@ -175,12 +177,13 @@ public class QLHoaDonController {
         }
         String[] luaChon = new String[phieu.size()];
         for (int i = 0; i < luaChon.length; i++) {
-            luaChon[i] = phieu.get(i)[0] + " — " + phieu.get(i)[1] + " — " + phieu.get(i)[2];
+            luaChon[i] = phieu.get(i).getMaPhieuTNSC() + " — " + phieu.get(i).getXe().getBienSo() + " — "
+                    + phieu.get(i).getXe().getKhachHang().getHoTen();
         }
         Object chon = JOptionPane.showInputDialog(view, "Chọn phiếu đã hoàn thành:", "Lập hóa đơn",
                 JOptionPane.PLAIN_MESSAGE, null, luaChon, luaChon[0]);
         if (chon != null) {
-            dieuHuong.moLapHoaDon(phieu.get(java.util.Arrays.asList(luaChon).indexOf(chon))[0]);
+            dieuHuong.moLapHoaDon(phieu.get(java.util.Arrays.asList(luaChon).indexOf(chon)).getMaPhieuTNSC());
         }
     }
 

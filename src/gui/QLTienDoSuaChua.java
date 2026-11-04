@@ -646,7 +646,7 @@ public class QLTienDoSuaChua extends JPanel {
 
         JPanel left = UIComponents.trong(new GridLayout(2, 1, 0, 4));
         JLabel lblMa = UIComponents.label(phieu.getMaPhieuTNSC(), UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK);
-        String moTaXe = phieu.getBienSo() + " • " + phieu.getThongTinXeNgan();
+        String moTaXe = phieu.getXe().getBienSo() + " • " + phieu.getThongTinXeNgan();
         JLabel lblXe = UIComponents.label(moTaXe, UIConstants.FONT_BODY.deriveFont(12.5f), UIConstants.TEXT_MUTED);
         left.add(lblMa);
         left.add(lblXe);

@@ -183,7 +183,7 @@ public class TrangChuKyThuatVienController {
 
             view.getTableModel().addRow(new Object[]{
                     p.getMaPhieuTNSC(),
-                    p.getBienSo(),
+                    p.getXe().getBienSo(),
                     p.getThongTinXeNgan(),
                     p.getTomTatHangMuc(),
                     nhanTrangThai,

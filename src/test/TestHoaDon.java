@@ -12,6 +12,7 @@ import entity.HinhThucKhuyenMai;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.KhuyenMai;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhamViKhuyenMai;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
@@ -148,6 +149,8 @@ public class TestHoaDon {
         String ma = dao.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, 108000.0, "NV0002");
         kiem("Tiền mặt vừa đủ được nhận", ma.matches("HD\\d{6}"));
         kiem("Tiền mặt thành Đã thanh toán", dao.findById(ma).getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN);
+        kiem("Hóa đơn không khuyến mãi có khuyến mãi null", dao.findById(ma).getKhuyenMai() == null
+                && dao.findById(ma).getThue() != null);
     }
 
     private static void kiemTraTonKho() throws Exception {
@@ -321,10 +324,27 @@ public class TestHoaDon {
         kiem("Dự đoán mã đúng dạng", dao.duDoanMaHD().matches("HD\\d{6}"));
 
         HoaDon hd = dao.findById("HD000001");
+        kiem("Hóa đơn đọc có phiếu, xe, khách, nhân viên và thuế", hd.getPhieu() != null
+                && "PTNSC00001".equals(hd.getPhieu().getMaPhieuTNSC())
+                && hd.getPhieu().getXe() != null && "51H-123.45".equals(hd.getPhieu().getXe().getBienSo())
+                && hd.getPhieu().getXe().getKhachHang() != null
+                && "Phạm Minh Hoàng".equals(hd.getPhieu().getXe().getKhachHang().getHoTen())
+                && hd.getNhanVienLap() != null && "NV0002".equals(hd.getNhanVienLap().getMaNV())
+                && hd.getNhanVienLap().getHoTen() != null
+                && hd.getKhuyenMai() != null && "KM0001".equals(hd.getKhuyenMai().getMaKM())
+                && hd.getThue() != null && "VAT08".equals(hd.getThue().getMaThue()) && hd.getThue().getThueSuat() == 8);
+        PhieuTiepNhanVaSuaChua phieuHd = dao.findThongTinPhieu(hd.getPhieu().getMaPhieuTNSC());
+        kiem("Phiếu của hóa đơn có xe và chủ xe", phieuHd.getXe().getKhachHang().getSoDienThoai().equals("0988111222")
+                && phieuHd.getXe().getHangXe() != null && phieuHd.getTrangThai() == TrangThaiPhieu.HOAN_THANH);
+        kiem("Dịch vụ và phụ tùng của hóa đơn đủ đối tượng", dao.findDichVu("PTNSC00001").size() == 3
+                && dao.findDichVu("PTNSC00001").get(0).getDichVu().getTenDichVu() != null
+                && dao.findPhuTung("PTNSC00001").size() == 2
+                && dao.findPhuTung("PTNSC00001").get(0).getPhuTung().getTenPhuTung() != null);
         File tep = File.createTempFile("hoadon", ".pdf");
         tep.deleteOnExit();
-        PdfExporter.xuatHoaDon(tep, hd, dao.findThongTinPhieu(hd.getMaPhieuTNSC()),
-                dao.findDichVu(hd.getMaPhieuTNSC()), dao.findPhuTung(hd.getMaPhieuTNSC()));
+        String maPhieuHd = hd.getPhieu().getMaPhieuTNSC();
+        PdfExporter.xuatHoaDon(tep, hd, dao.findThongTinPhieu(maPhieuHd),
+                dao.findDichVu(maPhieuHd), dao.findPhuTung(maPhieuHd));
         PdfReader doc = new PdfReader(tep.getPath());
         String chu = PdfTextExtractor.getTextFromPage(doc, 1);
         doc.close();
@@ -367,8 +387,8 @@ public class TestHoaDon {
     }
 
     private static boolean choLap(String maPhieu) throws SQLException {
-        for (String[] d : dao.findPhieuChoLap()) {
-            if (d[0].equals(maPhieu)) {
+        for (PhieuTiepNhanVaSuaChua d : dao.findPhieuChoLap()) {
+            if (d.getMaPhieuTNSC().equals(maPhieu)) {
                 return true;
             }
         }

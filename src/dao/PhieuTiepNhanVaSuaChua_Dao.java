@@ -4,6 +4,7 @@ import connection.ConnectDB;
 import entity.DichVu;
 import entity.KhachHang;
 import entity.MucUuTien;
+import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import entity.Xe;
@@ -18,19 +19,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PhieuTiepNhanVaSuaChua_Dao {
+    /** Các cột xe (bí danh x) và chủ xe (bí danh k) mà docXe đọc theo tên. */
+    static final String COT_XE = "x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, " + KhachHang_Dao.COT_KHACH_HANG;
+
     private static final String SELECT_JOIN =
             "SELECT p.maPhieuTNSC, p.yeuCauBanDau, p.soKm, p.mucNhienLieu, "
             + "p.trayXuoc, p.taiSanTrenXe, p.thoiGianTiepNhan, p.thoiGianDuKien, "
-            + "p.trangThai, p.bienSo, p.maNV_LapPhieu, p.danhGiaNoiThat, p.ghiChu, "
-            + "p.phuTungDuKien, p.ghiChuKyThuat, p.uuTien, p.maNV_PhuTrach, "
-            + "k.soDienThoai AS sdtKhachHang, "
-            + "k.hoTen AS tenKhachHang, "
-            + "x.hangXe + N' ' + COALESCE(x.dongXe, N'') AS thongTinXe, "
-            + "n.hoTen AS tenNVLapPhieu "
+            + "p.trangThai, p.danhGiaNoiThat, p.ghiChu, "
+            + "p.phuTungDuKien, p.ghiChuKyThuat, p.uuTien, "
+            + COT_XE + ", "
+            + NhanVien_Dao.cotNhanVien("n", "lap_") + ", "
+            + NhanVien_Dao.cotNhanVien("pt", "pt_") + " "
             + "FROM PhieuTiepNhanVaSuaChua p "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
             + "JOIN KhachHang k ON k.maKH = x.maKH "
-            + "JOIN NhanVien n ON n.maNV = p.maNV_LapPhieu ";
+            + "JOIN NhanVien n ON n.maNV = p.maNV_LapPhieu "
+            + "LEFT JOIN NhanVien pt ON pt.maNV = p.maNV_PhuTrach ";
 
     private static final String NOT_LOCKED =
             "NOT EXISTS (SELECT 1 FROM HoaDon h "
@@ -216,7 +220,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
 
     /** Trả về xe cùng chủ xe, hoặc null khi không có xe này. */
     public Xe findXeDayDu(String bienSo) throws SQLException {
-        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, " + KhachHang_Dao.COT_KHACH_HANG + " "
+        String sql = "SELECT " + COT_XE + " "
                 + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH WHERE x.bienSo = ?";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -289,8 +293,8 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 statement.setTimestamp(8, Timestamp.valueOf(phieu.getThoiGianDuKien()));
             }
             statement.setString(9, phieu.getTrangThai().getText());
-            statement.setString(10, phieu.getBienSo());
-            statement.setString(11, phieu.getMaNVLapPhieu());
+            statement.setString(10, phieu.getXe().getBienSo());
+            statement.setString(11, phieu.getNhanVienLap().getMaNV());
             statement.setString(12, phieu.getDanhGiaNoiThat());
             statement.setString(13, phieu.getGhiChu());
             statement.setString(14, phieu.getPhuTungDuKien());
@@ -402,8 +406,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
     }
 
     public Xe findXeVaChuXe(String bienSo) throws SQLException {
-        String sql = "SELECT x.bienSo, x.soVIN, x.hangXe, x.dongXe, x.doiXe, x.mauSon, "
-                + KhachHang_Dao.COT_KHACH_HANG + " "
+        String sql = "SELECT " + COT_XE + " "
                 + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH "
                 + "WHERE x.bienSo = ?";
         try (Connection connection = ConnectDB.getConnection();
@@ -418,7 +421,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    private static Xe docXe(ResultSet rs) throws SQLException {
+    static Xe docXe(ResultSet rs) throws SQLException {
         int doiXe = rs.getInt("doiXe");
         Integer nam = rs.wasNull() ? null : doiXe;
         return new Xe(rs.getString("bienSo"), rs.getString("soVIN"), rs.getString("hangXe"),
@@ -466,18 +469,14 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 tiepNhan == null ? null : tiepNhan.toLocalDateTime(),
                 duKien == null ? null : duKien.toLocalDateTime(),
                 TrangThaiPhieu.fromDb(rs.getString("trangThai")),
-                rs.getString("bienSo"),
-                rs.getString("maNV_LapPhieu"),
-                rs.getString("tenKhachHang"),
-                rs.getString("thongTinXe"),
-                rs.getString("tenNVLapPhieu"));
+                docXe(rs),
+                NhanVien_Dao.docNhanVien(rs, "lap_"));
         phieu.setDanhGiaNoiThat(rs.getString("danhGiaNoiThat"));
         phieu.setGhiChu(rs.getString("ghiChu"));
         phieu.setPhuTungDuKien(rs.getString("phuTungDuKien"));
         phieu.setGhiChuKyThuat(rs.getString("ghiChuKyThuat"));
         phieu.setUuTien(MucUuTien.fromDb(rs.getString("uuTien")));
-        phieu.setMaNVPhuTrach(rs.getString("maNV_PhuTrach"));
-        phieu.setSdtKhachHang(rs.getString("sdtKhachHang"));
+        phieu.setNhanVienPhuTrach(NhanVien_Dao.docNhanVien(rs, "pt_"));
         return phieu;
     }
 }

@@ -81,10 +81,10 @@ public class ChiTietPhieuSuaChuaController {
                 return;
             }
             taiDanhMuc();
-            view.getTxtBienSo().setText(phieu.getBienSo());
-            view.getTxtXe().setText(phieu.getThongTinXe());
-            view.getTxtKhachHang().setText(phieu.getTenKhachHang());
-            view.getTxtSoDienThoai().setText(phieu.getSdtKhachHang());
+            view.getTxtBienSo().setText(phieu.getXe().getBienSo());
+            view.getTxtXe().setText(phieu.getTenXe());
+            view.getTxtKhachHang().setText(phieu.getXe().getKhachHang().getHoTen());
+            view.getTxtSoDienThoai().setText(phieu.getXe().getKhachHang().getSoDienThoai());
             view.getTxtSoKm().setText(dinhDangTien.format(phieu.getSoKm()) + " km");
             view.getTxtPhuTungDuKien().setText(phieu.getPhuTungDuKien());
             view.getTxtGhiChuKyThuat().setText(phieu.getGhiChuKyThuat());
@@ -94,7 +94,7 @@ public class ChiTietPhieuSuaChuaController {
                 view.getCboTrangThai().addItem(TrangThaiPhieu.DA_HUY);
             }
             view.getCboTrangThai().setSelectedItem(phieu.getTrangThai());
-            view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getMaNVPhuTrach()));
+            view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getNhanVienPhuTrach()));
             view.getThanhTienTrinh().setHienTai(phieuDao.buocHienTai(maPhieu));
             hienDanhSach();
             view.setKhoa(phieuDao.isKhoa(maPhieu));
@@ -119,12 +119,12 @@ public class ChiTietPhieuSuaChuaController {
     }
 
     /** Tìm mục đúng trong danh sách thợ để bảng hiển thị họ tên thay vì chỉ mã. */
-    private Object thoHienThi(String maNV) {
-        if (maNV != null) {
+    private Object thoHienThi(NhanVien tho) {
+        if (tho != null) {
             JComboBox<Object> cbo = view.getCboThoTrongBang();
             for (int i = 0; i < cbo.getItemCount(); i++) {
                 Object muc = cbo.getItemAt(i);
-                if (muc instanceof NhanVien && maNV.equals(((NhanVien) muc).getMaNV())) {
+                if (muc instanceof NhanVien && tho.getMaNV().equals(((NhanVien) muc).getMaNV())) {
                     return muc;
                 }
             }
@@ -138,7 +138,7 @@ public class ChiTietPhieuSuaChuaController {
         double tong = 0;
         int stt = 1;
         for (ChiTietSuaChua_DichVu d : danhSach) {
-            view.getTableModel().addRow(new Object[] {stt++, d.getTenDichVu(), thoHienThi(d.getMaNVKyThuat()),
+            view.getTableModel().addRow(new Object[] {stt++, d.getDichVu().getTenDichVu(), thoHienThi(d.getKyThuatVien()),
                 d.getTrangThaiTienDo(), dinhDangTien.format(d.getTienCongThucTe())});
             tong += d.getTienCongThucTe();
         }
@@ -153,14 +153,14 @@ public class ChiTietPhieuSuaChuaController {
             return;
         }
         for (ChiTietSuaChua_DichVu d : danhSach) {
-            if (d.getMaDichVu().equals(dv.getMaDichVu())) {
+            if (d.getDichVu().equals(dv)) {
                 view.hienLoi("Dịch vụ này đã có trong phiếu.");
                 return;
             }
         }
         ChiTietSuaChua_DichVu moi = new ChiTietSuaChua_DichVu();
-        moi.setMaPhieuTNSC(maPhieu);
-        moi.setMaDichVu(dv.getMaDichVu());
+        moi.setPhieu(phieu);
+        moi.setDichVu(dv);
         moi.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
         moi.setTienCongThucTe(dv.getTienCong());
         ghi(() -> chiTietDao.insert(moi));
@@ -177,7 +177,7 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi("Không thể xóa dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> chiTietDao.delete(maPhieu, dang.getMaDichVu()));
+        ghi(() -> chiTietDao.delete(maPhieu, dang.getDichVu().getMaDichVu()));
     }
 
     private void luuPhanCong() {
@@ -188,7 +188,7 @@ public class ChiTietPhieuSuaChuaController {
             for (int i = 0; i < danhSach.size(); i++) {
                 ChiTietSuaChua_DichVu d = danhSach.get(i);
                 Object tho = view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO);
-                d.setMaNVKyThuat(tho instanceof NhanVien ? ((NhanVien) tho).getMaNV() : null);
+                d.setKyThuatVien(tho instanceof NhanVien ? (NhanVien) tho : null);
                 d.setTienCongThucTe(Double.parseDouble(
                         String.valueOf(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_TIEN_CONG))
                                 .replace(".", "").trim()));
