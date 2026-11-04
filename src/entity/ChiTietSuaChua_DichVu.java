@@ -3,87 +3,58 @@ package entity;
 import java.util.Objects;
 
 public class ChiTietSuaChua_DichVu {
-    private String maPhieuTNSC;
-    private String maDichVu;
-    private String tenDichVu;
-    private String maNVKyThuat;
-    private String tenKyThuatVien;
+    private PhieuTiepNhanVaSuaChua phieu;
+    private DichVu dichVu;
+    private NhanVien kyThuatVien;
     private TrangThaiTienDo trangThaiTienDo;
     private double tienCongThucTe;
 
     public ChiTietSuaChua_DichVu() {
     }
 
-    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu) {
-        setMaPhieuTNSC(maPhieuTNSC);
-        setMaDichVu(maDichVu);
+    public ChiTietSuaChua_DichVu(PhieuTiepNhanVaSuaChua phieu, DichVu dichVu) {
+        setPhieu(phieu);
+        setDichVu(dichVu);
     }
 
-    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
-            String maNVKyThuat, TrangThaiTienDo trangThaiTienDo, double tienCongThucTe) {
-        this(maPhieuTNSC, maDichVu, null, maNVKyThuat, null,
-                trangThaiTienDo, tienCongThucTe);
-    }
-
-    public ChiTietSuaChua_DichVu(String maPhieuTNSC, String maDichVu,
-            String tenDichVu, String maNVKyThuat, String tenKyThuatVien,
-            TrangThaiTienDo trangThaiTienDo, double tienCongThucTe) {
-        setMaPhieuTNSC(maPhieuTNSC);
-        setMaDichVu(maDichVu);
-        setTenDichVu(tenDichVu);
-        setMaNVKyThuat(maNVKyThuat);
-        setTenKyThuatVien(tenKyThuatVien);
+    public ChiTietSuaChua_DichVu(PhieuTiepNhanVaSuaChua phieu, DichVu dichVu,
+            NhanVien kyThuatVien, TrangThaiTienDo trangThaiTienDo, double tienCongThucTe) {
+        setPhieu(phieu);
+        setDichVu(dichVu);
+        setKyThuatVien(kyThuatVien);
         setTrangThaiTienDo(trangThaiTienDo);
         setTienCongThucTe(tienCongThucTe);
     }
 
-    public String getMaPhieuTNSC() {
-        return maPhieuTNSC;
+    public PhieuTiepNhanVaSuaChua getPhieu() {
+        return phieu;
     }
 
-    public void setMaPhieuTNSC(String maPhieuTNSC) {
-        if (maPhieuTNSC == null || maPhieuTNSC.trim().isEmpty()) {
+    public void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
+        if (phieu == null) {
             throw new IllegalArgumentException("Mã phiếu tiếp nhận không được để trống.");
         }
-        this.maPhieuTNSC = maPhieuTNSC.trim();
+        this.phieu = phieu;
     }
 
-    public String getMaDichVu() {
-        return maDichVu;
+    public DichVu getDichVu() {
+        return dichVu;
     }
 
-    public void setMaDichVu(String maDichVu) {
-        if (maDichVu == null || maDichVu.trim().isEmpty()) {
+    public void setDichVu(DichVu dichVu) {
+        if (dichVu == null) {
             throw new IllegalArgumentException("Mã dịch vụ không được để trống.");
         }
-        this.maDichVu = maDichVu.trim();
+        this.dichVu = dichVu;
     }
 
-    public String getTenDichVu() {
-        return tenDichVu;
+    /** Null khi dòng chưa phân công kỹ thuật viên. */
+    public NhanVien getKyThuatVien() {
+        return kyThuatVien;
     }
 
-    public void setTenDichVu(String tenDichVu) {
-        this.tenDichVu = tenDichVu;
-    }
-
-    public String getMaNVKyThuat() {
-        return maNVKyThuat;
-    }
-
-    public void setMaNVKyThuat(String maNVKyThuat) {
-        if (maNVKyThuat != null && maNVKyThuat.trim().isEmpty()) {
-            throw new IllegalArgumentException("Mã kỹ thuật viên phải có nội dung hoặc là null.");
-        }
-        this.maNVKyThuat = maNVKyThuat == null ? null : maNVKyThuat.trim();
-    }
-
-    public String getTenKyThuatVien() {
-        return tenKyThuatVien;
-    }
-
-    public void setTenKyThuatVien(String tenKyThuatVien) {
-        this.tenKyThuatVien = tenKyThuatVien;
+    public void setKyThuatVien(NhanVien kyThuatVien) {
+        this.kyThuatVien = kyThuatVien;
     }
 
     public TrangThaiTienDo getTrangThaiTienDo() {
@@ -117,17 +88,30 @@ public class ChiTietSuaChua_DichVu {
             return false;
         }
         ChiTietSuaChua_DichVu other = (ChiTietSuaChua_DichVu) obj;
-        return Objects.equals(maPhieuTNSC, other.maPhieuTNSC)
-                && Objects.equals(maDichVu, other.maDichVu);
+        return Objects.equals(maPhieu(), other.maPhieu())
+                && Objects.equals(maDichVu(), other.maDichVu());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maPhieuTNSC, maDichVu);
+        return Objects.hash(maPhieu(), maDichVu());
     }
 
     @Override
     public String toString() {
-        return maPhieuTNSC + " - " + maDichVu;
+        return maPhieu() + " - " + maDichVu();
+    }
+
+    /** Thợ phụ trách để hiển thị: "NV0003 — Tên" hoặc "Chờ phân công". */
+    public String getThoHienThi() {
+        return kyThuatVien == null ? "Chờ phân công" : kyThuatVien.getMaNV() + " — " + kyThuatVien.getHoTen();
+    }
+
+    private String maPhieu() {
+        return phieu == null ? null : phieu.getMaPhieuTNSC();
+    }
+
+    private String maDichVu() {
+        return dichVu == null ? null : dichVu.getMaDichVu();
     }
 }

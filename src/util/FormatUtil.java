@@ -17,6 +17,12 @@ public class FormatUtil {
         // Prevent instantiation
     }
 
+    /** Mô tả xe đầy đủ trên hóa đơn: "Honda Civic • Đời 2021 • Đỏ". */
+    public static String moTaXeDayDu(entity.Xe xe) {
+        return xe.getHangXe() + " " + xe.getDongXe() + " • Đời " + (xe.getDoiXe() == null ? "" : xe.getDoiXe())
+                + " • " + xe.getMauSon();
+    }
+
     /**
      * Định dạng số tiền thành chuỗi tiền tệ VNĐ (Ví dụ: 1,500,000đ).
      */

@@ -246,9 +246,9 @@ public class QLTienDoSuaChuaController {
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
 
-        view.getLblValBienSo().setText(p.getBienSo());
+        view.getLblValBienSo().setText(p.getXe().getBienSo());
         view.getLblValXe().setText(p.getThongTinXeNgan());
-        view.getLblValKhachHang().setText(p.getTenKhachHang());
+        view.getLblValKhachHang().setText(p.getXe().getKhachHang().getHoTen());
         view.getLblValTiepNhan().setText(p.getThoiGianTiepNhan() != null ? p.getThoiGianTiepNhan().format(DT_FMT) : "---");
         view.getLblValDuKien().setText(p.getThoiGianDuKien() != null ? p.getThoiGianDuKien().format(DT_FMT) : "---");
         view.getLblValSoKm().setText(KM_FMT.format(p.getSoKm()) + " km");
@@ -257,7 +257,7 @@ public class QLTienDoSuaChuaController {
 
         for (ChiTietSuaChua_DichVu ct : p.getDanhSachDichVu()) {
             view.getModelHangMuc().addRow(new Object[]{
-                    ct.getTenDichVu(),
+                    ct.getDichVu().getTenDichVu(),
                     ct.getTrangThaiTienDo(),
                     ct.getTrangThaiTienDo()
             });
@@ -320,14 +320,14 @@ public class QLTienDoSuaChuaController {
 
     private void xuLyDoiTrangThaiHangMuc(ChiTietSuaChua_DichVu ct) {
         try {
-            if (tienDoDao.isPhieuDaThanhToan(ct.getMaPhieuTNSC())) {
+            if (tienDoDao.isPhieuDaThanhToan(ct.getPhieu().getMaPhieuTNSC())) {
                 JOptionPane.showMessageDialog(view, "Phiếu sửa chữa này đã thanh toán và bị khóa dữ liệu!",
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             TrangThaiTienDo moi = (TrangThaiTienDo) JOptionPane.showInputDialog(
                     view,
-                    "Chọn trạng thái tiến độ mới cho hạng mục:\n" + ct.getTenDichVu(),
+                    "Chọn trạng thái tiến độ mới cho hạng mục:\n" + ct.getDichVu().getTenDichVu(),
                     "Cập nhật tiến độ hạng mục",
                     JOptionPane.PLAIN_MESSAGE,
                     null,
@@ -342,8 +342,8 @@ public class QLTienDoSuaChuaController {
                     view.getPnlHopLoiTrangThai().setVisible(true);
                     return;
                 }
-                tienDoDao.capNhatTienDoHangMuc(ct.getMaPhieuTNSC(), ct.getMaDichVu(), moi);
-                loadDanhSachPhieu(ct.getMaPhieuTNSC());
+                tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi);
+                loadDanhSachPhieu(ct.getPhieu().getMaPhieuTNSC());
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -385,8 +385,8 @@ public class QLTienDoSuaChuaController {
 
         String tenKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getHoTen() : "Lê Văn Thợ Máy";
         if (!phieuDangChon.getDanhSachDichVu().isEmpty()
-                && phieuDangChon.getDanhSachDichVu().get(0).getTenKyThuatVien() != null) {
-            tenKTV = phieuDangChon.getDanhSachDichVu().get(0).getTenKyThuatVien();
+                && phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien() != null) {
+            tenKTV = phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien().getHoTen();
         }
         view.getTxtKyThuatVienYC().setText(tenKTV);
         view.getTxtNgayYeuCau().setText(LocalDateTime.now().format(DT_FMT));

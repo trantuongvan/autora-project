@@ -198,6 +198,23 @@ public class NhanVien_Dao {
         }
     }
 
+    /** Các cột nhân viên của bảng có bí danh {@code bd}, đặt tên có tiền tố để một câu SQL đọc được nhiều nhân viên. */
+    static String cotNhanVien(String bd, String tienTo) {
+        return bd + ".maNV AS " + tienTo + "maNV, " + bd + ".hoTen AS " + tienTo + "hoTen, "
+                + bd + ".soDienThoai AS " + tienTo + "soDienThoai, " + bd + ".diaChi AS " + tienTo + "diaChi, "
+                + bd + ".viTriLamViec AS " + tienTo + "viTriLamViec";
+    }
+
+    /** Trả về null khi dòng không có nhân viên (LEFT JOIN không khớp). */
+    static NhanVien docNhanVien(ResultSet rs, String tienTo) throws SQLException {
+        String ma = rs.getString(tienTo + "maNV");
+        if (ma == null) {
+            return null;
+        }
+        return new NhanVien(ma, rs.getString(tienTo + "hoTen"), rs.getString(tienTo + "soDienThoai"),
+                rs.getString(tienTo + "diaChi"), VaiTro.fromDb(rs.getString(tienTo + "viTriLamViec")));
+    }
+
     private NhanVien mapNhanVien(ResultSet result) throws SQLException {
         NhanVien employee = new NhanVien(
                 result.getString("maNV"),

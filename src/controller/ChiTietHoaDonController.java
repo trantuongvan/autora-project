@@ -3,13 +3,18 @@ package controller;
 import com.itextpdf.text.DocumentException;
 import dao.HoaDon_Dao;
 import dao.Thue_Dao;
+import entity.ChiTietSuaChua_DichVu;
+import entity.ChiTietSuaChua_PhuTung;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
+import entity.KhachHang;
 import entity.KhuyenMai;
 import entity.PhienDangNhap;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
+import entity.Xe;
 import gui.ChiTietHoaDon;
 import util.FormatUtil;
 import util.PdfExporter;
@@ -72,9 +77,9 @@ public class ChiTietHoaDonController {
 
     private static final class DuLieu {
         HoaDon hoaDon;
-        HoaDon.ThongTinPhieu phieu;
-        List<Object[]> dichVu;
-        List<Object[]> phuTung;
+        PhieuTiepNhanVaSuaChua phieu;
+        List<ChiTietSuaChua_DichVu> dichVu;
+        List<ChiTietSuaChua_PhuTung> phuTung;
         List<KhuyenMai> khuyenMai = new ArrayList<>();
         List<Thue> thue = new ArrayList<>();
         String maDuDoan;
@@ -93,7 +98,7 @@ public class ChiTietHoaDonController {
                         d.loi = "Hóa đơn " + maHD + " không còn tồn tại.";
                         return d;
                     }
-                    ma = d.hoaDon.getMaPhieuTNSC();
+                    ma = d.hoaDon.getPhieu().getMaPhieuTNSC();
                 }
                 d.phieu = dao.findThongTinPhieu(ma);
                 if (d.phieu == null) {
@@ -101,7 +106,7 @@ public class ChiTietHoaDonController {
                     return d;
                 }
                 if (maHD == null) {
-                    if (d.phieu.trangThaiPhieu != TrangThaiPhieu.HOAN_THANH || dao.coHoaDonHieuLuc(ma)) {
+                    if (d.phieu.getTrangThai() != TrangThaiPhieu.HOAN_THANH || dao.coHoaDonHieuLuc(ma)) {
                         d.loi = "Phiếu " + ma + " chưa hoàn thành hoặc đã có hóa đơn.";
                         return d;
                     }
@@ -134,16 +139,18 @@ public class ChiTietHoaDonController {
 
     private void hienDuLieu(DuLieu d) {
         hoaDon = d.hoaDon;
-        HoaDon.ThongTinPhieu p = d.phieu;
+        Xe xe = d.phieu.getXe();
+        KhachHang kh = xe.getKhachHang();
         view.setThongTin(
-                new String[] {p.hoTen + " (" + p.maKH + " — " + p.loaiKhachHang + ")", "SĐT: " + p.soDienThoai,
-                    "Địa chỉ: " + rong(p.diaChi), "Email: " + rong(p.email)},
-                new String[] {"Biển số: " + p.bienSo, p.xe, "VIN: " + rong(p.soVIN), "Mã phiếu: " + p.maPhieu},
+                new String[] {kh.getHoTen() + " (" + kh.getMaKH() + " — " + kh.getLoaiKhachHang() + ")",
+                    "SĐT: " + kh.getSoDienThoai(), "Địa chỉ: " + rong(kh.getDiaChi()), "Email: " + rong(kh.getEmail())},
+                new String[] {"Biển số: " + xe.getBienSo(), FormatUtil.moTaXeDayDu(xe), "VIN: " + rong(xe.getSoVIN()),
+                    "Mã phiếu: " + d.phieu.getMaPhieuTNSC()},
                 new String[] {
                     "Ngày lập: " + (hoaDon == null || hoaDon.getNgayLap() == null ? "—"
                             : hoaDon.getNgayLap().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))),
                     "Hình thức: " + (hoaDon == null ? "—" : hoaDon.getHinhThucThanhToan()),
-                    "Mã khuyến mãi: " + (hoaDon == null ? "—" : rong(hoaDon.getMaKM()))},
+                    "Mã khuyến mãi: " + (hoaDon == null ? "—" : rong(hoaDon.getKhuyenMai() == null ? null : hoaDon.getKhuyenMai().getMaKM()))},
                 hoaDon == null ? null : hoaDon.getTrangThaiThanhToan().getText());
         view.setChiTiet(dongDichVu(d.dichVu), dongPhuTung(d.phuTung));
         if (hoaDon == null) {
@@ -157,20 +164,23 @@ public class ChiTietHoaDonController {
         return s == null || s.trim().isEmpty() ? "—" : s;
     }
 
-    private List<Object[]> dongDichVu(List<Object[]> nguon) {
+    private List<Object[]> dongDichVu(List<ChiTietSuaChua_DichVu> nguon) {
         List<Object[]> dong = new ArrayList<>();
-        for (Object[] d : nguon) {
-            tongTienCong += (double) d[4];
-            dong.add(new Object[] {d[0], d[1], d[2], d[3], tien(d[4])});
+        for (ChiTietSuaChua_DichVu d : nguon) {
+            tongTienCong += d.getTienCongThucTe();
+            dong.add(new Object[] {d.getDichVu().getTenDichVu(), d.getDichVu().getMaDichVu(), d.getThoHienThi(),
+                d.getTrangThaiTienDo().getText(), tien(d.getTienCongThucTe())});
         }
         return dong;
     }
 
-    private List<Object[]> dongPhuTung(List<Object[]> nguon) {
+    private List<Object[]> dongPhuTung(List<ChiTietSuaChua_PhuTung> nguon) {
         List<Object[]> dong = new ArrayList<>();
-        for (Object[] d : nguon) {
-            tongTienPhuTung += (double) d[4];
-            dong.add(new Object[] {d[0], d[1], d[2], tien(d[3]), tien(d[4])});
+        for (ChiTietSuaChua_PhuTung d : nguon) {
+            double thanhTien = HoaDon_Dao.thanhTien(d);
+            tongTienPhuTung += thanhTien;
+            dong.add(new Object[] {d.getPhuTung().getTenPhuTung(), d.getPhuTung().getMaSKU(), d.getSoLuongSuDung(),
+                tien(d.getGiaBanThucTe()), tien(thanhTien)});
         }
         return dong;
     }
@@ -194,7 +204,7 @@ public class ChiTietHoaDonController {
         }
         view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
         view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
-        if (d.phieu.duocGhiNo) {
+        if (d.phieu.getXe().getKhachHang().isDuocGhiNo()) {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
@@ -210,7 +220,7 @@ public class ChiTietHoaDonController {
         maQr = hoaDon.getMaHD();
         view.getBtnIn().addActionListener(e -> inHoaDon(view, hoaDon.getMaHD()));
         hienTongHop(hoaDon.getTongTienCong(), hoaDon.getTongTienPhuTung(), hoaDon.getTongTienGiam(),
-                hoaDon.getThueSuat(), hoaDon.getTongTienVAT(), hoaDon.getTongThanhToan());
+                hoaDon.getThue() == null ? 0 : hoaDon.getThue().getThueSuat(), hoaDon.getTongTienVAT(), hoaDon.getTongThanhToan());
 
         TrangThaiHoaDon trangThai = hoaDon.getTrangThaiThanhToan();
         if (trangThai == TrangThaiHoaDon.CONG_NO) {
@@ -408,8 +418,9 @@ public class ChiTietHoaDonController {
                 return;
             }
             File tep = chon.getSelectedFile();
-            PdfExporter.xuatHoaDon(tep, hd, dao.findThongTinPhieu(hd.getMaPhieuTNSC()),
-                    dao.findDichVu(hd.getMaPhieuTNSC()), dao.findPhuTung(hd.getMaPhieuTNSC()));
+            String maPhieu = hd.getPhieu().getMaPhieuTNSC();
+            PdfExporter.xuatHoaDon(tep, hd, dao.findThongTinPhieu(maPhieu),
+                    dao.findDichVu(maPhieu), dao.findPhuTung(maPhieu));
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().open(tep);
             }

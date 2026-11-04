@@ -60,11 +60,12 @@ public class TienDoSuaChua_Dao {
         String maKTV = maNVKyThuat == null ? "" : maNVKyThuat.trim();
 
         String sql = "SELECT p.maPhieuTNSC, p.yeuCauBanDau, p.soKm, p.mucNhienLieu, p.trayXuoc, p.taiSanTrenXe, "
-                + "       p.thoiGianTiepNhan, p.thoiGianDuKien, p.trangThai, p.bienSo, p.maNV_LapPhieu, "
-                + "       x.hangXe, x.dongXe, x.doiXe, x.mauSon, kh.hoTen AS tenKhachHang, kh.soDienThoai AS sdtKH "
+                + "       p.thoiGianTiepNhan, p.thoiGianDuKien, p.trangThai, "
+                + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", " + NhanVien_Dao.cotNhanVien("nl", "lap_") + " "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "JOIN Xe x ON x.bienSo = p.bienSo "
-                + "JOIN KhachHang kh ON kh.maKH = x.maKH "
+                + "JOIN KhachHang k ON k.maKH = x.maKH "
+                + "JOIN NhanVien nl ON nl.maNV = p.maNV_LapPhieu "
                 + "WHERE p.trangThai <> N'Đã hủy' "
                 + "  AND (? = '' OR EXISTS (SELECT 1 FROM ChiTietSuaChua_DichVu ct WHERE ct.maPhieuTNSC = p.maPhieuTNSC AND (ct.maNV_KyThuat = ? OR ct.maNV_KyThuat IS NULL))) "
                 + "  AND (? = '' OR p.maPhieuTNSC LIKE ? OR p.bienSo LIKE ? OR x.hangXe LIKE ? OR x.dongXe LIKE ? "
@@ -91,7 +92,7 @@ public class TienDoSuaChua_Dao {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     PhieuTiepNhanVaSuaChua p = mapPhieu(rs);
-                    List<ChiTietSuaChua_DichVu> dvList = findDichVuByPhieu(c, p.getMaPhieuTNSC(), maKTV);
+                    List<ChiTietSuaChua_DichVu> dvList = findDichVuByPhieu(c, p, maKTV);
                     p.setDanhSachDichVu(dvList);
                     p.setTongSoHangMuc(dvList.size());
 
@@ -102,7 +103,7 @@ public class TienDoSuaChua_Dao {
                             done++;
                         }
                         if (sb.length() > 0) sb.append(", ");
-                        sb.append(ct.getTenDichVu());
+                        sb.append(ct.getDichVu().getTenDichVu());
                     }
                     p.setSoHangMucHoanThanh(done);
                     p.setTomTatHangMuc(sb.length() > 0 ? sb.toString() : p.getYeuCauBanDau());
@@ -115,33 +116,20 @@ public class TienDoSuaChua_Dao {
 
     public List<ChiTietSuaChua_DichVu> findDichVuByPhieu(String maPhieuTNSC, String maNVKyThuat) throws SQLException {
         try (Connection c = ConnectDB.getConnection()) {
-            return findDichVuByPhieu(c, maPhieuTNSC, maNVKyThuat);
+            return findDichVuByPhieu(c, new PhieuTiepNhanVaSuaChua(maPhieuTNSC), maNVKyThuat);
         }
     }
 
-    private List<ChiTietSuaChua_DichVu> findDichVuByPhieu(Connection c, String maPhieuTNSC, String maNVKyThuat) throws SQLException {
-        String sql = "SELECT ct.maPhieuTNSC, ct.maDichVu, ct.maNV_KyThuat, ct.trangThaiTienDo, ct.tienCongThucTe, "
-                + "       dv.tenDichVu, nv.hoTen AS tenKTV "
-                + "FROM ChiTietSuaChua_DichVu ct "
-                + "JOIN DichVu dv ON dv.maDichVu = ct.maDichVu "
-                + "LEFT JOIN NhanVien nv ON nv.maNV = ct.maNV_KyThuat "
-                + "WHERE ct.maPhieuTNSC = ? "
-                + "ORDER BY ct.maDichVu ASC";
+    private List<ChiTietSuaChua_DichVu> findDichVuByPhieu(Connection c, PhieuTiepNhanVaSuaChua phieu, String maNVKyThuat) throws SQLException {
+        String sql = "SELECT " + ChiTietSuaChua_DichVu_Dao.COT_DICH_VU + ChiTietSuaChua_DichVu_Dao.TU_DICH_VU
+                + "WHERE c.maPhieuTNSC = ? "
+                + "ORDER BY c.maDichVu ASC";
         List<ChiTietSuaChua_DichVu> list = new ArrayList<>();
         try (PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, maPhieuTNSC);
+            ps.setString(1, phieu.getMaPhieuTNSC());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    ChiTietSuaChua_DichVu ct = new ChiTietSuaChua_DichVu(
-                            rs.getString("maPhieuTNSC"),
-                            rs.getString("maDichVu"),
-                            rs.getString("maNV_KyThuat"),
-                            TrangThaiTienDo.fromDb(rs.getString("trangThaiTienDo")),
-                            rs.getDouble("tienCongThucTe")
-                    );
-                    ct.setTenDichVu(rs.getString("tenDichVu"));
-                    ct.setTenKyThuatVien(rs.getString("tenKTV"));
-                    list.add(ct);
+                    list.add(ChiTietSuaChua_DichVu_Dao.docDichVu(rs, phieu));
                 }
             }
         }
@@ -345,15 +333,9 @@ public class TienDoSuaChua_Dao {
                 tsTiepNhan != null ? tsTiepNhan.toLocalDateTime() : null,
                 tsDuKien != null ? tsDuKien.toLocalDateTime() : null,
                 TrangThaiPhieu.fromDb(rs.getString("trangThai")),
-                rs.getString("bienSo"),
-                rs.getString("maNV_LapPhieu")
+                PhieuTiepNhanVaSuaChua_Dao.docXe(rs),
+                NhanVien_Dao.docNhanVien(rs, "lap_")
         );
-        p.setHangXe(rs.getString("hangXe"));
-        p.setDongXe(rs.getString("dongXe"));
-        p.setDoiXe(rs.getInt("doiXe"));
-        p.setMauSon(rs.getString("mauSon"));
-        p.setTenKhachHang(rs.getString("tenKhachHang"));
-        p.setSdtKhachHang(rs.getString("sdtKH"));
         return p;
     }
 }

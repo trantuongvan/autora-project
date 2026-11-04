@@ -1,12 +1,16 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.ChiTietSuaChua_DichVu;
+import entity.ChiTietSuaChua_PhuTung;
 import entity.HinhThucKhuyenMai;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.KhuyenMai;
-import entity.LoaiKhachHang;
 import entity.PhamViKhuyenMai;
+import entity.PhieuTiepNhanVaSuaChua;
+import entity.PhuTung;
+import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
 
@@ -27,11 +31,13 @@ public class HoaDon_Dao {
     private static final String SELECT_HOA_DON =
             "SELECT h.maHD, h.maPhieuTNSC, h.ngayLap, h.tongTienCong, h.tongTienPhuTung, h.tongTienGiam, "
             + "h.tongTienVAT, h.tongThanhToan, h.hinhThucThanhToan, h.trangThaiThanhToan, h.lyDoHuy, "
-            + "h.maNV_Lap, h.maKM, h.maThue, k.hoTen, p.bienSo, t.thueSuat "
+            + "h.maKM, t.maThue, t.tenLoaiThue, t.thueSuat, "
+            + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", " + NhanVien_Dao.cotNhanVien("n", "lap_") + " "
             + "FROM HoaDon h "
             + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = h.maPhieuTNSC "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
             + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN NhanVien n ON n.maNV = h.maNV_Lap "
             + "LEFT JOIN Thue t ON t.maThue = h.maThue ";
 
     private static final String SINH_MA_HD =
@@ -100,28 +106,30 @@ public class HoaDon_Dao {
         }
     }
 
-    /** Phiếu đủ điều kiện lập hóa đơn. Mỗi dòng: {maPhieu, bienSo, hoTen}. */
-    public List<String[]> findPhieuChoLap() throws SQLException {
-        String sql = "SELECT p.maPhieuTNSC, p.bienSo, k.hoTen FROM PhieuTiepNhanVaSuaChua p "
+    /** Phiếu đủ điều kiện lập hóa đơn, kèm xe và chủ xe. */
+    public List<PhieuTiepNhanVaSuaChua> findPhieuChoLap() throws SQLException {
+        String sql = "SELECT p.maPhieuTNSC, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + " FROM PhieuTiepNhanVaSuaChua p "
                 + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = x.maKH "
                 + "WHERE p.trangThai = N'Hoàn thành' AND NOT EXISTS (SELECT 1 FROM HoaDon h "
                 + "WHERE h.maPhieuTNSC = p.maPhieuTNSC AND h.trangThaiThanhToan <> N'Đã hủy') "
                 + "ORDER BY p.thoiGianTiepNhan DESC";
-        List<String[]> ketQua = new ArrayList<>();
+        List<PhieuTiepNhanVaSuaChua> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
-                ketQua.add(new String[] {rs.getString(1), rs.getString(2), rs.getString(3)});
+                PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(rs.getString("maPhieuTNSC"));
+                phieu.setTrangThai(TrangThaiPhieu.HOAN_THANH);
+                phieu.setXe(PhieuTiepNhanVaSuaChua_Dao.docXe(rs));
+                ketQua.add(phieu);
             }
         }
         return ketQua;
     }
 
-    public HoaDon.ThongTinPhieu findThongTinPhieu(String maPhieu) throws SQLException {
-        String sql = "SELECT p.maPhieuTNSC, p.trangThai, k.maKH, k.hoTen, k.loaiKhachHang, k.soDienThoai, k.diaChi, "
-                + "k.email, k.duocGhiNo, x.bienSo, "
-                + "CONCAT(x.hangXe, ' ', x.dongXe, ' • Đời ', x.doiXe, ' • ', x.mauSon) AS xe, x.soVIN "
+    /** Phiếu kèm xe và chủ xe; null khi không có phiếu. */
+    public PhieuTiepNhanVaSuaChua findThongTinPhieu(String maPhieu) throws SQLException {
+        String sql = "SELECT p.maPhieuTNSC, p.trangThai, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + " "
                 + "FROM PhieuTiepNhanVaSuaChua p JOIN Xe x ON x.bienSo = p.bienSo "
                 + "JOIN KhachHang k ON k.maKH = x.maKH WHERE p.maPhieuTNSC = ?";
         try (Connection connection = ConnectDB.getConnection();
@@ -131,11 +139,10 @@ public class HoaDon_Dao {
                 if (!rs.next()) {
                     return null;
                 }
-                return new HoaDon.ThongTinPhieu(rs.getString("maPhieuTNSC"), TrangThaiPhieu.fromDb(rs.getString("trangThai")),
-                        rs.getString("maKH"), rs.getString("hoTen"), LoaiKhachHang.fromDb(rs.getString("loaiKhachHang")),
-                        rs.getString("soDienThoai"),
-                        rs.getString("diaChi"), rs.getString("email"), rs.getBoolean("duocGhiNo"),
-                        rs.getString("bienSo"), rs.getString("xe"), rs.getString("soVIN"));
+                PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(rs.getString("maPhieuTNSC"));
+                phieu.setTrangThai(TrangThaiPhieu.fromDb(rs.getString("trangThai")));
+                phieu.setXe(PhieuTiepNhanVaSuaChua_Dao.docXe(rs));
+                return phieu;
             }
         }
     }
@@ -156,38 +163,19 @@ public class HoaDon_Dao {
         }
     }
 
-    /** Mỗi dòng: {tenDichVu, maDichVu, kyThuatVien, trangThai, tienCong}. */
-    public List<Object[]> findDichVu(String maPhieu) throws SQLException {
-        String sql = "SELECT d.tenDichVu, c.maDichVu, c.maNV_KyThuat, n.hoTen, c.trangThaiTienDo, c.tienCongThucTe "
-                + "FROM ChiTietSuaChua_DichVu c JOIN DichVu d ON d.maDichVu = c.maDichVu "
-                + "LEFT JOIN NhanVien n ON n.maNV = c.maNV_KyThuat WHERE c.maPhieuTNSC = ? ORDER BY c.maDichVu";
-        List<Object[]> ketQua = new ArrayList<>();
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, maPhieu);
-            try (ResultSet rs = statement.executeQuery()) {
-                while (rs.next()) {
-                    String ten = rs.getString(1);
-                    String ma = rs.getString(2);
-                    String maTho = rs.getString(3);
-                    String tenTho = rs.getString(4);
-                    String tho = maTho == null ? "Chờ phân công" : maTho + " — " + tenTho;
-                    ketQua.add(new Object[] {ten, ma, tho, rs.getString(5), rs.getDouble(6)});
-                }
-            }
-        }
-        return ketQua;
+    public List<ChiTietSuaChua_DichVu> findDichVu(String maPhieu) throws SQLException {
+        return new ChiTietSuaChua_DichVu_Dao().findByPhieu(maPhieu);
     }
 
-    /** Mỗi dòng: {tenPhuTung, maSKU, soLuong, giaBan, thanhTien}. */
-    public List<Object[]> findPhuTung(String maPhieu) throws SQLException {
+    public List<ChiTietSuaChua_PhuTung> findPhuTung(String maPhieu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
-            List<Object[]> ketQua = new ArrayList<>();
-            for (Object[] d : docPhuTung(connection, maPhieu, "")) {
-                ketQua.add(new Object[] {d[0], d[1], d[2], d[3], (int) d[2] * (double) d[3]});
-            }
-            return ketQua;
+            return docPhuTung(connection, maPhieu, "");
         }
+    }
+
+    /** Thành tiền của một dòng phụ tùng. */
+    public static double thanhTien(ChiTietSuaChua_PhuTung dong) {
+        return dong.getSoLuongSuDung() * dong.getGiaBanThucTe();
     }
 
     public List<KhuyenMai> findKhuyenMaiHopLe() throws SQLException {
@@ -230,10 +218,9 @@ public class HoaDon_Dao {
                 double thueSuat = docThueSuat(connection, maThue);
 
                 // HOLDLOCK: không ai sửa được dòng đã tính tiền trước khi hóa đơn được ghi.
-                List<Object[]> phuTung = docPhuTung(connection, maPhieu, "WITH (HOLDLOCK)");
                 double tienPhuTung = 0;
-                for (Object[] d : phuTung) {
-                    tienPhuTung += (int) d[2] * (double) d[3];
+                for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu, "WITH (HOLDLOCK)")) {
+                    tienPhuTung += thanhTien(d);
                 }
                 TienHoaDon tien = tinhTien(docTienCong(connection, maPhieu), tienPhuTung,
                         km == null ? null : km.getHinhThuc(), km == null ? 0 : km.getGiaTri(),
@@ -319,17 +306,20 @@ public class HoaDon_Dao {
         }
     }
 
-    /** Mỗi dòng: {tenPhuTung, maSKU, soLuong, giaBan}. */
-    private static List<Object[]> docPhuTung(Connection connection, String maPhieu, String khoa) throws SQLException {
-        String sql = "SELECT t.tenPhuTung, c.maSKU, c.soLuongSuDung, c.giaBanThucTe "
+    private static List<ChiTietSuaChua_PhuTung> docPhuTung(Connection connection, String maPhieu, String khoa) throws SQLException {
+        String sql = "SELECT t.maSKU, t.tenPhuTung, c.soLuongSuDung, c.giaBanThucTe "
                 + "FROM ChiTietSuaChua_PhuTung c " + khoa + " JOIN PhuTung t ON t.maSKU = c.maSKU "
                 + "WHERE c.maPhieuTNSC = ? ORDER BY c.maSKU";
-        List<Object[]> ketQua = new ArrayList<>();
+        List<ChiTietSuaChua_PhuTung> ketQua = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
+            PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    ketQua.add(new Object[] {rs.getString(1), rs.getString(2), rs.getInt(3), rs.getDouble(4)});
+                    PhuTung phuTung = new PhuTung(rs.getString("maSKU"));
+                    phuTung.setTenPhuTung(rs.getString("tenPhuTung"));
+                    ketQua.add(new ChiTietSuaChua_PhuTung(phieu, phuTung, rs.getInt("soLuongSuDung"),
+                            rs.getDouble("giaBanThucTe")));
                 }
             }
         }
@@ -520,15 +510,17 @@ public class HoaDon_Dao {
 
     private HoaDon mapHoaDon(ResultSet rs) throws SQLException {
         Timestamp ngayLap = rs.getTimestamp("ngayLap");
-        HoaDon hd = new HoaDon(rs.getString("maHD"), rs.getString("maPhieuTNSC"),
+        PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(rs.getString("maPhieuTNSC"));
+        phieu.setXe(PhieuTiepNhanVaSuaChua_Dao.docXe(rs));
+        String maKM = rs.getString("maKM");
+        String maThue = rs.getString("maThue");
+        return new HoaDon(rs.getString("maHD"), phieu,
                 ngayLap == null ? null : ngayLap.toLocalDateTime(), rs.getDouble("tongTienCong"),
                 rs.getDouble("tongTienPhuTung"), rs.getDouble("tongTienGiam"), rs.getDouble("tongTienVAT"),
                 rs.getDouble("tongThanhToan"), HinhThucThanhToan.fromDb(rs.getString("hinhThucThanhToan")),
                 TrangThaiHoaDon.fromDb(rs.getString("trangThaiThanhToan")),
-                rs.getString("lyDoHuy"), rs.getString("maNV_Lap"), rs.getString("maKM"), rs.getString("maThue"));
-        hd.setTenKhachHang(rs.getString("hoTen"));
-        hd.setBienSo(rs.getString("bienSo"));
-        hd.setThueSuat(rs.getDouble("thueSuat"));
-        return hd;
+                rs.getString("lyDoHuy"), NhanVien_Dao.docNhanVien(rs, "lap_"),
+                maKM == null ? null : new KhuyenMai(maKM),
+                maThue == null ? null : new Thue(maThue, rs.getString("tenLoaiThue"), rs.getDouble("thueSuat")));
     }
 }

@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class HoaDon {
     private String maHD;
-    private String maPhieuTNSC;
+    private PhieuTiepNhanVaSuaChua phieu;
     private LocalDateTime ngayLap;
     private double tongTienCong;
     private double tongTienPhuTung;
@@ -15,13 +15,9 @@ public class HoaDon {
     private HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.TIEN_MAT;
     private TrangThaiHoaDon trangThaiThanhToan = TrangThaiHoaDon.DA_THANH_TOAN;
     private String lyDoHuy;
-    private String maNVLap;
-    private String maKM;
-    private String maThue;
-    // Trường hiển thị lấy từ bảng khác.
-    private String tenKhachHang;
-    private String bienSo;
-    private double thueSuat;
+    private NhanVien nhanVienLap;
+    private KhuyenMai khuyenMai;
+    private Thue thue;
 
     public HoaDon() {
     }
@@ -30,11 +26,11 @@ public class HoaDon {
         setMaHD(maHD);
     }
 
-    public HoaDon(String maHD, String maPhieuTNSC, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
+    public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
             double tongTienGiam, double tongTienVAT, double tongThanhToan, HinhThucThanhToan hinhThucThanhToan,
-            TrangThaiHoaDon trangThaiThanhToan, String lyDoHuy, String maNVLap, String maKM, String maThue) {
+            TrangThaiHoaDon trangThaiThanhToan, String lyDoHuy, NhanVien nhanVienLap, KhuyenMai khuyenMai, Thue thue) {
         setMaHD(maHD);
-        setMaPhieuTNSC(maPhieuTNSC);
+        setPhieu(phieu);
         setNgayLap(ngayLap);
         setTongTienCong(tongTienCong);
         setTongTienPhuTung(tongTienPhuTung);
@@ -44,41 +40,9 @@ public class HoaDon {
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
-        this.maNVLap = maNVLap;
-        this.maKM = maKM;
-        this.maThue = maThue;
-    }
-
-    /** Thông tin khách và xe của phiếu để hiển thị và in hóa đơn. */
-    public static final class ThongTinPhieu {
-        public final String maPhieu;
-        public final TrangThaiPhieu trangThaiPhieu;
-        public final String maKH;
-        public final String hoTen;
-        public final LoaiKhachHang loaiKhachHang;
-        public final String soDienThoai;
-        public final String diaChi;
-        public final String email;
-        public final boolean duocGhiNo;
-        public final String bienSo;
-        public final String xe;
-        public final String soVIN;
-
-        public ThongTinPhieu(String maPhieu, TrangThaiPhieu trangThaiPhieu, String maKH, String hoTen, LoaiKhachHang loaiKhachHang,
-                String soDienThoai, String diaChi, String email, boolean duocGhiNo, String bienSo, String xe, String soVIN) {
-            this.maPhieu = maPhieu;
-            this.trangThaiPhieu = trangThaiPhieu;
-            this.maKH = maKH;
-            this.hoTen = hoTen;
-            this.loaiKhachHang = loaiKhachHang;
-            this.soDienThoai = soDienThoai;
-            this.diaChi = diaChi;
-            this.email = email;
-            this.duocGhiNo = duocGhiNo;
-            this.bienSo = bienSo;
-            this.xe = xe;
-            this.soVIN = soVIN;
-        }
+        this.nhanVienLap = nhanVienLap;
+        this.khuyenMai = khuyenMai;
+        this.thue = thue;
     }
 
     public String getMaHD() {
@@ -92,15 +56,15 @@ public class HoaDon {
         this.maHD = maHD;
     }
 
-    public String getMaPhieuTNSC() {
-        return maPhieuTNSC;
+    public PhieuTiepNhanVaSuaChua getPhieu() {
+        return phieu;
     }
 
-    public void setMaPhieuTNSC(String maPhieuTNSC) {
-        if (maPhieuTNSC == null || maPhieuTNSC.trim().isEmpty()) {
+    public void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
+        if (phieu == null) {
             throw new IllegalArgumentException("Phiếu sửa chữa không tồn tại hoặc chưa xong");
         }
-        this.maPhieuTNSC = maPhieuTNSC.trim();
+        this.phieu = phieu;
     }
 
     public LocalDateTime getNgayLap() {
@@ -192,52 +156,30 @@ public class HoaDon {
         this.lyDoHuy = lyDoHuy == null ? null : lyDoHuy.trim();
     }
 
-    public String getMaNVLap() {
-        return maNVLap;
+    public NhanVien getNhanVienLap() {
+        return nhanVienLap;
     }
 
-    public void setMaNVLap(String maNVLap) {
-        this.maNVLap = maNVLap;
+    public void setNhanVienLap(NhanVien nhanVienLap) {
+        this.nhanVienLap = nhanVienLap;
     }
 
-    public String getMaKM() {
-        return maKM;
+    /** Null khi hóa đơn không áp dụng khuyến mãi. */
+    public KhuyenMai getKhuyenMai() {
+        return khuyenMai;
     }
 
-    public void setMaKM(String maKM) {
-        this.maKM = maKM;
+    public void setKhuyenMai(KhuyenMai khuyenMai) {
+        this.khuyenMai = khuyenMai;
     }
 
-    public String getMaThue() {
-        return maThue;
+    /** Null khi hóa đơn không có loại thuế. */
+    public Thue getThue() {
+        return thue;
     }
 
-    public void setMaThue(String maThue) {
-        this.maThue = maThue;
-    }
-
-    public String getTenKhachHang() {
-        return tenKhachHang;
-    }
-
-    public void setTenKhachHang(String tenKhachHang) {
-        this.tenKhachHang = tenKhachHang;
-    }
-
-    public String getBienSo() {
-        return bienSo;
-    }
-
-    public void setBienSo(String bienSo) {
-        this.bienSo = bienSo;
-    }
-
-    public double getThueSuat() {
-        return thueSuat;
-    }
-
-    public void setThueSuat(double thueSuat) {
-        this.thueSuat = thueSuat;
+    public void setThue(Thue thue) {
+        this.thue = thue;
     }
 
     @Override
@@ -252,7 +194,7 @@ public class HoaDon {
 
     @Override
     public String toString() {
-        return "HoaDon{" + maHD + ", phieu=" + maPhieuTNSC + ", tong=" + tongThanhToan
+        return "HoaDon{" + maHD + ", phieu=" + (phieu == null ? null : phieu.getMaPhieuTNSC()) + ", tong=" + tongThanhToan
                 + ", " + hinhThucThanhToan + ", " + trangThaiThanhToan + "}";
     }
 }
