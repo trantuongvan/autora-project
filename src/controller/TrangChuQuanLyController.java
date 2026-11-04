@@ -60,8 +60,8 @@ public class TrangChuQuanLyController {
         LocalDate homNay = LocalDate.now();
         int chon = view.getCboKhoangThoiGian().getSelectedIndex();
         boolean tuyChon = chon == 2;
-        view.getTxtTuNgay().setEditable(tuyChon);
-        view.getTxtDenNgay().setEditable(tuyChon);
+        view.getTxtTuNgay().setEnabled(tuyChon);
+        view.getTxtDenNgay().setEnabled(tuyChon);
         if (!tuyChon) {
             LocalDate tu = chon == 0 ? homNay.with(DayOfWeek.MONDAY) : homNay.withDayOfMonth(1);
             view.getTxtTuNgay().setText(tu.format(DINH_DANG_NGAY));

@@ -62,6 +62,11 @@ public class QLKhachHangController {
         view.getTblDanhSach().getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 taiLienKet();
+                // Danh sách tải lại sẽ chọn lại dòng đang sửa: giữ nguyên nội dung người dùng đang gõ.
+                String ma = maDongChon();
+                if (ma != null && !ma.equals(maDangSua)) {
+                    dienForm(dongHienTai.get(view.getTblDanhSach().getSelectedRow()));
+                }
             }
         });
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
@@ -88,15 +93,7 @@ public class QLKhachHangController {
     private void xuLyClickBang(MouseEvent e) {
         JTable bang = view.getTblDanhSach();
         int dong = bang.rowAtPoint(e.getPoint());
-        if (dong < 0) {
-            return;
-        }
-        int icon = UIComponents.viTriBieuTuong(bang, e, QLKhachHang.COT_THAO_TAC, 3);
-        if (icon == QLKhachHang.ICON_XEM) {
-            dienForm(dongHienTai.get(dong), false);
-        } else if (icon == QLKhachHang.ICON_SUA) {
-            dienForm(dongHienTai.get(dong), true);
-        } else if (icon == QLKhachHang.ICON_XOA) {
+        if (dong >= 0 && UIComponents.viTriBieuTuong(bang, e, QLKhachHang.COT_THAO_TAC, 2) == QLKhachHang.ICON_XOA) {
             xoa((String) dongHienTai.get(dong)[0]);
         }
     }
@@ -216,8 +213,8 @@ public class QLKhachHangController {
 
     private void moFormThem() {
         maDangSua = null;
+        view.getTblDanhSach().clearSelection();
         view.xoaLoi();
-        view.setChoPhepSua(true);
         view.getLblTieuDeForm().setText("Thêm khách hàng");
         view.getTxtMaKH().setText("Tự động cấp khi lưu");
         view.getTxtHoTen().setText("");
@@ -229,11 +226,10 @@ public class QLKhachHangController {
         view.getCboGhiNo().setSelectedItem(QLKhachHang.KHONG);
     }
 
-    private void dienForm(Object[] r, boolean choPhepSua) {
-        maDangSua = choPhepSua ? (String) r[0] : null;
+    private void dienForm(Object[] r) {
+        maDangSua = (String) r[0];
         view.xoaLoi();
-        view.setChoPhepSua(choPhepSua);
-        view.getLblTieuDeForm().setText(choPhepSua ? "Sửa thông tin khách hàng" : "Thông tin khách hàng");
+        view.getLblTieuDeForm().setText("Sửa thông tin khách hàng");
         view.getTxtMaKH().setText((String) r[0]);
         view.getTxtHoTen().setText((String) r[1]);
         view.getTxtSoDienThoai().setText((String) r[2]);

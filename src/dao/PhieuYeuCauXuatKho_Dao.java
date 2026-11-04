@@ -10,28 +10,6 @@ import java.util.List;
 
 public class PhieuYeuCauXuatKho_Dao {
 
-    public void ensureSampleDataIfEmpty() {
-        String checkSql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho";
-        try (Connection c = ConnectDB.getConnection();
-             Statement s = c.createStatement();
-             ResultSet r = s.executeQuery(checkSql)) {
-            if (r.next() && r.getInt(1) == 0) {
-                String insPYC = "INSERT INTO PhieuYeuCauXuatKho(maPhieuYC, ngayYeuCau, ngayXuat, trangThai, maPhieuTNSC, maNV_KyThuat, maNV_ThuKho) VALUES "
-                        + "('PYC00001', '2026-10-20 09:30:00', '2026-10-20 09:45:00', N'Đã xuất', 'PTNSC00001', 'NV0005', 'NV0004'), "
-                        + "('PYC00002', '2026-10-23 10:15:00', NULL, N'Chờ xuất', 'PTNSC00002', 'NV0005', NULL), "
-                        + "('PYC00003', '2026-10-23 11:00:00', NULL, N'Chờ xuất', 'PTNSC00002', 'NV0006', NULL)";
-                String insCT = "INSERT INTO ChiTietYeuCauXuatKho(maPhieuYC, maSKU, soLuong) VALUES "
-                        + "('PYC00001', 'SKU_OIL01', 1), "
-                        + "('PYC00001', 'SKU_FLT01', 1), "
-                        + "('PYC00002', 'SKU_BRK01', 1), "
-                        + "('PYC00002', 'SKU_FLT02', 1), "
-                        + "('PYC00003', 'SKU_SPK01', 6)";
-                s.executeUpdate(insPYC);
-                s.executeUpdate(insCT);
-            }
-        } catch (SQLException ignored) {}
-    }
-
     public String nextId() throws SQLException {
         String sql = "SELECT 'PYC' + RIGHT('00000' + CAST(COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maPhieuYC, 4, 20))), 0) + 1 AS VARCHAR(20)), 5) "
                 + "FROM PhieuYeuCauXuatKho";
@@ -44,7 +22,6 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public int countByTrangThai(String trangThai) throws SQLException {
-        ensureSampleDataIfEmpty();
         String sql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE trangThai = ?";
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql)) {
@@ -56,7 +33,6 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public int countDaXuatHomNay() throws SQLException {
-        ensureSampleDataIfEmpty();
         String sql = "SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE trangThai = N'Đã xuất'";
         try (Connection c = ConnectDB.getConnection();
              Statement s = c.createStatement();
@@ -66,7 +42,6 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public List<PhieuYeuCauXuatKho> searchYeuCauThongMinh(String keyword, String trangThai) throws SQLException {
-        ensureSampleDataIfEmpty();
         String k = keyword == null ? "" : keyword.trim();
         String tt = (trangThai == null || "Tất cả".equals(trangThai)) ? "" : trangThai.trim();
 

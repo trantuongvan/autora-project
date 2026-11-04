@@ -76,8 +76,8 @@ public class QLHoaDonController {
         }
         int dongModel = bang.convertRowIndexToModel(dong);
         String ma = String.valueOf(view.getTableModel().getValueAt(dongModel, 0));
-        int icon = UIComponents.viTriBieuTuong(bang, e, QLHoaDon.COT_THAO_TAC, 3);
-        if (icon == QLHoaDon.ICON_CHI_TIET || (icon < 0 && e.getClickCount() == 2)) {
+        int icon = UIComponents.viTriBieuTuong(bang, e, QLHoaDon.COT_THAO_TAC, 2);
+        if (icon < 0 && e.getClickCount() == 2) {
             dieuHuong.moChiTietHoaDon(ma);
         } else if (icon == QLHoaDon.ICON_IN) {
             ChiTietHoaDonController.inHoaDon(view, ma);

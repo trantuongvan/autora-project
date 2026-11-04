@@ -22,9 +22,7 @@ import java.util.List;
 public class QLNhanVien extends JPanel {
 
     public static final int COT_THAO_TAC = 6;
-    public static final int ICON_XEM = 0;
-    public static final int ICON_SUA = 1;
-    public static final int ICON_XOA = 2;
+    public static final int ICON_XOA = 1;
 
     public static final String[] VI_TRI = {"Chủ cửa hàng", "Lễ tân", "Kỹ thuật viên", "Thủ kho"};
 
@@ -90,7 +88,6 @@ public class QLNhanVien extends JPanel {
         UIComponents.styleTable(tblDanhSach);
         tblDanhSach.getColumnModel().getColumn(0).setCellRenderer(new CellRenderer(UIConstants.FONT_FORM_LABEL.deriveFont(14f), null));
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(
-                new LineIcon(Loai.EYE, UIConstants.ROLE_MANAGER),
                 new LineIcon(Loai.PENCIL, UIConstants.ROLE_MANAGER),
                 new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT)));
         UIComponents.datDoRong(tblDanhSach, 90, 160, 120, 230, 130, 190, 120);
@@ -270,11 +267,12 @@ public class QLNhanVien extends JPanel {
         tblDanhSach.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
-                boolean tren = UIComponents.viTriBieuTuong(tblDanhSach, e, COT_THAO_TAC, 3) >= 0;
+                boolean tren = UIComponents.viTriBieuTuong(tblDanhSach, e, COT_THAO_TAC, 2) >= 0;
                 tblDanhSach.setCursor(Cursor.getPredefinedCursor(tren ? Cursor.HAND_CURSOR : Cursor.DEFAULT_CURSOR));
             }
         });
         btnHuy.addActionListener(e -> {
+            tblDanhSach.clearSelection();
             xoaTrangForm();
             setCheDoSua(false);
         });

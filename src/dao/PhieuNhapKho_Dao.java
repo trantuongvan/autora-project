@@ -52,28 +52,6 @@ public class PhieuNhapKho_Dao {
         return null;
     }
 
-    /** Khởi tạo dữ liệu mẫu cho PhieuNhapKho nếu bảng đang trống để test ngay giao diện. */
-    public void ensureSampleDataIfEmpty() {
-        String checkSql = "SELECT COUNT(*) FROM PhieuNhapKho";
-        try (Connection c = ConnectDB.getConnection();
-             Statement s = c.createStatement();
-             ResultSet r = s.executeQuery(checkSql)) {
-            if (r.next() && r.getInt(1) == 0) {
-                String insPhieu = "INSERT INTO PhieuNhapKho(maPhieuNhap, ngayNhap, tongTienNhap, maNCC, maNV_ThuKho) VALUES "
-                        + "('PN201020260001', '2026-10-20 08:40:00', 9000000, 'NCC0002', 'NV0004'), "
-                        + "('PN221020260002', '2026-10-22 14:15:00', 6400000, 'NCC0001', 'NV0004'), "
-                        + "('PN251020260003', '2026-10-25 09:30:00', 3600000, 'NCC0003', 'NV0004')";
-                String insCT = "INSERT INTO ChiTietNhapKho(maPhieuNhap, maSKU, soLuongNhap, giaNhapThucTe) VALUES "
-                        + "('PN201020260001', 'SKU_OIL01', 20, 450000), "
-                        + "('PN221020260002', 'SKU_BRK01', 8, 800000), "
-                        + "('PN251020260003', 'SKU_FLT02', 20, 120000), "
-                        + "('PN251020260003', 'SKU_FLT01', 15, 80000)";
-                s.executeUpdate(insPhieu);
-                s.executeUpdate(insCT);
-            }
-        } catch (SQLException ignored) {}
-    }
-
     /** Phát sinh mã phiếu nhập tự động: PN + ddMMyyyy + 4 chữ số (VD: PN031120260001) theo Bảng 28 báo cáo. */
     public String nextId() throws SQLException {
         String prefix = "PN" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
@@ -97,7 +75,6 @@ public class PhieuNhapKho_Dao {
 
     /** Tìm kiếm lịch sử phiếu nhập kho theo từ khóa, nhà cung cấp và khoảng ngày. */
     public List<PhieuNhapKho> search(String keyword, String maNCC, LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        ensureSampleDataIfEmpty();
         String k = keyword == null ? "" : keyword.trim();
         String ncc = (maNCC == null || "Tất cả".equals(maNCC)) ? "" : maNCC.trim();
 

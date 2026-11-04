@@ -15,6 +15,7 @@ import gui.TrangChuThuKho.MenuThuKho;
 import util.FormatUtil;
 import util.UIComponents;
 import util.UIConstants;
+import util.XuatFile;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -22,17 +23,21 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class QLNhapKhoController {
 
@@ -124,6 +129,7 @@ public class QLNhapKhoController {
         view.getBtnLamMoi().addActionListener(e -> loadData());
 
         view.getBtnTaoPhieuMoi().addActionListener(e -> moPopupLapPhieuNhap(null));
+        view.getBtnNhapExcel().addActionListener(e -> nhapTuExcel());
         view.getBtnDongModal().addActionListener(e -> view.hienThiModalLapPhieu(false));
         view.getBtnHuyModal().addActionListener(e -> view.hienThiModalLapPhieu(false));
 
@@ -466,6 +472,98 @@ public class QLNhapKhoController {
             JOptionPane.showMessageDialog(view, "Lỗi truy vấn phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /** Đưa các dòng hợp lệ lên bảng để thủ kho xem lại trước khi lưu; dòng sai được liệt kê và không thêm vào. */
+    private void nhapTuExcel() {
+        JFileChooser chon = new JFileChooser();
+        chon.setFileFilter(new FileNameExtensionFilter("Excel (.xlsx)", "xlsx"));
+        if (chon.showOpenDialog(view) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        List<String[]> dong;
+        try {
+            dong = XuatFile.docXlsx(chon.getSelectedFile(), 3);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(view, "Không đọc được file. Hãy chọn file Excel .xlsx.\n" + ex.getMessage(),
+                    "Lỗi nhập Excel", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        List<String> loi = new ArrayList<>();
+        Set<String> maTrongFile = new HashSet<>();
+        int soDongThem = 0;
+        try {
+            // Dòng 1 là tiêu đề.
+            for (int i = 1; i < dong.size(); i++) {
+                String[] o = dong.get(i);
+                if (o[0].trim().isEmpty() && o[1].trim().isEmpty() && o[2].trim().isEmpty()) {
+                    continue;
+                }
+                String loiDong = themDongExcel(o[0].trim(), o[1].trim(), o[2].trim(), maTrongFile);
+                if (loiDong == null) {
+                    soDongThem++;
+                } else {
+                    loi.add("Dòng " + (i + 1) + ": " + loiDong);
+                }
+            }
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(view, "Lỗi truy vấn phụ tùng: " + ex.getMessage(),
+                    "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+        }
+        veBangChiTietModal();
+        tinhVaKiemTraChiTietModal();
+        String thongBao = "Đã đưa " + soDongThem + " dòng từ file vào phiếu. Hãy kiểm tra lại trước khi lưu.";
+        if (loi.isEmpty()) {
+            JOptionPane.showMessageDialog(view, thongBao, "Nhập Excel", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        JTextArea chiTiet = new JTextArea(thongBao + "\n\n" + loi.size() + " dòng không được thêm:\n" + String.join("\n", loi));
+        chiTiet.setEditable(false);
+        chiTiet.setFont(UIConstants.FONT_BODY.deriveFont(13f));
+        JScrollPane cuon = new JScrollPane(chiTiet);
+        cuon.setPreferredSize(new Dimension(520, 240));
+        JOptionPane.showMessageDialog(view, cuon, "Nhập Excel", JOptionPane.WARNING_MESSAGE);
+    }
+
+    /** Trả về lý do nếu dòng sai, null nếu đã đưa vào phiếu. Mã đã có trên phiếu thì lấy số lượng và đơn giá theo file. */
+    private String themDongExcel(String maSKU, String soLuong, String donGia, Set<String> maTrongFile) throws SQLException {
+        PhuTung pt = maSKU.isEmpty() ? null : phuTungDao.findById(maSKU);
+        if (pt == null) {
+            return "không có phụ tùng mã \"" + maSKU + "\".";
+        }
+        if (maTrongFile.contains(pt.getMaSKU())) {
+            return "mã " + pt.getMaSKU() + " bị lặp trong file.";
+        }
+        int sl;
+        try {
+            sl = Integer.parseInt(soLuong);
+        } catch (NumberFormatException ex) {
+            sl = 0;
+        }
+        if (sl <= 0) {
+            return "số lượng \"" + soLuong + "\" phải là số nguyên dương.";
+        }
+        double gia;
+        try {
+            gia = FormatUtil.parseCurrency(donGia);
+        } catch (NumberFormatException ex) {
+            gia = 0;
+        }
+        if (gia <= 0) {
+            return "đơn giá \"" + donGia + "\" không hợp lệ.";
+        }
+        maTrongFile.add(pt.getMaSKU());
+        for (ChiTietNhapKho daCo : dsChiTietModal) {
+            if (daCo.getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
+                daCo.setSoLuongNhap(sl);
+                daCo.setGiaNhapThucTe(gia);
+                return null;
+            }
+        }
+        ChiTietNhapKho ct = new ChiTietNhapKho(view.getLblMaPhieuNhapModal().getText(), pt.getMaSKU(), sl, gia);
+        ct.setTenPhuTung(pt.getTenPhuTung());
+        dsChiTietModal.add(ct);
+        return null;
     }
 
     private void xuLyLuuPhieuNhap() {

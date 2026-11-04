@@ -33,8 +33,8 @@ public class KhuyenMaiFormDialog extends JDialog {
     private final JRadioButton radPhanTram = new JRadioButton("Giảm theo %", true);
     private final JRadioButton radTienMat = new JRadioButton("Giảm theo số tiền cố định");
     private final JTextField txtGiaTri = new JTextField();
-    private final JTextField txtBatDau = new PlaceholderField("dd/MM/yyyy");
-    private final JTextField txtKetThuc = new PlaceholderField("dd/MM/yyyy");
+    private final JTextField txtBatDau = new PlaceholderField("Chọn ngày");
+    private final JTextField txtKetThuc = new PlaceholderField("Chọn ngày");
     private final JRadioButton radTongHoaDon = new JRadioButton(KhuyenMai.PHAM_VI[0], true);
     private final JRadioButton radNhomDichVu = new JRadioButton(KhuyenMai.PHAM_VI[1]);
     private final JRadioButton radPhuTung = new JRadioButton(KhuyenMai.PHAM_VI[2]);
@@ -61,6 +61,7 @@ public class KhuyenMaiFormDialog extends JDialog {
         UIComponents.styleInput(txtGiaTri);
         UIComponents.styleInput(txtBatDau);
         UIComponents.styleInput(txtKetThuc);
+        util.ChonNgay.ganNgay(txtBatDau, txtKetThuc);
         UIComponents.styleInput(txtSoLuotToiDa);
 
         CotDoc noiDung = new CotDoc();

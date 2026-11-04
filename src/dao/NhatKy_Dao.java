@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,9 +31,16 @@ public class NhatKy_Dao {
 
     /** Mỗi dòng: {thoiGian, tenDangNhap, hanhDong, doiTuong, giaTriCu, giaTriMoi}, mới nhất trước. */
     public List<Object[]> search(String tuKhoa) throws SQLException {
+        return search(tuKhoa, null, null);
+    }
+
+    /** tuNgay, denNgay null nghĩa là không giới hạn phía đó; denNgay tính trọn ngày. */
+    public List<Object[]> search(String tuKhoa, LocalDate tuNgay, LocalDate denNgay) throws SQLException {
         String key = tuKhoa == null ? "" : tuKhoa.trim();
         String sql = "SELECT TOP (500) thoiGian, tenDangNhap, hanhDong, doiTuong, giaTriCu, giaTriMoi "
                 + "FROM NhatKyHoatDong WHERE (? = N'' OR tenDangNhap LIKE ? OR hanhDong LIKE ? OR doiTuong LIKE ?) "
+                + (tuNgay == null ? "" : "AND thoiGian >= ? ")
+                + (denNgay == null ? "" : "AND thoiGian < ? ")
                 + "ORDER BY thoiGian DESC, maNhatKy DESC";
         List<Object[]> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
@@ -40,6 +49,13 @@ public class NhatKy_Dao {
             statement.setString(2, "%" + key + "%");
             statement.setString(3, "%" + key + "%");
             statement.setString(4, "%" + key + "%");
+            int thuTu = 5;
+            if (tuNgay != null) {
+                statement.setTimestamp(thuTu++, Timestamp.valueOf(tuNgay.atStartOfDay()));
+            }
+            if (denNgay != null) {
+                statement.setTimestamp(thuTu, Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay()));
+            }
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
                     ketQua.add(new Object[] {rs.getTimestamp(1).toLocalDateTime(), rs.getString(2), rs.getString(3),

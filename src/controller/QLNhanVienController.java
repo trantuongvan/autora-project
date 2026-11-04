@@ -5,19 +5,10 @@ import entity.NhanVien;
 import entity.PhienDangNhap;
 import gui.QLNhanVien;
 
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.SwingWorker;
-import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.Dimension;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -86,19 +77,19 @@ public class QLNhanVienController {
             view.getTxtMaNV().setText("");
             view.setCheDoSua(false);
         });
+        view.getTblDanhSach().getSelectionModel().addListSelectionListener(e -> {
+            int row = view.getTblDanhSach().getSelectedRow();
+            if (!e.getValueIsAdjusting() && row >= 0) {
+                edit(row);
+            }
+        });
         view.getTblDanhSach().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 int row = view.getTblDanhSach().rowAtPoint(e.getPoint());
-                if (row < 0) {
-                    return;
-                }
-                int icon = util.UIComponents.viTriBieuTuong(
-                        view.getTblDanhSach(), e, QLNhanVien.COT_THAO_TAC, 3);
-                if (icon >= 0) {
-                    act(row, icon);
-                } else if (e.getClickCount() == 2) {
-                    edit(row);
+                if (row >= 0 && util.UIComponents.viTriBieuTuong(view.getTblDanhSach(), e,
+                        QLNhanVien.COT_THAO_TAC, 2) == QLNhanVien.ICON_XOA) {
+                    hoiXoa(row);
                 }
             }
         });
@@ -145,66 +136,13 @@ public class QLNhanVienController {
         }.execute();
     }
 
-    private void act(int row, int icon) {
+    private void hoiXoa(int row) {
         int modelRow = view.getTblDanhSach().convertRowIndexToModel(row);
         String id = String.valueOf(view.getTableModel().getValueAt(modelRow, 0));
-        if (icon == QLNhanVien.ICON_XEM) {
-            NhanVien employee = find(id);
-            if (employee != null) {
-                showEmployeeDetail(employee);
-            }
-        } else if (icon == QLNhanVien.ICON_SUA) {
-            edit(row);
-        } else {
-            selectedId = id;
-            view.hienXacNhanXoa(
-                    view.getTableModel().getValueAt(modelRow, 1) + " • " + id,
-                    String.valueOf(view.getTableModel().getValueAt(modelRow, 4)));
-        }
-    }
-
-    private void showEmployeeDetail(NhanVien employee) {
-        String[][] fields = {
-                {"Mã nhân viên:", employee.getMaNV()},
-                {"Họ tên:", employee.getHoTen()},
-                {"Số điện thoại:", employee.getSoDienThoai()},
-                {"Địa chỉ:", employee.getDiaChi()},
-                {"Vị trí:", employee.getViTriLamViec()},
-                {"Tài khoản:", employee.getTenDangNhap() == null
-                        ? "Chưa liên kết" : employee.getTenDangNhap()}
-        };
-        JPanel content = new JPanel(new GridBagLayout());
-        content.setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));
-        content.setPreferredSize(new Dimension(430, 210));
-        Font font = UIManager.getFont("Label.font").deriveFont(15f);
-
-        for (int i = 0; i < fields.length; i++) {
-            GridBagConstraints labelCell = new GridBagConstraints();
-            labelCell.gridx = 0;
-            labelCell.gridy = i;
-            labelCell.weightx = 0.34;
-            labelCell.fill = GridBagConstraints.HORIZONTAL;
-            labelCell.anchor = GridBagConstraints.NORTHWEST;
-            labelCell.insets = new Insets(5, 2, 5, 16);
-            JLabel label = new JLabel(fields[i][0]);
-            label.setFont(font.deriveFont(Font.BOLD));
-            content.add(label, labelCell);
-
-            GridBagConstraints valueCell = new GridBagConstraints();
-            valueCell.gridx = 1;
-            valueCell.gridy = i;
-            valueCell.weightx = 0.66;
-            valueCell.fill = GridBagConstraints.HORIZONTAL;
-            valueCell.anchor = GridBagConstraints.NORTHWEST;
-            valueCell.insets = new Insets(5, 0, 5, 2);
-            String text = fields[i][1] == null || fields[i][1].trim().isEmpty()
-                    ? "—" : fields[i][1];
-            JLabel value = new JLabel(text);
-            value.setFont(font);
-            content.add(value, valueCell);
-        }
-        JOptionPane.showMessageDialog(view, content,
-                "Thông tin nhân viên", JOptionPane.INFORMATION_MESSAGE);
+        selectedId = id;
+        view.hienXacNhanXoa(
+                view.getTableModel().getValueAt(modelRow, 1) + " • " + id,
+                String.valueOf(view.getTableModel().getValueAt(modelRow, 4)));
     }
 
     private NhanVien find(String id) {
@@ -290,6 +228,10 @@ public class QLNhanVienController {
             }
             view.anXacNhanXoa();
             selectedId = null;
+            // Biểu mẫu đang hiện nhân viên vừa xóa: dọn đi để nút lưu không ghi vào mã đã mất.
+            view.xoaTrangForm();
+            view.getTxtMaNV().setText("");
+            view.setCheDoSua(false);
             load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
