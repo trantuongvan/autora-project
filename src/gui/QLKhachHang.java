@@ -1,7 +1,8 @@
 package gui;
 
 import controller.QLKhachHangController;
-import entity.KhachHang;
+import entity.LoaiKhachHang;
+import entity.TrangThaiLichHen;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -19,16 +20,23 @@ public class QLKhachHang extends JPanel {
     public static final String KHONG = "Không";
     public static final int COT_LOAI = 5;
     public static final int COT_GHI_NO = 6;
-    public static final int COT_THAO_TAC = 8;
+    public static final int COT_LICH_HEN = 8;
+    public static final int COT_THAO_TAC = 9;
     public static final int ICON_XOA = 1;
+    public static final String CO_LICH_HEN = "Có lịch hẹn";
+    public static final String KHONG_LICH_HEN = "Không có lịch hẹn";
+    public static final String QUA_HEN = "Quá hẹn";
+    public static final int COT_TRANG_THAI_LICH = 3;
 
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocLoai = new JComboBox<>();
+    private final JComboBox<Object> cboLocLoai = new JComboBox<>();
     private final JComboBox<String> cboLocGhiNo = new JComboBox<>(new String[] {TAT_CA, DUOC_PHEP, KHONG});
-    private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
+    private final JComboBox<String> cboLocLichHen =
+            new JComboBox<>(new String[] {TAT_CA, CO_LICH_HEN, KHONG_LICH_HEN});
+    private final JButton btnTim = UIComponents.nutTaiDuLieu();
     private final JButton btnThem = UIComponents.nutChinh("+  Thêm khách hàng", UIConstants.PRIMARY);
     private final DefaultTableModel tableModel = UIComponents.modelKhongSua(
-            "Mã KH", "Họ tên", "SĐT", "Địa chỉ", "Email / MST", "Loại KH", "Ghi nợ", "Xe", "Thao tác");
+            "Mã KH", "Họ tên", "SĐT", "Địa chỉ", "Email / MST", "Loại KH", "Ghi nợ", "Xe", "Lịch hẹn", "Thao tác");
     private final JTable tblDanhSach = new JTable(tableModel);
 
     private final JLabel lblTieuDeForm = UIComponents.label("", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK);
@@ -38,7 +46,7 @@ public class QLKhachHang extends JPanel {
     private final JTextField txtDiaChi = new JTextField();
     private final JTextField txtEmail = new JTextField();
     private final JTextField txtMaSoThue = new JTextField();
-    private final JComboBox<String> cboLoai = new JComboBox<>(KhachHang.LOAI_KHACH_HANG);
+    private final JComboBox<LoaiKhachHang> cboLoai = new JComboBox<>(LoaiKhachHang.values());
     private final JComboBox<String> cboGhiNo = new JComboBox<>(new String[] {KHONG, DUOC_PHEP});
     private final JLabel lblLoiHoTen = UIComponents.errorLabel();
     private final JLabel lblLoiSoDienThoai = UIComponents.errorLabel();
@@ -54,6 +62,10 @@ public class QLKhachHang extends JPanel {
     private final JTable tblXe = new JTable(xeModel);
     private final DefaultTableModel lichSuModel = UIComponents.modelKhongSua("Mã phiếu", "Ngày", "Hạng mục", "Tổng tiền");
     private final JTable tblLichSu = new JTable(lichSuModel);
+    private final DefaultTableModel lichHenModel = UIComponents.modelKhongSua("Thời gian", "Xe", "Ghi chú", "Trạng thái");
+    private final JTable tblLichHen = new JTable(lichHenModel);
+    private final JButton btnThemLichHen = UIComponents.nutChinh("+  Thêm lịch hẹn", UIConstants.PRIMARY);
+    private final JButton btnHuyLichHen = UIComponents.nutPhu("Hủy lịch hẹn");
 
     public QLKhachHang() {
         setLayout(new BorderLayout());
@@ -69,6 +81,7 @@ public class QLKhachHang extends JPanel {
         noiDung.them(taoTheDanhSach(timKiem), 18);
         noiDung.them(taoTheForm(), 16);
         noiDung.them(taoTheLienKet(), 16);
+        noiDung.them(taoTheLichHen(), 16);
         noiDung.ketThuc();
         add(UIComponents.cuonTrang(noiDung), BorderLayout.CENTER);
     }
@@ -82,17 +95,19 @@ public class QLKhachHang extends JPanel {
 
     private JPanel taoTheDanhSach(IconField timKiem) {
         cboLocLoai.addItem(TAT_CA);
-        for (String loai : KhachHang.LOAI_KHACH_HANG) {
+        for (LoaiKhachHang loai : LoaiKhachHang.values()) {
             cboLocLoai.addItem(loai);
         }
         UIComponents.styleCombo(cboLocLoai);
         UIComponents.styleCombo(cboLocGhiNo);
+        UIComponents.styleCombo(cboLocLichHen);
 
         JPanel hangLoc = UIComponents.trong(new GridBagLayout());
-        hangLoc.add(QLTiepNhanSuaChua.o("Tìm kiếm", false, timKiem), UIComponents.gbc(0, 0, 1, 0.5, 0, 12));
-        hangLoc.add(QLTiepNhanSuaChua.o("Loại khách hàng", false, cboLocLoai), UIComponents.gbc(1, 0, 1, 0.25, 0, 12));
-        hangLoc.add(QLTiepNhanSuaChua.o("Được ghi nợ", false, cboLocGhiNo), UIComponents.gbc(2, 0, 1, 0.25, 0, 12));
-        GridBagConstraints gcNut = UIComponents.gbc(3, 0, 1, 0, 0, 0);
+        hangLoc.add(QLTiepNhanSuaChua.o("Tìm kiếm", false, timKiem), UIComponents.gbc(0, 0, 1, 0.4, 0, 12));
+        hangLoc.add(QLTiepNhanSuaChua.o("Loại khách hàng", false, cboLocLoai), UIComponents.gbc(1, 0, 1, 0.2, 0, 12));
+        hangLoc.add(QLTiepNhanSuaChua.o("Được ghi nợ", false, cboLocGhiNo), UIComponents.gbc(2, 0, 1, 0.2, 0, 12));
+        hangLoc.add(QLTiepNhanSuaChua.o("Lịch hẹn", false, cboLocLichHen), UIComponents.gbc(3, 0, 1, 0.2, 0, 12));
+        GridBagConstraints gcNut = UIComponents.gbc(4, 0, 1, 0, 0, 0);
         gcNut.anchor = GridBagConstraints.SOUTH;
         gcNut.fill = GridBagConstraints.NONE;
         hangLoc.add(btnTim, gcNut);
@@ -105,7 +120,7 @@ public class QLKhachHang extends JPanel {
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setCellRenderer(new ActionRenderer(
                 new LineIcon(Loai.PENCIL, UIConstants.ROLE_RECEPTION),
                 new LineIcon(Loai.TRASH, UIConstants.ROLE_RECEPTION_LIGHT)));
-        UIComponents.datDoRong(tblDanhSach, 75, 140, 115, 120, 150, 135, 110, 110, 112);
+        UIComponents.datDoRong(tblDanhSach, 75, 140, 115, 120, 150, 135, 110, 110, 125, 112);
         // Dưới mức này ActionRenderer xuống dòng làm mất icon.
         tblDanhSach.getColumnModel().getColumn(COT_THAO_TAC).setMinWidth(112);
 
@@ -184,15 +199,52 @@ public class QLKhachHang extends JPanel {
         return the;
     }
 
-    private static Color mauLoai(String loai) {
-        switch (loai) {
-            case "VIP":
-                return UIConstants.ROLE_TECH_STOCK_LIGHT;
-            case "Thành viên":
-                return UIConstants.PRIMARY_LIGHT;
-            default:
-                return UIConstants.TEXT_MUTED;
+    private JPanel taoTheLichHen() {
+        UIComponents.styleTable(tblLichHen);
+        tblLichHen.getColumnModel().getColumn(COT_TRANG_THAI_LICH).setCellRenderer(new BadgeRenderer(QLKhachHang::mauLichHen));
+        UIComponents.datDoRong(tblLichHen, 150, 230, 380, 120);
+
+        JPanel nut = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        nut.add(btnHuyLichHen);
+        nut.add(btnThemLichHen);
+        JPanel dau = UIComponents.trong(new BorderLayout());
+        dau.add(UIComponents.label("Lịch hẹn", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK), BorderLayout.WEST);
+        dau.add(nut, BorderLayout.EAST);
+        btnThemLichHen.setEnabled(false);
+        btnHuyLichHen.setEnabled(false);
+
+        CotDoc than = new CotDoc();
+        than.them(dau, 0);
+        than.them(UIComponents.label("Chọn một khách hàng ở danh sách để xem, thêm hoặc hủy lịch hẹn.",
+                UIConstants.FONT_CAPTION, UIConstants.TEXT_MUTED), 2);
+        than.them(UIComponents.cuonBang(tblLichHen), 8);
+
+        RoundedPanel the = UIComponents.card();
+        the.setLayout(new BorderLayout());
+        the.setBorder(new EmptyBorder(18, 20, 18, 20));
+        the.add(than, BorderLayout.CENTER);
+        UIComponents.canChieuCaoBang(tblLichHen, 2, 6);
+        return the;
+    }
+
+    private static Color mauLichHen(String trangThai) {
+        if (QUA_HEN.equals(trangThai)) {
+            return UIConstants.STATUS_DANGER;
         }
+        if (TrangThaiLichHen.DA_DEN.getText().equals(trangThai)) {
+            return UIConstants.STATUS_SUCCESS;
+        }
+        return TrangThaiLichHen.DA_HUY.getText().equals(trangThai) ? UIConstants.TEXT_MUTED : UIConstants.PRIMARY_LIGHT;
+    }
+
+    private static Color mauLoai(String loai) {
+        if (LoaiKhachHang.VIP.getText().equals(loai)) {
+            return UIConstants.ROLE_TECH_STOCK_LIGHT;
+        }
+        if (LoaiKhachHang.THANH_VIEN.getText().equals(loai)) {
+            return UIConstants.PRIMARY_LIGHT;
+        }
+        return UIConstants.TEXT_MUTED;
     }
 
     private static Color mauGhiNo(String ghiNo) {
@@ -221,6 +273,12 @@ public class QLKhachHang extends JPanel {
         revalidate();
     }
 
+    public void setLichHen(List<Object[]> dong) {
+        datDong(lichHenModel, dong);
+        UIComponents.canChieuCaoBang(tblLichHen, 2, 6);
+        revalidate();
+    }
+
     private static void datDong(DefaultTableModel model, List<Object[]> dong) {
         model.setRowCount(0);
         for (Object[] r : dong) {
@@ -238,9 +296,13 @@ public class QLKhachHang extends JPanel {
     }
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocLoai() { return cboLocLoai; }
+    public JComboBox<Object> getCboLocLoai() { return cboLocLoai; }
     public JComboBox<String> getCboLocGhiNo() { return cboLocGhiNo; }
+    public JComboBox<String> getCboLocLichHen() { return cboLocLichHen; }
     public JButton getBtnTim() { return btnTim; }
+    public JTable getTblLichHen() { return tblLichHen; }
+    public JButton getBtnThemLichHen() { return btnThemLichHen; }
+    public JButton getBtnHuyLichHen() { return btnHuyLichHen; }
     public JButton getBtnThem() { return btnThem; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public JLabel getLblTieuDeForm() { return lblTieuDeForm; }
@@ -250,7 +312,7 @@ public class QLKhachHang extends JPanel {
     public JTextField getTxtDiaChi() { return txtDiaChi; }
     public JTextField getTxtEmail() { return txtEmail; }
     public JTextField getTxtMaSoThue() { return txtMaSoThue; }
-    public JComboBox<String> getCboLoai() { return cboLoai; }
+    public JComboBox<LoaiKhachHang> getCboLoai() { return cboLoai; }
     public JComboBox<String> getCboGhiNo() { return cboGhiNo; }
     public JLabel getLblLoiHoTen() { return lblLoiHoTen; }
     public JLabel getLblLoiSoDienThoai() { return lblLoiSoDienThoai; }

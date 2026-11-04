@@ -1,5 +1,6 @@
 package gui;
 
+import entity.TrangThaiPhieu;
 import controller.TrangChuKyThuatVienController;
 import util.UIComponents;
 import util.UIConstants;
@@ -91,7 +92,6 @@ public class TrangChuKyThuatVien extends JPanel {
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));
 
-        UIComponents.Badge badgeCa = new UIComponents.Badge("Ca làm việc • 08:00 – 17:00", UIConstants.ROLE_RECEPTION_LIGHT);
         JPanel pnlHeader = UIComponents.tieuDeTrang(
                 "Tổng quan công việc",
                 lblMoTaChao,
@@ -334,6 +334,14 @@ public class TrangChuKyThuatVien extends JPanel {
         return b;
     }
 
+    private final UIComponents.Badge badgeCa = new UIComponents.Badge("Chưa xếp ca", UIConstants.ROLE_RECEPTION_LIGHT);
+
+    /** Ca thật của kỹ thuật viên đang đăng nhập; null khi chưa xếp ca. */
+    public void setCaLamViec(entity.CaLamViec ca) {
+        badgeCa.setText(ca == null ? "Chưa xếp ca"
+                : "Ca làm việc • " + ca.getGioBatDau() + " – " + ca.getGioKetThuc());
+    }
+
     public void capNhatThongTinKTVHeader(String hoTen) {
         if (hoTen == null || hoTen.trim().isEmpty()) return;
         lblTenKTVHeader.setText(hoTen.trim());
@@ -401,10 +409,10 @@ public class TrangChuKyThuatVien extends JPanel {
 
     private Color mauTrangThai(String s) {
         if (s == null) return UIConstants.TEXT_MUTED;
-        if (s.startsWith("Hoàn thành")) return UIConstants.STATUS_SUCCESS;
-        if (s.startsWith("Đang sửa")) return UIConstants.PRIMARY;
-        if (s.startsWith("Chờ phụ tùng")) return UIConstants.STATUS_WARNING;
-        if (s.startsWith("Chờ sửa") || s.startsWith("Chờ kiểm tra")) return UIConstants.STATUS_DANGER;
+        if (s.startsWith(TrangThaiPhieu.HOAN_THANH.getText())) return UIConstants.STATUS_SUCCESS;
+        if (s.startsWith(TrangThaiPhieu.DANG_SUA.getText())) return UIConstants.PRIMARY;
+        if (s.startsWith(TrangThaiPhieu.CHO_PHU_TUNG.getText())) return UIConstants.STATUS_WARNING;
+        if (s.startsWith("Chờ sửa") || s.startsWith(TrangThaiPhieu.CHO_KIEM_TRA.getText())) return UIConstants.STATUS_DANGER;
         return UIConstants.TEXT_MUTED;
     }
 

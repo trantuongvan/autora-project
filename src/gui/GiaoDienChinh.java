@@ -1,6 +1,7 @@
 package gui;
 
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import util.UIComponents;
 import util.UIComponents.LineIcon;
 import util.UIComponents.Loai;
@@ -71,7 +72,7 @@ public class GiaoDienChinh extends JFrame {
     private JPanel taoTaiKhoan() {
         PhienDangNhap phien = PhienDangNhap.getHienTai();
         String hoTen = phien == null ? "" : phien.getHoTen();
-        String vaiTro = phien == null ? "" : phien.getVaiTro();
+        VaiTro vaiTro = phien == null ? null : phien.getVaiTro();
         Color mauVaiTro = mauTheoVaiTro(vaiTro);
 
         RoundedPanel anhDaiDien = new RoundedPanel(36, UIComponents.tint(mauVaiTro, 0.85f), null);
@@ -81,7 +82,7 @@ public class GiaoDienChinh extends JFrame {
 
         JPanel nguoiDung = UIComponents.trong(new GridLayout(2, 1));
         nguoiDung.add(UIComponents.label(hoTen, UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK));
-        nguoiDung.add(UIComponents.label(vaiTro, UIConstants.FONT_BODY, mauVaiTro));
+        nguoiDung.add(UIComponents.label(vaiTro == null ? "" : vaiTro.getText(), UIConstants.FONT_BODY, mauVaiTro));
 
         btnDangXuat.setContentAreaFilled(false);
         btnDangXuat.setBorderPainted(false);
@@ -132,11 +133,11 @@ public class GiaoDienChinh extends JFrame {
         return menu;
     }
 
-    private static Color mauTheoVaiTro(String vaiTro) {
-        if (PhienDangNhap.VAI_TRO_CHU_CUA_HANG.equals(vaiTro)) {
+    private static Color mauTheoVaiTro(VaiTro vaiTro) {
+        if (vaiTro == VaiTro.CHU_CUA_HANG) {
             return UIConstants.ROLE_MANAGER;
         }
-        if (PhienDangNhap.VAI_TRO_LE_TAN.equals(vaiTro)) {
+        if (vaiTro == VaiTro.LE_TAN) {
             return UIConstants.ROLE_RECEPTION;
         }
         return UIConstants.ROLE_TECH_STOCK;

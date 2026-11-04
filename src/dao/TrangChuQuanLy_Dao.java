@@ -15,7 +15,7 @@ import java.util.Map;
 
 /**
  * Truy vấn số liệu tổng hợp cho trang chủ phân hệ Quản lý.
- * Mọi mốc thời gian đều truyền dưới dạng tham số (nửa khoảng [từ, đến)) để không bọc hàm lên cột ngayLap.
+ * Mọi mốc thời gian đều truyền dưới dạng tham số (nửa khoảng [từ, đến)) để không bọc hàm lên cột ngayThanhToan.
  */
 public class TrangChuQuanLy_Dao {
 
@@ -25,7 +25,7 @@ public class TrangChuQuanLy_Dao {
     /** Doanh thu đã thanh toán trong đúng một ngày. */
     public double doanhThuNgay(LocalDate ngay) throws SQLException {
         String sql = "SELECT COALESCE(SUM(tongThanhToan), 0) AS tong FROM HoaDon "
-                + "WHERE " + DA_THANH_TOAN + "AND ngayLap >= ? AND ngayLap < ?";
+                + "WHERE " + DA_THANH_TOAN + "AND ngayThanhToan >= ? AND ngayThanhToan < ?";
         Timestamp tu = Timestamp.valueOf(ngay.atStartOfDay());
         Timestamp den = Timestamp.valueOf(ngay.plusDays(1).atStartOfDay());
         try (Connection c = ConnectDB.getConnection();
@@ -42,7 +42,7 @@ public class TrangChuQuanLy_Dao {
     /** Doanh thu đã thanh toán trong một tháng. */
     public double doanhThuThang(int nam, int thang) throws SQLException {
         String sql = "SELECT COALESCE(SUM(tongThanhToan), 0) AS tong FROM HoaDon "
-                + "WHERE " + DA_THANH_TOAN + "AND ngayLap >= ? AND ngayLap < ?";
+                + "WHERE " + DA_THANH_TOAN + "AND ngayThanhToan >= ? AND ngayThanhToan < ?";
         LocalDate dauThang = LocalDate.of(nam, thang, 1);
         Timestamp tu = Timestamp.valueOf(dauThang.atStartOfDay());
         Timestamp den = Timestamp.valueOf(dauThang.plusMonths(1).atStartOfDay());
@@ -79,10 +79,16 @@ public class TrangChuQuanLy_Dao {
         }
     }
 
-    /** {số hóa đơn còn nợ, tổng tiền còn nợ}. */
+    /**
+     * {số việc chờ thanh toán, tổng tiền còn nợ}. Số việc gồm hóa đơn công nợ và phiếu đã hoàn thành chưa có hóa đơn;
+     * tổng tiền chỉ tính công nợ vì phiếu chưa lập hóa đơn chưa có khuyến mãi và thuế nên chưa biết số tiền cuối.
+     */
     public Object[] hoaDonChoThanhToan() throws SQLException {
-        String sql = "SELECT COUNT(*) AS soLuong, COALESCE(SUM(tongThanhToan), 0) AS tongTien "
-                + "FROM HoaDon WHERE " + CONG_NO;
+        String sql = "SELECT (SELECT COUNT(*) FROM HoaDon WHERE " + CONG_NO + ") "
+                + "+ (SELECT COUNT(*) FROM PhieuTiepNhanVaSuaChua p WHERE p.trangThai = N'Hoàn thành' "
+                + "AND NOT EXISTS (SELECT 1 FROM HoaDon h WHERE h.maPhieuTNSC = p.maPhieuTNSC "
+                + "AND h.trangThaiThanhToan <> N'Đã hủy')) AS soLuong, "
+                + "(SELECT COALESCE(SUM(tongThanhToan), 0) FROM HoaDon WHERE " + CONG_NO + ") AS tongTien";
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql);
              ResultSet r = p.executeQuery()) {
@@ -95,7 +101,7 @@ public class TrangChuQuanLy_Dao {
     public double[] tyTrongThang(int nam, int thang) throws SQLException {
         String sql = "SELECT COALESCE(SUM(tongTienCong), 0) AS tienCong, "
                 + "COALESCE(SUM(tongTienPhuTung), 0) AS phuTung "
-                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayLap >= ? AND ngayLap < ?";
+                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayThanhToan >= ? AND ngayThanhToan < ?";
         LocalDate dauThang = LocalDate.of(nam, thang, 1);
         Timestamp tu = Timestamp.valueOf(dauThang.atStartOfDay());
         Timestamp den = Timestamp.valueOf(dauThang.plusMonths(1).atStartOfDay());
@@ -112,9 +118,9 @@ public class TrangChuQuanLy_Dao {
 
     /** Doanh thu đã thanh toán theo từng ngày trong khoảng (chỉ các ngày có hóa đơn). */
     public Map<LocalDate, Double> doanhThuTheoNgay(LocalDate tu, LocalDate den) throws SQLException {
-        String sql = "SELECT CAST(ngayLap AS DATE) AS ngay, COALESCE(SUM(tongThanhToan), 0) AS tong "
-                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayLap >= ? AND ngayLap < ? "
-                + "GROUP BY CAST(ngayLap AS DATE) ORDER BY CAST(ngayLap AS DATE)";
+        String sql = "SELECT CAST(ngayThanhToan AS DATE) AS ngay, COALESCE(SUM(tongThanhToan), 0) AS tong "
+                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayThanhToan >= ? AND ngayThanhToan < ? "
+                + "GROUP BY CAST(ngayThanhToan AS DATE) ORDER BY CAST(ngayThanhToan AS DATE)";
         Timestamp tuTS = Timestamp.valueOf(tu.atStartOfDay());
         Timestamp denTS = Timestamp.valueOf(den.plusDays(1).atStartOfDay());
         Map<LocalDate, Double> ketQua = new LinkedHashMap<>();
@@ -133,13 +139,13 @@ public class TrangChuQuanLy_Dao {
 
     /** {LocalDate ngày, int số phiếu, double tiền công, double phụ tùng, double VAT, double tổng} theo ngày. */
     public List<Object[]> bangDoanhThu(LocalDate tu, LocalDate den) throws SQLException {
-        String sql = "SELECT CAST(ngayLap AS DATE) AS ngay, COUNT(*) AS soPhieu, "
+        String sql = "SELECT CAST(ngayThanhToan AS DATE) AS ngay, COUNT(*) AS soPhieu, "
                 + "COALESCE(SUM(tongTienCong), 0) AS tienCong, "
                 + "COALESCE(SUM(tongTienPhuTung), 0) AS phuTung, "
                 + "COALESCE(SUM(tongTienVAT), 0) AS vat, "
                 + "COALESCE(SUM(tongThanhToan), 0) AS tong "
-                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayLap >= ? AND ngayLap < ? "
-                + "GROUP BY CAST(ngayLap AS DATE) ORDER BY CAST(ngayLap AS DATE) DESC";
+                + "FROM HoaDon WHERE " + DA_THANH_TOAN + "AND ngayThanhToan >= ? AND ngayThanhToan < ? "
+                + "GROUP BY CAST(ngayThanhToan AS DATE) ORDER BY CAST(ngayThanhToan AS DATE) DESC";
         Timestamp tuTS = Timestamp.valueOf(tu.atStartOfDay());
         Timestamp denTS = Timestamp.valueOf(den.plusDays(1).atStartOfDay());
         List<Object[]> ketQua = new ArrayList<>();

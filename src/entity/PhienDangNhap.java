@@ -2,19 +2,14 @@ package entity;
 
 /** Phiên làm việc của người dùng đang đăng nhập, dùng chung toàn ứng dụng. */
 public final class PhienDangNhap {
-    public static final String VAI_TRO_CHU_CUA_HANG = "Chủ cửa hàng";
-    public static final String VAI_TRO_LE_TAN = "Lễ tân";
-    public static final String VAI_TRO_KY_THUAT_VIEN = "Kỹ thuật viên";
-    public static final String VAI_TRO_THU_KHO = "Thủ kho";
-
     private static PhienDangNhap hienTai;
 
     private final String tenDangNhap;
     private final String maNV;
     private final String hoTen;
-    private final String vaiTro;
+    private final VaiTro vaiTro;
 
-    public PhienDangNhap(String tenDangNhap, String maNV, String hoTen, String vaiTro) {
+    public PhienDangNhap(String tenDangNhap, String maNV, String hoTen, VaiTro vaiTro) {
         this.tenDangNhap = tenDangNhap;
         this.maNV = maNV;
         this.hoTen = hoTen;
@@ -46,7 +41,7 @@ public final class PhienDangNhap {
         return hoTen;
     }
 
-    public String getVaiTro() {
+    public VaiTro getVaiTro() {
         return vaiTro;
     }
 }

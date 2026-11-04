@@ -7,8 +7,8 @@ import java.util.Objects;
 public class PhieuBanGiao {
 
     private String maPhieuBG;
-    private String maPhieuTNSC;
-    private String maNVBanGiao;
+    private PhieuTiepNhanVaSuaChua phieu;
+    private NhanVien nhanVienBanGiao;
     private String chuKyKhachHang;
     private LocalDateTime ngayBanGiao;
     private boolean xacNhanHoanTat;
@@ -21,12 +21,12 @@ public class PhieuBanGiao {
         setMaPhieuBG(maPhieuBG);
     }
 
-    public PhieuBanGiao(String maPhieuBG, String maPhieuTNSC, String maNVBanGiao,
+    public PhieuBanGiao(String maPhieuBG, PhieuTiepNhanVaSuaChua phieu, NhanVien nhanVienBanGiao,
                         LocalDateTime ngayBanGiao, boolean xacNhanHoanTat,
                         boolean xacNhanThanhToan, String chuKyKhachHang) {
         setMaPhieuBG(maPhieuBG);
-        setMaPhieuTNSC(maPhieuTNSC);
-        setMaNVBanGiao(maNVBanGiao);
+        setPhieu(phieu);
+        setNhanVienBanGiao(nhanVienBanGiao);
         setNgayBanGiao(ngayBanGiao);
         setXacNhanHoanTat(xacNhanHoanTat);
         setXacNhanThanhToan(xacNhanThanhToan);
@@ -44,26 +44,26 @@ public class PhieuBanGiao {
         this.maPhieuBG = maPhieuBG.trim();
     }
 
-    public String getMaPhieuTNSC() {
-        return maPhieuTNSC;
+    public PhieuTiepNhanVaSuaChua getPhieu() {
+        return phieu;
     }
 
-    public void setMaPhieuTNSC(String maPhieuTNSC) {
-        if (maPhieuTNSC == null || maPhieuTNSC.trim().isEmpty()) {
+    public void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
+        if (phieu == null) {
             throw new IllegalArgumentException("Mã phiếu sửa chữa không được để trống.");
         }
-        this.maPhieuTNSC = maPhieuTNSC.trim();
+        this.phieu = phieu;
     }
 
-    public String getMaNVBanGiao() {
-        return maNVBanGiao;
+    public NhanVien getNhanVienBanGiao() {
+        return nhanVienBanGiao;
     }
 
-    public void setMaNVBanGiao(String maNVBanGiao) {
-        if (maNVBanGiao == null || maNVBanGiao.trim().isEmpty()) {
+    public void setNhanVienBanGiao(NhanVien nhanVienBanGiao) {
+        if (nhanVienBanGiao == null) {
             throw new IllegalArgumentException("Nhân viên bàn giao không được để trống.");
         }
-        this.maNVBanGiao = maNVBanGiao.trim();
+        this.nhanVienBanGiao = nhanVienBanGiao;
     }
 
     public String getChuKyKhachHang() {
@@ -117,6 +117,6 @@ public class PhieuBanGiao {
 
     @Override
     public String toString() {
-        return maPhieuBG + " - " + maPhieuTNSC;
+        return maPhieuBG + " - " + (phieu == null ? null : phieu.getMaPhieuTNSC());
     }
 }

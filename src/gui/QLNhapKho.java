@@ -73,9 +73,7 @@ public class QLNhapKho extends JPanel {
 
     private final JLabel lblFooterSoPhieu = UIComponents.label("Hiển thị 0 / 0 phiếu", UIConstants.FONT_CAPTION.deriveFont(12.5f), UIConstants.TEXT_MUTED);
     private final JLabel lblCapNhatLuc = UIComponents.label("Cập nhật lúc --:--", UIConstants.FONT_CAPTION.deriveFont(12.5f), UIConstants.TEXT_MUTED);
-    private final JButton btnLamMoi = UIComponents.nutIcon(
-            new UIComponents.LineIcon(UIComponents.Loai.REFRESH, UIConstants.PRIMARY, 16)
-    );
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
 
     // Thành phần Modal Popup Lập phiếu nhập kho
     private final JLabel lblMaPhieuNhapModal = UIComponents.label("PN031120260001", UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK);
@@ -166,7 +164,7 @@ public class QLNhapKho extends JPanel {
 
         // Kéo rộng cboLocNCC lên 270px để không bị che tên Nhà cung cấp dài khi xổ xuống
         JPanel pnlFilterRow = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        fTimPhieu.setPreferredSize(new Dimension(320, 40));
+        fTimPhieu.setPreferredSize(new Dimension(260, 40));
         UIComponents.styleCombo(cboLocNCC);
         cboLocNCC.setPreferredSize(new Dimension(270, 40));
         fTuNgay.setPreferredSize(new Dimension(140, 40));
@@ -177,6 +175,7 @@ public class QLNhapKho extends JPanel {
         pnlFilterRow.add(cboLocNCC);
         pnlFilterRow.add(fTuNgay);
         pnlFilterRow.add(fDenNgay);
+        pnlFilterRow.add(btnTaiDuLieu);
         pnlCardTop.add(pnlFilterRow, BorderLayout.CENTER);
 
         cardBang.add(pnlCardTop, BorderLayout.NORTH);
@@ -200,7 +199,6 @@ public class QLNhapKho extends JPanel {
         pnlRightFooter.add(new QLPhuTung.PaginationButton("›", false));
         pnlRightFooter.add(Box.createHorizontalStrut(8));
         pnlRightFooter.add(lblCapNhatLuc);
-        pnlRightFooter.add(btnLamMoi);
         pnlFooter.add(pnlRightFooter, BorderLayout.EAST);
 
         cardBang.add(pnlFooter, BorderLayout.SOUTH);
@@ -351,7 +349,7 @@ public class QLNhapKho extends JPanel {
 
     private void capNhatChieuCaoBang() {
         if (spBang == null) return;
-        int rowCount = Math.max(1, tblPhieuNhap.getRowCount());
+        int rowCount = Math.max(3, tblPhieuNhap.getRowCount());
         int headerH = tblPhieuNhap.getTableHeader().getPreferredSize().height;
         int totalH = headerH + rowCount * tblPhieuNhap.getRowHeight() + 2;
         Dimension d = new Dimension(100, totalH);
@@ -434,7 +432,7 @@ public class QLNhapKho extends JPanel {
     public JTable getTblPhieuNhap() { return tblPhieuNhap; }
     public JLabel getLblFooterSoPhieu() { return lblFooterSoPhieu; }
     public JLabel getLblCapNhatLuc() { return lblCapNhatLuc; }
-    public JButton getBtnLamMoi() { return btnLamMoi; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
 
     public JLabel getLblMaPhieuNhapModal() { return lblMaPhieuNhapModal; }
     public JLabel getLblNgayNhapModal() { return lblNgayNhapModal; }

@@ -2,7 +2,8 @@ package gui;
 
 import controller.DieuHuongHoaDon;
 import controller.QLHoaDonController;
-import entity.HoaDon;
+import entity.HinhThucThanhToan;
+import entity.TrangThaiHoaDon;
 import util.UIComponents;
 import util.UIComponents.*;
 import util.UIConstants;
@@ -22,11 +23,11 @@ public class QLHoaDon extends JPanel {
     public static final int ICON_HUY = 1;
 
     private final JTextField txtTimKiem = new PlaceholderField("Mã HĐ / Mã phiếu / SĐT / Biển số");
-    private final JComboBox<String> cboTrangThai = new JComboBox<>();
-    private final JComboBox<String> cboHinhThuc = new JComboBox<>();
+    private final JComboBox<Object> cboTrangThai = new JComboBox<>();
+    private final JComboBox<Object> cboHinhThuc = new JComboBox<>();
     private final JTextField txtTuNgay = new PlaceholderField("Chọn ngày");
     private final JTextField txtDenNgay = new PlaceholderField("Chọn ngày");
-    private final JButton btnTim = UIComponents.nutChinh("Tìm", UIConstants.PRIMARY);
+    private final JButton btnTim = UIComponents.nutTaiDuLieu();
     private final JButton btnLapHoaDon = UIComponents.nutChinh("+ Lập hóa đơn", UIConstants.PRIMARY);
     private final JLabel lblLoiLoc = UIComponents.errorLabel();
     private final JLabel lblSoDong = UIComponents.label(" ", UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
@@ -83,11 +84,11 @@ public class QLHoaDon extends JPanel {
         UIComponents.styleInput(txtDenNgay);
         util.ChonNgay.ganNgay(txtTuNgay, txtDenNgay);
         cboTrangThai.addItem(TAT_CA);
-        for (String s : HoaDon.TRANG_THAI) {
+        for (TrangThaiHoaDon s : TrangThaiHoaDon.values()) {
             cboTrangThai.addItem(s);
         }
         cboHinhThuc.addItem(TAT_CA);
-        for (String s : HoaDon.HINH_THUC) {
+        for (HinhThucThanhToan s : HinhThucThanhToan.values()) {
             cboHinhThuc.addItem(s);
         }
         UIComponents.styleCombo(cboTrangThai);
@@ -122,14 +123,13 @@ public class QLHoaDon extends JPanel {
     }
 
     static Color mauTrangThai(String trangThai) {
-        switch (trangThai) {
-            case HoaDon.DA_THANH_TOAN:
-                return UIConstants.STATUS_SUCCESS;
-            case HoaDon.CONG_NO:
-                return UIConstants.STATUS_WARNING;
-            default:
-                return UIConstants.TEXT_MUTED;
+        if (TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(trangThai)) {
+            return UIConstants.STATUS_SUCCESS;
         }
+        if (TrangThaiHoaDon.CONG_NO.getText().equals(trangThai)) {
+            return UIConstants.STATUS_WARNING;
+        }
+        return UIConstants.TEXT_MUTED;
     }
 
     /** Hiện toàn bộ dòng khớp, bảng tự cuộn khi quá 14 dòng. */
@@ -152,8 +152,8 @@ public class QLHoaDon extends JPanel {
     }
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboTrangThai() { return cboTrangThai; }
-    public JComboBox<String> getCboHinhThuc() { return cboHinhThuc; }
+    public JComboBox<Object> getCboTrangThai() { return cboTrangThai; }
+    public JComboBox<Object> getCboHinhThuc() { return cboHinhThuc; }
     public JTextField getTxtTuNgay() { return txtTuNgay; }
     public JTextField getTxtDenNgay() { return txtDenNgay; }
     public JButton getBtnTim() { return btnTim; }

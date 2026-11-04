@@ -294,10 +294,15 @@ public final class UIComponents {
             }
             g2.setFont(getFont());
             FontMetrics fm = g2.getFontMetrics();
-            int x = (getWidth() - fm.stringWidth(getText())) / 2;
+            Icon bieuTuong = getIcon();
+            int rongIcon = bieuTuong == null ? 0 : bieuTuong.getIconWidth() + 8;
+            int x = (getWidth() - fm.stringWidth(getText()) - rongIcon) / 2;
             int y = (getHeight() - fm.getHeight()) / 2 + fm.getAscent();
+            if (bieuTuong != null) {
+                bieuTuong.paintIcon(this, g2, x, (getHeight() - bieuTuong.getIconHeight()) / 2);
+            }
             g2.setColor(fg);
-            g2.drawString(getText(), x, y);
+            g2.drawString(getText(), x + rongIcon, y);
             g2.dispose();
         }
     }
@@ -305,6 +310,13 @@ public final class UIComponents {
     /** Nút hành động chính (nền màu). */
     public static JButton nutChinh(String text, Color mau) {
         return new RoundedButton(text, mau, false);
+    }
+
+    /** Nút "Tải dữ liệu" dùng chung cho mọi màn hình danh sách. */
+    public static JButton nutTaiDuLieu() {
+        JButton b = nutChinh("Tải dữ liệu", UIConstants.PRIMARY);
+        b.setIcon(new LineIcon(Loai.REFRESH, Color.WHITE, 16));
+        return b;
     }
 
     /** Nút phụ (Hủy, Đóng): nền trắng viền xám. */
@@ -439,11 +451,36 @@ public final class UIComponents {
     /** Bọc bảng vào JScrollPane không viền, nền trắng (đặt trong card). */
     public static JScrollPane cuonBang(JTable t) {
         JScrollPane sp = new JScrollPane(t);
+        JViewport vung = new JViewport() {
+            @Override
+            public void paint(Graphics g) {
+                super.paint(g);
+                if (Boolean.TRUE.equals(t.getClientProperty("chuaTai")) && t.getRowCount() == 0) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+                    g2.setFont(UIConstants.FONT_BODY.deriveFont(14f));
+                    g2.setColor(UIConstants.TEXT_MUTED);
+                    FontMetrics fm = g2.getFontMetrics();
+                    g2.drawString(GOI_Y_TAI, (getWidth() - fm.stringWidth(GOI_Y_TAI)) / 2, Math.min(getHeight() - 8, 50));
+                    g2.dispose();
+                }
+            }
+        };
+        vung.setView(t);
+        sp.setViewport(vung);
         sp.setBorder(null);
         sp.getViewport().setBackground(UIConstants.CARD_BG);
         sp.getVerticalScrollBar().setUnitIncrement(20);
         sp.getVerticalScrollBar().setBlockIncrement(120);
         return sp;
+    }
+
+    public static final String GOI_Y_TAI = "Bấm Tải dữ liệu để xem danh sách.";
+
+    /** Bảng đang rỗng vì chưa bấm Tải dữ liệu: hiện gợi ý ở vùng trống. */
+    public static void goiYChuaTai(JTable t, boolean chuaTai) {
+        t.putClientProperty("chuaTai", chuaTai);
+        t.repaint();
     }
 
     public static void datDoRong(JTable t, int... w) {

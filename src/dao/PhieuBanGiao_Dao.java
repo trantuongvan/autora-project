@@ -1,7 +1,11 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.NhanVien;
 import entity.PhieuBanGiao;
+import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiHoaDon;
+import entity.TrangThaiPhieu;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,7 +31,7 @@ public class PhieuBanGiao_Dao {
             + "bg.maNV_BanGiao, nv.hoTen AS tenNVBanGiao "
             + "FROM PhieuTiepNhanVaSuaChua p "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
-            + "JOIN KhachHang k ON k.maKH = x.maKH "
+            + "JOIN KhachHang k ON k.maKH = p.maKH "
             + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
             + "AND h.trangThaiThanhToan <> N'Đã hủy' "
             + "LEFT JOIN Thue th ON th.maThue = h.maThue "
@@ -69,10 +73,10 @@ public class PhieuBanGiao_Dao {
         String sql = LIST_SQL
                 + " WHERE p.trangThai <> N'Đã hủy' "
                 + "AND (? = '' OR p.maPhieuTNSC LIKE ? OR x.bienSo LIKE ? OR k.hoTen LIKE ?)"
-                + " AND (? = 'Tất cả'"
-                + " OR (? = 'Chờ bàn giao' AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao bg"
+                + " AND (? = N'Tất cả'"
+                + " OR (? = N'Chờ bàn giao' AND NOT EXISTS (SELECT 1 FROM PhieuBanGiao bg"
                 + " WHERE bg.maPhieuTNSC = p.maPhieuTNSC))"
-                + " OR (? = 'Đã bàn giao' AND EXISTS (SELECT 1 FROM PhieuBanGiao bg"
+                + " OR (? = N'Đã bàn giao' AND EXISTS (SELECT 1 FROM PhieuBanGiao bg"
                 + " WHERE bg.maPhieuTNSC = p.maPhieuTNSC)))"
                 + " ORDER BY p.thoiGianTiepNhan DESC";
         String query = tuKhoa == null ? "" : tuKhoa.trim();
@@ -92,8 +96,8 @@ public class PhieuBanGiao_Dao {
                 while (result.next()) {
                     int progress = result.getInt("tienDo");
                     String payment = result.getString("thanhToan");
-                    boolean paid = "Đã thanh toán".equals(payment);
-                    boolean debt = "Công nợ".equals(payment) && result.getBoolean("duocGhiNo");
+                    boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
+                    boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
                     boolean ready = progress == 100 && (paid || debt);
                     String invoice;
                     if (paid) {
@@ -132,7 +136,7 @@ public class PhieuBanGiao_Dao {
                         + "MAX(CASE WHEN bg.maPhieuBG IS NULL THEN 0 ELSE 1 END) AS daBanGiao "
                         + "FROM PhieuTiepNhanVaSuaChua p "
                         + "JOIN Xe x ON x.bienSo = p.bienSo "
-                        + "JOIN KhachHang k ON k.maKH = x.maKH "
+                        + "JOIN KhachHang k ON k.maKH = p.maKH "
                         + "LEFT JOIN ChiTietSuaChua_DichVu d ON d.maPhieuTNSC = p.maPhieuTNSC "
                         + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
                         + "AND h.trangThaiThanhToan <> N'Đã hủy' "
@@ -200,8 +204,8 @@ public class PhieuBanGiao_Dao {
                 }
                 int progress = result.getInt("tienDo");
                 String payment = result.getString("thanhToan");
-                boolean paid = "Đã thanh toán".equals(payment);
-                boolean debt = "Công nợ".equals(payment) && result.getBoolean("duocGhiNo");
+                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
+                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
                 return new Object[]{
                         result.getString("bienSo"), result.getString("xe"),
                         result.getString("hoTen"), progress, result.getDouble("tienCong"),
@@ -226,14 +230,14 @@ public class PhieuBanGiao_Dao {
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
                 int progress = result.getInt("tienDo");
-                boolean paid = "Đã thanh toán".equals(result.getString("thanhToan"));
-                boolean debt = "Công nợ".equals(result.getString("thanhToan"))
+                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(result.getString("thanhToan"));
+                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(result.getString("thanhToan"))
                         && result.getBoolean("duocGhiNo");
                 boolean ready = progress == 100 && (paid || debt);
                 String status;
                 if (ready) {
                     status = "Chờ bàn giao";
-                } else if ("Chờ kiểm tra".equals(result.getString("trangThai"))) {
+                } else if (TrangThaiPhieu.fromDb(result.getString("trangThai")) == TrangThaiPhieu.CHO_KIEM_TRA) {
                     status = "Chờ tiếp nhận";
                 } else if (progress == 100) {
                     status = "Chờ xử lý hóa đơn";
@@ -295,8 +299,8 @@ public class PhieuBanGiao_Dao {
         Timestamp time = result.getTimestamp("ngayBanGiao");
         return new PhieuBanGiao(
                 result.getString("maPhieuBG"),
-                result.getString("maPhieuTNSC"),
-                result.getString("maNV_BanGiao"),
+                new PhieuTiepNhanVaSuaChua(result.getString("maPhieuTNSC")),
+                new NhanVien(result.getString("maNV_BanGiao")),
                 time == null ? null : time.toLocalDateTime(),
                 result.getBoolean("xacNhanHoanTat"),
                 result.getBoolean("xacNhanThanhToan"),

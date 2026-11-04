@@ -39,6 +39,7 @@ public class QLHoSoXe extends JPanel {
     }
 
     // --- Danh sách ---
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton btnThemHoSo = UIComponents.nutChinh("+  Thêm hồ sơ xe", UIConstants.PRIMARY);
     public static final String TAT_CA_HANG = "Tất cả hãng xe";
     private final JTextField txtTimKiem;
@@ -92,6 +93,7 @@ public class QLHoSoXe extends JPanel {
         UIComponents.styleCombo(cboLocHang);
         cboLocHang.setPreferredSize(new Dimension(180, 40));
         trai.add(cboLocHang);
+        trai.add(btnTaiDuLieu);
         hangTim.add(trai, BorderLayout.WEST);
         hangTim.add(UIComponents.label("Bấm vào dòng để hiện hồ sơ lên biểu mẫu", UIConstants.FONT_BODY.deriveFont(13f), UIConstants.TEXT_MUTED), BorderLayout.EAST);
         noiDung.them(hangTim, 18);
@@ -334,7 +336,7 @@ public class QLHoSoXe extends JPanel {
         btnHuy.setText("Hủy");
     }
     public void dienForm(entity.Xe xe) {
-        maChuSoHuuCanChon = xe.getMaKH();
+        maChuSoHuuCanChon = xe.getKhachHang().getMaKH();
         txtBienSo.setText(xe.getBienSo());
         txtVIN.setText(xe.getSoVIN());
         cboHang.setSelectedItem(xe.getHangXe());
@@ -476,6 +478,7 @@ public class QLHoSoXe extends JPanel {
     public JButton getBtnThemHoSo() { return btnThemHoSo; }
     public JComboBox<String> getCboLocHang() { return cboLocHang; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }
     public JTextField getTxtBienSo() { return txtBienSo; }
@@ -493,13 +496,8 @@ public class QLHoSoXe extends JPanel {
     // ==========================================================
 
     public void napDuLieuMau() {
-        List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"51H-123.45", "Toyota / Vios", "2021", "RL4B29F3300123456", "Nguyễn Văn Minh", "0901234567", ""});
-        ds.add(new Object[]{"51G-678.90", "Honda / City", "2020", "RL4GM6640LY123456", "Trần Thị Hương", "0912345678", ""});
-        ds.add(new Object[]{"51G-678.90", "Honda / City", "2020", "RL4GM6640LY123456", "Trần Thị Hương", "0912345678", ""});
-        ds.add(new Object[]{"51G-678.90", "Honda / City", "2020", "RL4GM6640LY123456", "Trần Thị Hương", "0912345678", ""});
-        setDanhSach(ds);
-        setThongKeBang(2, null);
+        setDanhSach(new ArrayList<>());
+        setThongKeBang(0, null);
 
         setDanhSachChuSoHuu(List.of("KH0001 - Nguyễn Văn Minh (0901234567)", "KH0002 - Trần Thị Hương (0912345678)"));
         // Form thêm mới bắt đầu ở trạng thái sạch; chỉ hiển thị lỗi sau khi người dùng lưu dữ liệu sai.

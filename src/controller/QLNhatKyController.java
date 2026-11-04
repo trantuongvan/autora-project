@@ -1,12 +1,12 @@
 package controller;
 
 import dao.NhatKy_Dao;
+import entity.NhatKyHoatDong;
 import gui.QLNhatKy;
 import util.ChonNgay;
+import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.time.LocalDate;
@@ -26,17 +26,12 @@ public class QLNhatKyController {
     public QLNhatKyController(QLNhatKy view) {
         this.view = view;
         initController();
-        taiDuLieu();
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { taiDuLieu(); }
-            @Override public void removeUpdate(DocumentEvent e) { taiDuLieu(); }
-            @Override public void changedUpdate(DocumentEvent e) { taiDuLieu(); }
-        });
-        view.getTxtTuNgay().addActionListener(e -> taiDuLieu());
-        view.getTxtDenNgay().addActionListener(e -> taiDuLieu());
+        view.getBtnTaiDuLieu().addActionListener(e -> taiDuLieu());
+        view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
         view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai");
         view.getActionMap().put("taiLai", new AbstractAction() {
             @Override
@@ -47,13 +42,14 @@ public class QLNhatKyController {
     }
 
     private void taiDuLieu() {
+        UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         String tuKhoa = view.getTxtTimKiem().getText();
         LocalDate tuNgay = docNgay(view.getTxtTuNgay().getText());
         LocalDate denNgay = docNgay(view.getTxtDenNgay().getText());
         int phien = ++phienBan;
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<NhatKyHoatDong>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<NhatKyHoatDong> doInBackground() throws Exception {
                 return dao.search(tuKhoa, tuNgay, denNgay);
             }
 
@@ -64,10 +60,9 @@ public class QLNhatKyController {
                 }
                 try {
                     List<Object[]> dong = new ArrayList<>();
-                    for (Object[] r : get()) {
-                        Object[] hienThi = r.clone();
-                        hienThi[0] = ((LocalDateTime) r[0]).format(DINH_DANG);
-                        dong.add(hienThi);
+                    for (NhatKyHoatDong r : get()) {
+                        dong.add(new Object[] {r.getThoiGian().format(DINH_DANG), r.getTenDangNhap(), r.getHanhDong(),
+                            r.getDoiTuong(), r.getGiaTriCu(), r.getGiaTriMoi()});
                     }
                     view.setDanhSach(dong);
                 } catch (Exception ex) {

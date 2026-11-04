@@ -2,6 +2,7 @@ package controller;
 
 import dao.DangNhap_Dao;
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import gui.DangNhap;
 import gui.GiaoDienChinh;
 
@@ -120,7 +121,7 @@ public class DangNhapController {
         }
         try {
             PhienDangNhap chu = dao.xacThuc(txtChu.getText().trim(), new String(pwdChu.getPassword()));
-            if (chu == null || !PhienDangNhap.VAI_TRO_CHU_CUA_HANG.equals(chu.getVaiTro())) {
+            if (chu == null || chu.getVaiTro() != VaiTro.CHU_CUA_HANG) {
                 JOptionPane.showMessageDialog(view, "Không xác nhận được tài khoản chủ cửa hàng.",
                         "Đặt lại mật khẩu", JOptionPane.WARNING_MESSAGE);
             } else if (!dao.datLaiMatKhau(taiKhoan, matKhauMoi, chu.getTenDangNhap())) {

@@ -1,6 +1,8 @@
 package controller;
 
+import dao.LichHen_Dao;
 import dao.PhieuBanGiao_Dao;
+import entity.LichHen;
 import gui.TrangChuLeTan;
 
 import javax.swing.JOptionPane;
@@ -9,13 +11,21 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 /** Nạp số liệu tổng quan và danh sách công việc của lễ tân. */
 public class TrangChuLeTanController {
 
     private final TrangChuLeTan view;
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
+    private final LichHen_Dao lichHenDao = new LichHen_Dao();
+    private List<LichHen> lichHen = new ArrayList<>();
+    /** Nhận biển số (hoặc SĐT khi lịch chưa gắn xe) để mở Tiếp nhận xe và tra cứu. */
+    private Consumer<String> moTiepNhan = tuKhoa -> { };
     private List<Object[]> all = new ArrayList<>();
     private int loadVersion;
     private boolean loadErrorShown;
@@ -53,14 +63,29 @@ public class TrangChuLeTanController {
             }
         });
         view.getBtnLamMoi().addActionListener(e -> load());
+        view.getTblLichHen().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = view.getTblLichHen().rowAtPoint(e.getPoint());
+                if (e.getClickCount() == 2 && row >= 0 && row < lichHen.size()) {
+                    LichHen lh = lichHen.get(row);
+                    moTiepNhan.accept(lh.getXe() != null ? lh.getXe().getBienSo() : lh.getKhachHang().getSoDienThoai());
+                }
+            }
+        });
     }
 
-    private void load() {
+    public void setMoTiepNhan(Consumer<String> moTiepNhan) {
+        this.moTiepNhan = moTiepNhan;
+    }
+
+    /** Tải lại số liệu, danh sách công việc và lịch hẹn hôm nay. */
+    public void load() {
         final int version = ++loadVersion;
         new SwingWorker<Object[], Void>() {
             @Override
             protected Object[] doInBackground() throws Exception {
-                return new Object[]{dao.findDashboardJobs(), dao.findDashboardStats()};
+                return new Object[]{dao.findDashboardJobs(), dao.findDashboardStats(), lichHenDao.findHomNay()};
             }
 
             @Override
@@ -75,6 +100,9 @@ public class TrangChuLeTanController {
                     all = jobs;
                     int[] stats = (int[]) result[1];
                     view.setSoLieu(stats[0], stats[1], stats[2], stats[3]);
+                    @SuppressWarnings("unchecked")
+                    List<LichHen> homNay = (List<LichHen>) result[2];
+                    hienLichHen(homNay);
                     filter();
                     loadErrorShown = false;
                 } catch (InterruptedException ex) {
@@ -85,6 +113,18 @@ public class TrangChuLeTanController {
                 }
             }
         }.execute();
+    }
+
+    private void hienLichHen(List<LichHen> homNay) {
+        lichHen = homNay;
+        DateTimeFormatter gio = DateTimeFormatter.ofPattern("HH:mm");
+        List<Object[]> rows = new ArrayList<>();
+        for (LichHen lh : homNay) {
+            rows.add(new Object[]{lh.getThoiGianHen().format(gio), lh.getKhachHang().getHoTen(),
+                lh.getKhachHang().getSoDienThoai(), lh.getXe() == null ? "—" : lh.getXe().toString(),
+                lh.getGhiChu().isEmpty() ? "—" : lh.getGhiChu()});
+        }
+        view.setLichHen(rows);
     }
 
     private void showLoadError(Throwable error) {

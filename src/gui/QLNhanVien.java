@@ -1,5 +1,8 @@
 package gui;
 
+import entity.CaLamViec;
+import entity.DichVu;
+import entity.VaiTro;
 import util.UIConstants;
 import util.UIComponents;
 import util.UIComponents.*;
@@ -24,12 +27,12 @@ public class QLNhanVien extends JPanel {
     public static final int COT_THAO_TAC = 6;
     public static final int ICON_XOA = 1;
 
-    public static final String[] VI_TRI = {"Chủ cửa hàng", "Lễ tân", "Kỹ thuật viên", "Thủ kho"};
 
     // --- Danh sách ---
     private final JButton btnThemNhanVien = UIComponents.nutChinh("+  Thêm nhân viên", UIConstants.ROLE_MANAGER);
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JTextField txtTimKiem;
-    private final JComboBox<String> cboLocViTri = new JComboBox<>();
+    private final JComboBox<Object> cboLocViTri = new JComboBox<>();
     private final JTable tblDanhSach;
     private final DefaultTableModel tableModel;
     private final RoundedPanel theBang = UIComponents.card();
@@ -41,7 +44,24 @@ public class QLNhanVien extends JPanel {
     private final JTextField txtHoTen = new JTextField();
     private final JTextField txtSoDienThoai = new JTextField();
     private final JTextField txtDiaChi = new JTextField();
-    private final JComboBox<String> cboViTri = new JComboBox<>(VI_TRI);
+    private final JComboBox<VaiTro> cboViTri = new JComboBox<>(VaiTro.values());
+    private static final String KHONG_CA = "(Chưa xếp ca)";
+    private final JComboBox<Object> cboCa = new JComboBox<>(new Object[] {KHONG_CA});
+    private final JLabel lblLoiCa = UIComponents.errorLabel();
+    private final JLabel lblLoiKyNang = UIComponents.errorLabel();
+    private final DefaultTableModel kyNangModel = new DefaultTableModel(new String[] {"Làm được", "Dịch vụ", "Số phút"}, 0) {
+        @Override
+        public Class<?> getColumnClass(int cot) {
+            return cot == 0 ? Boolean.class : Object.class;
+        }
+
+        @Override
+        public boolean isCellEditable(int dong, int cot) {
+            return cot == 0 || (cot == 2 && Boolean.TRUE.equals(getValueAt(dong, 0)));
+        }
+    };
+    private final JTable tblKyNang = new JTable(kyNangModel);
+    private final JPanel pnlKyNang = UIComponents.trong(new BorderLayout(0, 6));
     private final JLabel lblLoiHoTen = UIComponents.errorLabel();
     private final JLabel lblLoiSoDienThoai = UIComponents.errorLabel();
     private final JButton btnHuy = UIComponents.nutPhu("Hủy");
@@ -69,7 +89,7 @@ public class QLNhanVien extends JPanel {
         timKiem.setPreferredSize(new Dimension(500, 40));
         txtTimKiem = timKiem.getTextField();
         cboLocViTri.addItem("Tất cả vị trí");
-        for (String v : VI_TRI) cboLocViTri.addItem(v);
+        for (VaiTro v : VaiTro.values()) cboLocViTri.addItem(v);
         UIComponents.styleCombo(cboLocViTri);
         cboLocViTri.setPreferredSize(new Dimension(170, 40));
         JPanel hangTim = UIComponents.trong(new BorderLayout());
@@ -77,6 +97,7 @@ public class QLNhanVien extends JPanel {
         trai.add(timKiem);
         JPanel phai = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         phai.add(cboLocViTri);
+        phai.add(btnTaiDuLieu);
         hangTim.add(trai, BorderLayout.WEST);
         hangTim.add(phai, BorderLayout.EAST);
         noiDung.them(hangTim, 18);
@@ -155,10 +176,26 @@ public class QLNhanVien extends JPanel {
         than.add(txtDiaChi, UIComponents.gbc(0, 4, 2, 0.56, 6, 12));
         than.add(cboViTri, UIComponents.gbc(2, 4, 1, 0.44, 6, 0));
 
+        than.add(UIComponents.formLabel("Ca làm việc", false), UIComponents.gbc(0, 5, 2, 0.56, 14, 12));
+        than.add(cboCa, UIComponents.gbc(0, 6, 2, 0.56, 6, 12));
+        than.add(lblLoiCa, UIComponents.gbc(0, 7, 2, 0, 4, 12));
+
+        UIComponents.styleTable(tblKyNang);
+        tblKyNang.setRowHeight(34);
+        tblKyNang.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+        UIComponents.datDoRong(tblKyNang, 90, 380, 90);
+        JScrollPane cuonKyNang = UIComponents.cuonBang(tblKyNang);
+        cuonKyNang.setBorder(BorderFactory.createLineBorder(UIConstants.BORDER_COLOR));
+        cuonKyNang.setPreferredSize(new Dimension(100, 44 + 5 * 34 + 2));
+        pnlKyNang.add(UIComponents.formLabel("Kỹ năng (dịch vụ làm được và số phút)", false), BorderLayout.NORTH);
+        pnlKyNang.add(cuonKyNang, BorderLayout.CENTER);
+        pnlKyNang.add(lblLoiKyNang, BorderLayout.SOUTH);
+        than.add(pnlKyNang, UIComponents.gbc(0, 8, 3, 1, 14, 0));
+
         JPanel nut = UIComponents.trong(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         nut.add(btnHuy);
         nut.add(btnLuu);
-        than.add(nut, UIComponents.gbc(0, 6, 3, 1, 16, 0));
+        than.add(nut, UIComponents.gbc(0, 9, 3, 1, 16, 0));
         the.add(than, BorderLayout.CENTER);
         return the;
     }
@@ -214,6 +251,7 @@ public class QLNhanVien extends JPanel {
         UIComponents.styleInput(txtSoDienThoai);
         UIComponents.styleInput(txtDiaChi);
         UIComponents.styleCombo(cboViTri);
+        UIComponents.styleCombo(cboCa);
         fldMaNV.setEditable(false);
     }
 
@@ -262,6 +300,12 @@ public class QLNhanVien extends JPanel {
                 capNhat();
             }
         });
+        // Bảng kỹ năng chỉ có nghĩa với kỹ thuật viên.
+        cboViTri.addActionListener(e -> {
+            pnlKyNang.setVisible(cboViTri.getSelectedItem() == VaiTro.KY_THUAT_VIEN);
+            pnlKyNang.revalidate();
+        });
+        pnlKyNang.setVisible(cboViTri.getSelectedItem() == VaiTro.KY_THUAT_VIEN);
         btnDongXoa.addActionListener(e -> theXoa.setVisible(false));
         btnHuyXoa.addActionListener(e -> theXoa.setVisible(false));
         tblDanhSach.addMouseMotionListener(new MouseAdapter() {
@@ -310,8 +354,40 @@ public class QLNhanVien extends JPanel {
         txtSoDienThoai.setText("");
         txtDiaChi.setText("");
         cboViTri.setSelectedIndex(1);
+        cboCa.setSelectedIndex(0);
+        for (int i = 0; i < kyNangModel.getRowCount(); i++) {
+            kyNangModel.setValueAt("", i, 2);
+            kyNangModel.setValueAt(false, i, 0);
+        }
         hienLoiHoTen(null);
         hienLoiSoDienThoai(null);
+        hienLoiCa(null);
+        hienLoiKyNang(null);
+    }
+
+    public void napDanhSachCa(List<CaLamViec> ca) {
+        cboCa.removeAllItems();
+        cboCa.addItem(KHONG_CA);
+        for (CaLamViec c : ca) {
+            cboCa.addItem(c);
+        }
+    }
+
+    /** Mỗi dịch vụ một dòng, chưa tick; thứ tự dòng trùng thứ tự danh sách truyền vào. */
+    public void napDichVuKyNang(List<DichVu> dichVu) {
+        kyNangModel.setRowCount(0);
+        for (DichVu dv : dichVu) {
+            kyNangModel.addRow(new Object[] {false, dv.getTenDichVu(), ""});
+        }
+    }
+
+    public void hienLoiCa(String msg) {
+        UIComponents.showError(lblLoiCa, msg);
+        UIComponents.setError(cboCa, msg != null);
+    }
+
+    public void hienLoiKyNang(String msg) {
+        UIComponents.showError(lblLoiKyNang, msg);
     }
 
     public void dienForm(entity.NhanVien nv) {
@@ -320,6 +396,7 @@ public class QLNhanVien extends JPanel {
         txtSoDienThoai.setText(nv.getSoDienThoai());
         txtDiaChi.setText(nv.getDiaChi());
         cboViTri.setSelectedItem(nv.getViTriLamViec());
+        cboCa.setSelectedItem(nv.getCaLamViec() == null ? KHONG_CA : nv.getCaLamViec());
     }
 
     public void hienLoiHoTen(String msg) {
@@ -346,14 +423,18 @@ public class QLNhanVien extends JPanel {
     // --- Getter cho Controller ---
     public JButton getBtnThemNhanVien() { return btnThemNhanVien; }
     public JTextField getTxtTimKiem() { return txtTimKiem; }
-    public JComboBox<String> getCboLocViTri() { return cboLocViTri; }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
+    public JComboBox<Object> getCboLocViTri() { return cboLocViTri; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public DefaultTableModel getTableModel() { return tableModel; }
     public JTextField getTxtMaNV() { return txtMaNV; }
     public JTextField getTxtHoTen() { return txtHoTen; }
     public JTextField getTxtSoDienThoai() { return txtSoDienThoai; }
     public JTextField getTxtDiaChi() { return txtDiaChi; }
-    public JComboBox<String> getCboViTri() { return cboViTri; }
+    public JComboBox<VaiTro> getCboViTri() { return cboViTri; }
+    public JComboBox<Object> getCboCa() { return cboCa; }
+    public JTable getTblKyNang() { return tblKyNang; }
+    public DefaultTableModel getKyNangModel() { return kyNangModel; }
     public JButton getBtnHuy() { return btnHuy; }
     public JButton getBtnLuu() { return btnLuu; }
     public JButton getBtnHuyXoa() { return btnHuyXoa; }
@@ -366,17 +447,17 @@ public class QLNhanVien extends JPanel {
 
     public void napDuLieuMau() {
         List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"NV0001", "Trần Minh Hoàng", "0908888666", "18 Lê Quang Định, TP.HCM", "Chủ cửa hàng", "minhhoang", ""});
-        ds.add(new Object[]{"NV0002", "Nguyễn Lan Anh", "0902345678", "45 Xô Viết Nghệ Tĩnh", "Lễ tân", "lananh", ""});
-        ds.add(new Object[]{"NV0004", "Lê Văn Phúc", "0934567890", "26 Đinh Bộ Lĩnh, TP.HCM", "Thủ kho", "levanphuc", ""});
-        ds.add(new Object[]{"NV0005", "Lê Văn Sĩ", "0934564390", "26 Đinh Bộ Lĩnh, TP.HCM", "Kỹ thuật viên", "levansi", ""});
+        ds.add(new Object[]{"NV0001", "Trần Minh Hoàng", "0908888666", "18 Lê Quang Định, TP.HCM", VaiTro.CHU_CUA_HANG, "minhhoang", ""});
+        ds.add(new Object[]{"NV0002", "Nguyễn Lan Anh", "0902345678", "45 Xô Viết Nghệ Tĩnh", VaiTro.LE_TAN, "lananh", ""});
+        ds.add(new Object[]{"NV0004", "Lê Văn Phúc", "0934567890", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.THU_KHO, "levanphuc", ""});
+        ds.add(new Object[]{"NV0005", "Lê Văn Sĩ", "0934564390", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.KY_THUAT_VIEN, "levansi", ""});
         setDanhSach(ds);
 
         txtMaNV.setText("NV0006");
         txtHoTen.setText("Phạm Đức Long");
         txtSoDienThoai.setText("0912345678");
         txtDiaChi.setText("12 Nguyễn Hữu Cảnh, TP.HCM");
-        cboViTri.setSelectedItem("Kỹ thuật viên");
+        cboViTri.setSelectedItem(VaiTro.KY_THUAT_VIEN);
         hienLoiHoTen(null);
         hienLoiSoDienThoai(null);
         anXacNhanXoa();

@@ -3,10 +3,12 @@ package controller;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
+import entity.PhienDangNhap;
 import entity.ChiTietYeuCauXuatKho;
 import entity.NhanVien;
 import entity.PhieuYeuCauXuatKho;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLDuyetXuatKho;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -15,8 +17,6 @@ import util.UIConstants;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
@@ -35,11 +35,12 @@ public class QLDuyetXuatKhoController {
     private final PhieuNhapKho_Dao nhapKhoDao;
 
     private NhanVien thuKhoHienTai;
-    private String tabDangChon = "Chờ xuất";
+    private TrangThaiYeuCauXuat tabDangChon = TrangThaiYeuCauXuat.CHO_XUAT;
     private List<PhieuYeuCauXuatKho> danhSachHienTai = new ArrayList<>();
     private PhieuYeuCauXuatKho yeuCauDangChon;
     private List<ChiTietYeuCauXuatKho> danhSachChiTiet = new ArrayList<>();
     private boolean duTonKho = true;
+    private boolean daTai;
 
     private static final DateTimeFormatter DT_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
@@ -51,7 +52,7 @@ public class QLDuyetXuatKhoController {
 
         initThuKhoInfo();
         initController();
-        loadDanhSach(null);
+        hienChuaTai();
     }
 
     private void initThuKhoInfo() {
@@ -81,20 +82,11 @@ public class QLDuyetXuatKhoController {
             }
         });
 
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadDanhSach(null);
-            }
-        });
+        view.getBtnTaiDuLieu().addActionListener(e -> loadDanhSach(null));
+        view.getTxtTimKiem().addActionListener(e -> loadDanhSach(null));
 
         JButton[] tabs = view.getBtnTabs();
-        String[] tenTabs = view.getCacTab();
+        TrangThaiYeuCauXuat[] tenTabs = view.getCacTab();
         for (int i = 0; i < tabs.length; i++) {
             final int idx = i;
             tabs[i].addActionListener(e -> {
@@ -102,7 +94,6 @@ public class QLDuyetXuatKhoController {
                 for (int j = 0; j < tabs.length; j++) {
                     view.capNhatStyleTab(tabs[j], j == idx);
                 }
-                loadDanhSach(null);
             });
         }
 
@@ -123,7 +114,7 @@ public class QLDuyetXuatKhoController {
                 setBorder(new EmptyBorder(0, 12, 0, 12));
 
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && danhSachChiTiet.get(r).getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
+                        && danhSachChiTiet.get(r).getPhuTung().getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
 
                 if (c == 0 || c == 4) {
                     setFont(UIConstants.FONT_FORM_LABEL.deriveFont(13.5f));
@@ -157,7 +148,7 @@ public class QLDuyetXuatKhoController {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && danhSachChiTiet.get(r).getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
+                        && danhSachChiTiet.get(r).getPhuTung().getSoLuongTon() < danhSachChiTiet.get(r).getSoLuong();
 
                 area.setText(v == null ? "" : v.toString());
                 area.setBackground(sel ? t.getSelectionBackground() : (thieuTon ? bgInsufficient : UIConstants.CARD_BG));
@@ -182,7 +173,7 @@ public class QLDuyetXuatKhoController {
     }
 
     public void chonYeuCau(String maPhieuYC) {
-        tabDangChon = "Chờ xuất";
+        tabDangChon = TrangThaiYeuCauXuat.CHO_XUAT;
         JButton[] tabs = view.getBtnTabs();
         for (int i = 0; i < tabs.length; i++) {
             view.capNhatStyleTab(tabs[i], i == 0);
@@ -190,18 +181,45 @@ public class QLDuyetXuatKhoController {
         loadDanhSach(maPhieuYC);
     }
 
+    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
+    private void hienChuaTai() {
+        JPanel container = view.getPnlDanhSachYeuCau();
+        container.removeAll();
+        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
+        container.add(lblGoiY);
+        yeuCauDangChon = null;
+        loadChiTiet();
+    }
+
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadDanhSach(null);
+        }
+    }
+
     public void loadDanhSach(String maYCCanChon) {
+        daTai = true;
         try {
             String kw = view.getTxtTimKiem().getText();
             danhSachHienTai = yeuCauDao.searchYeuCauThongMinh(kw, tabDangChon);
 
-            int countCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int countCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getBadgeSoYeuCauCho().set(countCho + " yêu cầu chờ duyệt", UIConstants.ROLE_RECEPTION_LIGHT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(countCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(countCho > 0);
             view.getBtnTabs()[0].setText("Chờ xuất (" + countCho + ")");
             view.getLblDemYeuCauTrai().setText(danhSachHienTai.size() + " yêu cầu");
+            hienDanhSach(maYCCanChon);
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+    }
 
+    /** Vẽ lại danh sách đã tải và chọn một yêu cầu, không truy vấn lại theo bộ lọc mới chưa áp dụng. */
+    private void hienDanhSach(String maYCCanChon) {
+        try {
             JPanel container = view.getPnlDanhSachYeuCau();
             container.removeAll();
             yeuCauDangChon = null;
@@ -223,12 +241,12 @@ public class QLDuyetXuatKhoController {
             } else {
                 for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
                     boolean isSel = yeuCauDangChon != null && yc.getMaPhieuYC().equals(yeuCauDangChon.getMaPhieuYC());
-                    String tenKTV = yeuCauDao.getTenKTV(yc.getMaNVKyThuat());
+                    String tenKTV = yeuCauDao.getTenKTV(yc.getKyThuatVien().getMaNV());
                     JPanel item = view.taoTheYeuCau(yc, tenKTV, isSel);
                     item.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
-                            loadDanhSach(yc.getMaPhieuYC());
+                            hienDanhSach(yc.getMaPhieuYC());
                         }
                     });
                     container.add(item);
@@ -264,44 +282,39 @@ public class QLDuyetXuatKhoController {
         }
 
         try {
-            Color cTrangThai = yeuCauDangChon.getTrangThai().equals("Chờ xuất") ? UIConstants.STATUS_WARNING
-                    : (yeuCauDangChon.getTrangThai().equals("Đã xuất") ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
-            view.getBadgeTrangThai().set(yeuCauDangChon.getTrangThai(), cTrangThai);
+            Color cTrangThai = yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.CHO_XUAT ? UIConstants.STATUS_WARNING
+                    : (yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.DA_XUAT ? UIConstants.STATUS_SUCCESS : UIConstants.STATUS_DANGER);
+            view.getBadgeTrangThai().set(yeuCauDangChon.getTrangThai().getText(), cTrangThai);
 
-            String thongTinXe = yeuCauDao.getThongTinXe(yeuCauDangChon.getMaPhieuTNSC());
+            String thongTinXe = yeuCauDao.getThongTinXe(yeuCauDangChon.getPhieu().getMaPhieuTNSC());
             view.getLblMaYeuCau().setText(yeuCauDangChon.getMaPhieuYC());
             view.getLblThongTinPhu().setText("<html><div style='width:420px;'>Phiếu sửa chữa "
-                    + yeuCauDangChon.getMaPhieuTNSC() + " • Xe " + thongTinXe + "</div></html>");
+                    + yeuCauDangChon.getPhieu().getMaPhieuTNSC() + " • Xe " + thongTinXe + "</div></html>");
 
-            view.getLblValPhieuSC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getMaPhieuTNSC() + "</div></html>");
+            view.getLblValPhieuSC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getPhieu().getMaPhieuTNSC() + "</div></html>");
             view.getLblValXe().setText("<html><div style='width:320px;'>" + thongTinXe + "</div></html>");
-            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDao.getTenKTV(yeuCauDangChon.getMaNVKyThuat()) + "</div></html>");
+            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDao.getTenKTV(yeuCauDangChon.getKyThuatVien().getMaNV()) + "</div></html>");
             view.getLblValNgayYC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getNgayYeuCau().format(DT_FMT) + "</div></html>");
 
             danhSachChiTiet = yeuCauDao.getChiTietByMaPhieuYC(yeuCauDangChon.getMaPhieuYC());
             for (ChiTietYeuCauXuatKho ct : danhSachChiTiet) {
-                PhuTung pt = phuTungDao.findById(ct.getMaSKU());
-                int tonKho = pt != null ? pt.getSoLuongTon() : 0;
-                ct.setSoLuongTon(tonKho);
-                if (pt != null) {
-                    ct.setTenPhuTung(pt.getTenPhuTung());
-                    ct.setViTriKho(pt.getViTriLuuKho());
-                }
+                PhuTung pt = ct.getPhuTung();
+                int tonKho = pt.getSoLuongTon();
 
                 if (tonKho < ct.getSoLuong()) {
                     duTonKho = false;
                 }
 
                 view.getTableModel().addRow(new Object[]{
-                        ct.getMaSKU(),
-                        ct.getTenPhuTung(),
-                        ct.getViTriKho(),
+                        pt.getMaSKU(),
+                        pt.getTenPhuTung(),
+                        pt.getViTriLuuKho(),
                         ct.getSoLuong(),
                         tonKho
                 });
             }
 
-            boolean isChoXuat = "Chờ xuất".equals(yeuCauDangChon.getTrangThai());
+            boolean isChoXuat = yeuCauDangChon.getTrangThai() == TrangThaiYeuCauXuat.CHO_XUAT;
             view.getPnlHopLoiTonKho().setVisible(!duTonKho && isChoXuat);
             view.getBtnTuChoi().setEnabled(isChoXuat);
             view.getBtnXacNhanXuat().setEnabled(isChoXuat && duTonKho);
@@ -316,10 +329,10 @@ public class QLDuyetXuatKhoController {
         if (yeuCauDangChon == null || !duTonKho) return;
         try {
             // [VÁ LỖI THẤT THOÁT] Kiểm tra phiếu sửa chữa đã bị chốt Hóa đơn chưa
-            boolean daCoHoaDon = yeuCauDao.kiemTraTonTaiHoaDonHopLe(yeuCauDangChon.getMaPhieuTNSC());
+            boolean daCoHoaDon = yeuCauDao.kiemTraTonTaiHoaDonHopLe(yeuCauDangChon.getPhieu().getMaPhieuTNSC());
             if (daCoHoaDon) {
                 JOptionPane.showMessageDialog(view,
-                        "Không thể xuất kho!\nPhiếu sửa chữa " + yeuCauDangChon.getMaPhieuTNSC()
+                        "Không thể xuất kho!\nPhiếu sửa chữa " + yeuCauDangChon.getPhieu().getMaPhieuTNSC()
                                 + " đã được Lễ tân lập Hóa đơn thanh toán.\n"
                                 + "Để xuất thêm phụ tùng, Lễ tân cần Hủy hóa đơn hiện tại trước.",
                         "Chặn xuất kho", JOptionPane.ERROR_MESSAGE);
@@ -330,14 +343,15 @@ public class QLDuyetXuatKhoController {
             String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
             yeuCauDao.duyetXuatKho(
                     yeuCauDangChon.getMaPhieuYC(),
-                    yeuCauDangChon.getMaPhieuTNSC(),
+                    yeuCauDangChon.getPhieu().getMaPhieuTNSC(),
                     maThuKho,
-                    danhSachChiTiet
+                    danhSachChiTiet,
+                    PhienDangNhap.getHienTai().getTenDangNhap()
             );
             JOptionPane.showMessageDialog(view,
                     "Xuất kho thành công cho phiếu " + yeuCauDangChon.getMaPhieuYC() + "!\nSố lượng tồn kho đã được trừ tự động.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            loadDanhSach(null);
+            taiLai();
         } catch (SQLException ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi khi duyệt xuất kho: " + ex.getMessage(),
@@ -353,8 +367,12 @@ public class QLDuyetXuatKhoController {
         if (cf == JOptionPane.YES_OPTION) {
             try {
                 String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
-                yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho);
-                loadDanhSach(null);
+                if (!yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho,
+                        PhienDangNhap.getHienTai().getTenDangNhap())) {
+                    JOptionPane.showMessageDialog(view, "Yêu cầu " + yeuCauDangChon.getMaPhieuYC()
+                            + " không còn chờ xuất nên không thể từ chối.", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+                }
+                taiLai();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }

@@ -1,11 +1,11 @@
 package controller;
 
 import dao.Xe_Dao;
+import entity.KhachHang;
+import entity.TrangThaiHoaDon;
 import entity.Xe;
 import gui.QLHoSoXe;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
@@ -20,31 +20,18 @@ public class QLHoSoXeController {
     private String selectedPlate;
     private int loadVersion;
     private boolean loadErrorShown;
+    private boolean daTai;
 
     public QLHoSoXeController(QLHoSoXe view) {
         this.view = view;
         initController();
-        load();
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        loadChuSoHuu();
     }
 
     private void initController() {
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                load();
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                load();
-            }
-        });
-        view.getCboLocHang().addActionListener(e -> load());
+        view.getTxtTimKiem().addActionListener(e -> load());
+        view.getBtnTaiDuLieu().addActionListener(e -> load());
         view.getBtnLuu().addActionListener(e -> save());
         view.getBtnThemHoSo().addActionListener(e -> selectedPlate = null);
         view.getBtnHuy().addActionListener(e -> selectedPlate = null);
@@ -74,7 +61,25 @@ public class QLHoSoXeController {
         });
     }
 
+    /** Danh sách chủ xe cho biểu mẫu: cần ngay khi mở màn hình, không chờ bấm Tải dữ liệu. */
+    private void loadChuSoHuu() {
+        new SwingWorker<List<String>, Void>() {
+            @Override protected List<String> doInBackground() throws Exception {
+                return dao.findChuSoHuu();
+            }
+            @Override protected void done() {
+                try {
+                    view.setDanhSachChuSoHuu(get());
+                } catch (Exception ex) {
+                    view.setDanhSachChuSoHuu(Collections.emptyList());
+                }
+            }
+        }.execute();
+    }
+
     private void load() {
+        daTai = true;
+        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), false);
         final int version = ++loadVersion;
         final String query = view.getTxtTimKiem().getText();
         final String hang = QLHoSoXe.TAT_CA_HANG.equals(view.getCboLocHang().getSelectedItem())
@@ -87,7 +92,12 @@ public class QLHoSoXeController {
                 if (version != loadVersion) return;
                 try {
                     Object[] result = get();
-                    @SuppressWarnings("unchecked") List<Object[]> rows = (List<Object[]>) result[0];
+                    @SuppressWarnings("unchecked") List<Xe> dsXe = (List<Xe>) result[0];
+                    List<Object[]> rows = new ArrayList<>();
+                    for (Xe x : dsXe) {
+                        rows.add(new Object[]{x.getBienSo(), x.getHangXe() + " / " + x.getDongXe(), x.getDoiXe(),
+                                x.getSoVIN(), x.getKhachHang().getHoTen(), x.getKhachHang().getSoDienThoai(), ""});
+                    }
                     @SuppressWarnings("unchecked") List<String> owners = (List<String>) result[1];
                     view.setDanhSach(rows);
                     view.setThongKeBang(rows.size(), selectedPlate);
@@ -129,7 +139,7 @@ public class QLHoSoXeController {
             String owner = String.valueOf(view.getTableModel().getValueAt(modelRow, 4));
             String info = String.valueOf(view.getTableModel().getValueAt(modelRow, 5)) + " • "
                     + view.getTableModel().getValueAt(modelRow, 1) + " " + view.getTableModel().getValueAt(modelRow, 2);
-            boolean paid = history.stream().anyMatch(h -> String.valueOf(h[3]).contains("Đã thanh toán"));
+            boolean paid = history.stream().anyMatch(h -> String.valueOf(h[3]).contains(TrangThaiHoaDon.DA_THANH_TOAN.getText()));
             view.hienThiLichSu(plate, owner, info, history,
                     paid ? "Phiếu đã thanh toán: nội dung sửa chữa được khóa, không thể thay đổi." : null);
         } catch (SQLException ex) {
@@ -149,7 +159,7 @@ public class QLHoSoXeController {
             String year = view.getTxtNam().getText().trim();
             Integer y = year.isEmpty() ? null : Integer.valueOf(year);
             Xe xe = new Xe(plate, view.getTxtVIN().getText(), String.valueOf(view.getCboHang().getSelectedItem()),
-                    String.valueOf(view.getCboDong().getSelectedItem()), y, view.getTxtMauSon().getText(), selected.split(" - ", 2)[0]);
+                    String.valueOf(view.getCboDong().getSelectedItem()), y, view.getTxtMauSon().getText(), new KhachHang(selected.split(" - ", 2)[0]));
             boolean update = selectedPlate != null && plate.equalsIgnoreCase(selectedPlate);
             if (!update && dao.findById(xe.getBienSo()) != null) {
                 view.hienLoiBienSo("Biển số đã tồn tại trong hồ sơ.");
@@ -160,7 +170,7 @@ public class QLHoSoXeController {
             view.xoaTrangForm();
             view.setCheDoSua(false);
             view.anLichSu();
-            load();
+            if (daTai) load();
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(view, "Năm sản xuất phải là số nguyên.", "Dữ liệu chưa hợp lệ", JOptionPane.WARNING_MESSAGE);
         } catch (IllegalArgumentException ex) {
@@ -195,7 +205,7 @@ public class QLHoSoXeController {
                 view.setCheDoSua(false);
                 view.anLichSu();
             }
-            load();
+            if (daTai) load();
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(view,
                     "Không thể xóa hồ sơ xe đang được phiếu tiếp nhận hoặc dữ liệu khác sử dụng.\n" + ex.getMessage(),

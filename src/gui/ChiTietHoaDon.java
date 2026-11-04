@@ -2,6 +2,7 @@ package gui;
 
 import controller.ChiTietHoaDonController;
 import controller.DieuHuongHoaDon;
+import entity.HinhThucThanhToan;
 import entity.KhuyenMai;
 import entity.Thue;
 import util.UIComponents;
@@ -43,7 +44,7 @@ public class ChiTietHoaDon extends JPanel {
     private final JLabel lblQr = new JLabel("", SwingConstants.CENTER);
     private final JComboBox<KhuyenMai> cboKhuyenMai = new JComboBox<>();
     private final JComboBox<Thue> cboThue = new JComboBox<>();
-    private final JComboBox<String> cboHinhThuc = new JComboBox<>();
+    private final JComboBox<HinhThucThanhToan> cboHinhThuc = new JComboBox<>();
     private final JTextField txtTienKhachDua = new JTextField();
     private final JLabel lblTienThua = UIComponents.label(" ", UIConstants.FONT_FORM_LABEL, UIConstants.TEXT_DARK);
     private final JTextField txtLyDoHuy = new JTextField();
@@ -380,7 +381,7 @@ public class ChiTietHoaDon extends JPanel {
     public JButton getBtnIn() { return btnIn; }
     public JComboBox<KhuyenMai> getCboKhuyenMai() { return cboKhuyenMai; }
     public JComboBox<Thue> getCboThue() { return cboThue; }
-    public JComboBox<String> getCboHinhThuc() { return cboHinhThuc; }
+    public JComboBox<HinhThucThanhToan> getCboHinhThuc() { return cboHinhThuc; }
     public JTextField getTxtTienKhachDua() { return txtTienKhachDua; }
     public JTextField getTxtLyDoHuy() { return txtLyDoHuy; }
     public JButton getBtnGhiCongNo() { return btnGhiCongNo; }

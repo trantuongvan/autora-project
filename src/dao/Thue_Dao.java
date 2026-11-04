@@ -18,9 +18,14 @@ public class Thue_Dao {
                 PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             while (rs.next()) {
-                ketQua.add(new Thue(rs.getString("maThue"), rs.getString("tenLoaiThue"), rs.getDouble("thueSuat"), 0));
+                ketQua.add(new Thue(rs.getString("maThue"), rs.getString("tenLoaiThue"), rs.getDouble("thueSuat")));
             }
         }
         return ketQua;
+    }
+
+    /** Tiền thuế trên số tiền cơ sở theo thuế suất của loại thuế. */
+    public static double tinhTienThue(Thue thue, double tongTienCoSo) {
+        return HoaDon_Dao.phanTram(tongTienCoSo, thue.getThueSuat());
     }
 }

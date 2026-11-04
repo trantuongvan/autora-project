@@ -2,6 +2,8 @@ package gui;
 
 import controller.QLTienDoSuaChuaController;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -47,6 +49,7 @@ public class QLTienDoSuaChua extends JPanel {
             true
     );
     private final String[] CAC_TAB_LOC = {"Tất cả", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"};
+    private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton[] btnLocTrangThai = new JButton[CAC_TAB_LOC.length];
     private final JPanel pnlDanhSachPhieu = new JPanel();
 
@@ -139,6 +142,14 @@ public class QLTienDoSuaChua extends JPanel {
         } else {
             lblTieuDeTopBar.setText("Quản lý tiến độ sửa chữa");
         }
+    }
+
+    private final UIComponents.Badge badgeCa = new UIComponents.Badge("Chưa xếp ca", UIConstants.ROLE_RECEPTION_LIGHT);
+
+    /** Ca thật của kỹ thuật viên đang đăng nhập; null khi chưa xếp ca. */
+    public void setCaLamViec(entity.CaLamViec ca) {
+        badgeCa.setText(ca == null ? "Chưa xếp ca"
+                : "Ca làm việc • " + ca.getGioBatDau() + " – " + ca.getGioKetThuc());
     }
 
     public void capNhatThongTinKTVHeader(String hoTen) {
@@ -269,7 +280,6 @@ public class QLTienDoSuaChua extends JPanel {
         UIComponents.CotDoc root = new UIComponents.CotDoc();
         root.setBorder(new EmptyBorder(24, 28, 24, 28));
 
-        UIComponents.Badge badgeCa = new UIComponents.Badge("Ca làm việc • 08:00 – 17:00", UIConstants.ROLE_RECEPTION_LIGHT);
         JPanel pnlHeader = UIComponents.tieuDeTrang(
                 "Quản lý tiến độ sửa chữa",
                 "Theo dõi và cập nhật trạng thái từng phiếu sửa chữa được giao cho bạn.",
@@ -287,7 +297,10 @@ public class QLTienDoSuaChua extends JPanel {
         pnlTopTrai.them(UIComponents.label("Phiếu được giao", UIConstants.FONT_SECTION_TITLE.deriveFont(18f), UIConstants.TEXT_DARK), 0);
 
         fTimPhieu.setPreferredSize(new Dimension(100, 40));
-        pnlTopTrai.them(fTimPhieu, 12);
+        JPanel hangTim = UIComponents.trong(new BorderLayout(8, 0));
+        hangTim.add(fTimPhieu, BorderLayout.CENTER);
+        hangTim.add(btnTaiDuLieu, BorderLayout.EAST);
+        pnlTopTrai.them(hangTim, 12);
 
         // Dùng WrapFlowLayout để các nhãn lọc ("Hoàn thành") tự động rớt xuống dòng dưới
         JPanel pnlFilterPills = UIComponents.trong(new WrapFlowLayout(FlowLayout.LEFT, 6, 6));
@@ -571,10 +584,10 @@ public class QLTienDoSuaChua extends JPanel {
 
                 int activeDots = 1;
                 Color activeColor = UIConstants.ROLE_RECEPTION;
-                if ("Hoàn thành".equalsIgnoreCase(trangThai)) {
+                if (TrangThaiTienDo.HOAN_THANH.getText().equalsIgnoreCase(trangThai)) {
                     activeDots = 3;
                     activeColor = UIConstants.STATUS_SUCCESS;
-                } else if ("Đang sửa".equalsIgnoreCase(trangThai)) {
+                } else if (TrangThaiTienDo.DANG_SUA.getText().equalsIgnoreCase(trangThai)) {
                     activeDots = 2;
                     activeColor = UIConstants.PRIMARY;
                 }
@@ -596,10 +609,10 @@ public class QLTienDoSuaChua extends JPanel {
 
     public Color mauTrangThai(String s) {
         if (s == null) return UIConstants.TEXT_MUTED;
-        if (s.startsWith("Hoàn thành")) return UIConstants.STATUS_SUCCESS;
-        if (s.startsWith("Đang sửa")) return UIConstants.PRIMARY;
-        if (s.startsWith("Chờ phụ tùng")) return UIConstants.STATUS_WARNING;
-        if (s.startsWith("Chờ sửa") || s.startsWith("Chờ kiểm tra")) return UIConstants.STATUS_DANGER;
+        if (s.startsWith(TrangThaiPhieu.HOAN_THANH.getText())) return UIConstants.STATUS_SUCCESS;
+        if (s.startsWith(TrangThaiPhieu.DANG_SUA.getText())) return UIConstants.PRIMARY;
+        if (s.startsWith(TrangThaiPhieu.CHO_PHU_TUNG.getText())) return UIConstants.STATUS_WARNING;
+        if (s.startsWith("Chờ sửa") || s.startsWith(TrangThaiPhieu.CHO_KIEM_TRA.getText())) return UIConstants.STATUS_DANGER;
         return UIConstants.TEXT_MUTED;
     }
 
@@ -617,9 +630,9 @@ public class QLTienDoSuaChua extends JPanel {
     public void capNhatStyleNutPill(JButton b, boolean active) {
         String text = b.getText();
         Color base = UIConstants.ROLE_RECEPTION;
-        if ("Đang sửa".equals(text)) base = UIConstants.PRIMARY;
-        else if ("Chờ phụ tùng".equals(text)) base = UIConstants.STATUS_WARNING;
-        else if ("Hoàn thành".equals(text)) base = UIConstants.STATUS_SUCCESS;
+        if (TrangThaiPhieu.DANG_SUA.getText().equals(text)) base = UIConstants.PRIMARY;
+        else if (TrangThaiPhieu.CHO_PHU_TUNG.getText().equals(text)) base = UIConstants.STATUS_WARNING;
+        else if (TrangThaiPhieu.HOAN_THANH.getText().equals(text)) base = UIConstants.STATUS_SUCCESS;
 
         if (active) {
             b.setBackground(UIComponents.tint(base, 0.80f));
@@ -644,7 +657,7 @@ public class QLTienDoSuaChua extends JPanel {
 
         JPanel left = UIComponents.trong(new GridLayout(2, 1, 0, 4));
         JLabel lblMa = UIComponents.label(phieu.getMaPhieuTNSC(), UIConstants.FONT_FORM_LABEL.deriveFont(14f), UIConstants.TEXT_DARK);
-        String moTaXe = phieu.getBienSo() + " • " + phieu.getThongTinXeNgan();
+        String moTaXe = phieu.getXe().getBienSo() + " • " + phieu.getThongTinXeNgan();
         JLabel lblXe = UIComponents.label(moTaXe, UIConstants.FONT_BODY.deriveFont(12.5f), UIConstants.TEXT_MUTED);
         left.add(lblMa);
         left.add(lblXe);
@@ -849,6 +862,7 @@ public class QLTienDoSuaChua extends JPanel {
     public JButton getBtnMenuTienDo() { return btnMenuTienDo; }
     public JButton getBtnDangXuat() { return btnDangXuat; }
     public JTextField getTxtTimPhieu() { return fTimPhieu.getTextField(); }
+    public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
     public String[] getCacTabLoc() { return CAC_TAB_LOC; }
     public JButton[] getBtnLocTrangThai() { return btnLocTrangThai; }
     public JPanel getPnlDanhSachPhieu() { return pnlDanhSachPhieu; }

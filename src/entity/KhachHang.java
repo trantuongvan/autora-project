@@ -1,19 +1,23 @@
 package entity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /** POJO khách hàng theo mẫu trong tài liệu kiến trúc, dùng khi tiếp nhận khách mới. */
 public class KhachHang {
-    public static final String[] LOAI_KHACH_HANG = {"Khách vãng lai", "Thành viên", "VIP"};
-
     private String maKH;
     private String hoTen;
     private String soDienThoai;
     private String diaChi;
     private String email;
     private String maSoThue;
-    private String loaiKhachHang = LOAI_KHACH_HANG[0];
+    private LoaiKhachHang loaiKhachHang = LoaiKhachHang.KHACH_VANG_LAI;
     private boolean duocGhiNo;
+    /** Chỉ chứa biển số khi lấy từ KhachHang_Dao.search; không dùng để ghi. */
+    private List<Xe> danhSachXe = new ArrayList<>();
+    /** Chỉ có thời gian hẹn, và chỉ khi lấy từ KhachHang_Dao.search: lịch Đang hẹn gần nhất từ hôm nay; không dùng để ghi. */
+    private LichHen lichHenGanNhat;
 
     public KhachHang() {
     }
@@ -23,7 +27,7 @@ public class KhachHang {
     }
 
     public KhachHang(String maKH, String hoTen, String soDienThoai, String diaChi, String email,
-            String maSoThue, String loaiKhachHang, boolean duocGhiNo) {
+            String maSoThue, LoaiKhachHang loaiKhachHang, boolean duocGhiNo) {
         setMaKH(maKH);
         setHoTen(hoTen);
         setSoDienThoai(soDienThoai);
@@ -102,12 +106,12 @@ public class KhachHang {
         this.maSoThue = giaTri;
     }
 
-    public String getLoaiKhachHang() {
+    public LoaiKhachHang getLoaiKhachHang() {
         return loaiKhachHang;
     }
 
-    public void setLoaiKhachHang(String loaiKhachHang) {
-        if (!java.util.Arrays.asList(LOAI_KHACH_HANG).contains(loaiKhachHang)) {
+    public void setLoaiKhachHang(LoaiKhachHang loaiKhachHang) {
+        if (loaiKhachHang == null) {
             throw new IllegalArgumentException("Phân loại khách hàng không hợp lệ!");
         }
         this.loaiKhachHang = loaiKhachHang;
@@ -119,6 +123,22 @@ public class KhachHang {
 
     public void setDuocGhiNo(boolean duocGhiNo) {
         this.duocGhiNo = duocGhiNo;
+    }
+
+    public List<Xe> getDanhSachXe() {
+        return danhSachXe;
+    }
+
+    public void setDanhSachXe(List<Xe> danhSachXe) {
+        this.danhSachXe = danhSachXe == null ? new ArrayList<>() : danhSachXe;
+    }
+
+    public LichHen getLichHenGanNhat() {
+        return lichHenGanNhat;
+    }
+
+    public void setLichHenGanNhat(LichHen lichHenGanNhat) {
+        this.lichHenGanNhat = lichHenGanNhat;
     }
 
     @Override

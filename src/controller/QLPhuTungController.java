@@ -5,6 +5,7 @@ import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import entity.NhanVien;
 import entity.PhuTung;
+import entity.TrangThaiYeuCauXuat;
 import gui.QLPhuTung;
 import gui.TrangChuThuKho;
 import gui.TrangChuThuKho.MenuThuKho;
@@ -32,6 +33,7 @@ public class QLPhuTungController {
     private List<PhuTung> danhSachHienThi = new ArrayList<>();
     private boolean cheDoSua = false;
     private boolean dangNapDuLieuForm = false;
+    private boolean daTai = false;
 
     public QLPhuTungController(QLPhuTung view) {
         this.view = view;
@@ -41,7 +43,7 @@ public class QLPhuTungController {
 
         initHeaderAndFilters();
         initController();
-        loadData();
+        UIComponents.goiYChuaTai(view.getTblPhuTung(), true);
     }
 
     private void initHeaderAndFilters() {
@@ -50,15 +52,19 @@ public class QLPhuTungController {
             if (tk != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), tk.getHoTen());
             }
-            int soCho = yeuCauDao.countByTrangThai("Chờ xuất");
+            int soCho = yeuCauDao.countByTrangThai(TrangThaiYeuCauXuat.CHO_XUAT);
             view.getLblBadgeSidebarDuyetXuat().setText(String.valueOf(soCho));
             view.getLblBadgeSidebarDuyetXuat().setVisible(soCho > 0);
 
             List<String> dsHang = phuTungDao.findAllHangSanXuat();
+            Object dangChon = view.getCboHangSanXuat().getSelectedItem();
             view.getCboHangSanXuat().removeAllItems();
             view.getCboHangSanXuat().addItem("Hãng sản xuất: Tất cả");
             for (String h : dsHang) {
                 view.getCboHangSanXuat().addItem(h);
+            }
+            if (dangChon != null) {
+                view.getCboHangSanXuat().setSelectedItem(dangChon);
             }
         } catch (SQLException ex) {
             ex.printStackTrace();
@@ -81,21 +87,9 @@ public class QLPhuTungController {
             }
         });
 
-        // Bộ lọc realtime
-        view.getTxtTimKiem().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void removeUpdate(DocumentEvent e) {
-                loadData();
-            }
-            @Override public void changedUpdate(DocumentEvent e) {
-                loadData();
-            }
-        });
-        view.getCboHangSanXuat().addActionListener(e -> loadData());
-        view.getCboKhoangGia().addActionListener(e -> loadData());
-        view.getCboTinhTrangTon().addActionListener(e -> loadData());
+        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
+        view.getBtnTaiDuLieu().addActionListener(e -> loadData());
+        view.getTxtTimKiem().addActionListener(e -> loadData());
 
         // Mở / đóng Drawer
         view.getBtnMoThemPhuTung().addActionListener(e -> moDrawerThemMoi());
@@ -151,7 +145,16 @@ public class QLPhuTungController {
         };
     }
 
+    /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
+    private void taiLai() {
+        if (daTai) {
+            loadData();
+        }
+    }
+
     public void loadData() {
+        daTai = true;
+        UIComponents.goiYChuaTai(view.getTblPhuTung(), false);
         try {
             List<PhuTung> all = phuTungDao.findAll();
             int tongMatHang = all.size();
@@ -220,6 +223,9 @@ public class QLPhuTungController {
         view.getTxtGiaNhap().setText("85000");
         view.getTxtGiaBanLe().setText("120000");
         view.getTxtSoLuongTon().setText("10");
+        view.getTxtSoLuongTon().setEditable(true);
+        view.getTxtSoLuongTon().setBackground(UIConstants.CARD_BG);
+        view.getTxtSoLuongTon().setToolTipText(null);
         view.getTxtNguongCanhBao().setText("5");
         dangNapDuLieuForm = false;
         view.hienThiDrawer(true);
@@ -240,6 +246,9 @@ public class QLPhuTungController {
         view.getTxtGiaNhap().setText(String.valueOf(Math.round(pt.getGiaNhap())));
         view.getTxtGiaBanLe().setText(String.valueOf(Math.round(pt.getGiaBanLe())));
         view.getTxtSoLuongTon().setText(String.valueOf(pt.getSoLuongTon()));
+        view.getTxtSoLuongTon().setEditable(false);
+        view.getTxtSoLuongTon().setBackground(UIComponents.tint(UIConstants.APP_BG, 0.45f));
+        view.getTxtSoLuongTon().setToolTipText("Tồn kho chỉ thay đổi qua nhập kho và duyệt xuất kho.");
         view.getTxtNguongCanhBao().setText(String.valueOf(pt.getNguongCanhBao()));
         dangNapDuLieuForm = false;
         view.hienThiDrawer(true);
@@ -399,7 +408,7 @@ public class QLPhuTungController {
             }
             view.hienThiDrawer(false);
             initHeaderAndFilters();
-            loadData();
+            taiLai();
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phụ tùng: " + ex.getMessage(),
@@ -420,7 +429,7 @@ public class QLPhuTungController {
                     "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
             if (cf == JOptionPane.YES_OPTION) {
                 phuTungDao.delete(pt.getMaSKU());
-                loadData();
+                taiLai();
             }
         } catch (SQLException ex) {
             ex.printStackTrace();

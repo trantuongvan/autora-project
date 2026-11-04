@@ -2,6 +2,9 @@ package dao;
 
 import connection.ConnectDB;
 import entity.ChiTietSuaChua_DichVu;
+import entity.DichVu;
+import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiTienDo;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,29 +21,34 @@ public class ChiTietSuaChua_DichVu_Dao {
             + "AND NOT EXISTS (SELECT 1 FROM PhieuTiepNhanVaSuaChua p "
             + "WHERE p.maPhieuTNSC = c.maPhieuTNSC AND p.trangThai = N'Đã hủy')";
 
+    /** Cột và nguồn để nạp dòng dịch vụ cùng dịch vụ và kỹ thuật viên: bí danh c, d, n. */
+    static final String COT_DICH_VU = "c.trangThaiTienDo, c.tienCongThucTe, d.maDichVu, d.tenDichVu, d.tienCong, "
+            + NhanVien_Dao.cotNhanVien("n", "kt_") + " ";
+    static final String TU_DICH_VU = "FROM ChiTietSuaChua_DichVu c "
+            + "JOIN DichVu d ON d.maDichVu = c.maDichVu "
+            + "LEFT JOIN NhanVien n ON n.maNV = c.maNV_KyThuat ";
+
+    /** Đọc một dòng theo COT_DICH_VU; kỹ thuật viên là null khi chưa phân công. */
+    static ChiTietSuaChua_DichVu docDichVu(ResultSet rs, PhieuTiepNhanVaSuaChua phieu) throws SQLException {
+        return new ChiTietSuaChua_DichVu(phieu,
+                new DichVu(rs.getString("maDichVu"), rs.getString("tenDichVu"), rs.getDouble("tienCong")),
+                NhanVien_Dao.docNhanVien(rs, "kt_"),
+                TrangThaiTienDo.fromDb(rs.getString("trangThaiTienDo")),
+                rs.getDouble("tienCongThucTe"));
+    }
+
     public List<ChiTietSuaChua_DichVu> findByPhieu(String maPhieu) throws SQLException {
-        String sql = "SELECT c.maPhieuTNSC, c.maDichVu, d.tenDichVu, "
-                + "c.maNV_KyThuat, n.hoTen AS tenKyThuatVien, "
-                + "c.trangThaiTienDo, c.tienCongThucTe "
-                + "FROM ChiTietSuaChua_DichVu c "
-                + "JOIN DichVu d ON d.maDichVu = c.maDichVu "
-                + "LEFT JOIN NhanVien n ON n.maNV = c.maNV_KyThuat "
+        String sql = "SELECT " + COT_DICH_VU + TU_DICH_VU
                 + "WHERE c.maPhieuTNSC = ? ORDER BY c.maDichVu";
         List<ChiTietSuaChua_DichVu> result = new ArrayList<>();
 
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
+            PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
-                    result.add(new ChiTietSuaChua_DichVu(
-                            rs.getString("maPhieuTNSC"),
-                            rs.getString("maDichVu"),
-                            rs.getString("tenDichVu"),
-                            rs.getString("maNV_KyThuat"),
-                            rs.getString("tenKyThuatVien"),
-                            rs.getString("trangThaiTienDo"),
-                            rs.getDouble("tienCongThucTe")));
+                    result.add(docDichVu(rs, phieu));
                 }
             }
         }
@@ -55,20 +63,20 @@ public class ChiTietSuaChua_DichVu_Dao {
                 + "WHERE h.maPhieuTNSC = ? "
                 + "AND h.trangThaiThanhToan <> N'Đã hủy') "
                 + "AND NOT EXISTS (SELECT 1 FROM PhieuTiepNhanVaSuaChua p "
-                + "WHERE p.maPhieuTNSC = ? AND p.trangThai = N'Đã hủy')";
+                + "WHERE p.maPhieuTNSC = ? AND p.trangThai IN (N'Đã hủy', N'Hoàn thành'))";
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, chiTiet.getMaPhieuTNSC());
-            statement.setString(2, chiTiet.getMaDichVu());
-            if (chiTiet.getMaNVKyThuat() == null) {
+            statement.setString(1, chiTiet.getPhieu().getMaPhieuTNSC());
+            statement.setString(2, chiTiet.getDichVu().getMaDichVu());
+            if (chiTiet.getKyThuatVien() == null) {
                 statement.setNull(3, Types.VARCHAR);
             } else {
-                statement.setString(3, chiTiet.getMaNVKyThuat());
+                statement.setString(3, chiTiet.getKyThuatVien().getMaNV());
             }
-            statement.setString(4, chiTiet.getTrangThaiTienDo());
+            statement.setString(4, chiTiet.getTrangThaiTienDo().getText());
             statement.setDouble(5, chiTiet.getTienCongThucTe());
-            statement.setString(6, chiTiet.getMaPhieuTNSC());
-            statement.setString(7, chiTiet.getMaPhieuTNSC());
+            statement.setString(6, chiTiet.getPhieu().getMaPhieuTNSC());
+            statement.setString(7, chiTiet.getPhieu().getMaPhieuTNSC());
             return statement.executeUpdate() == 1;
         }
     }
@@ -79,14 +87,14 @@ public class ChiTietSuaChua_DichVu_Dao {
                 + "WHERE c.maPhieuTNSC = ? AND c.maDichVu = ? AND " + NOT_LOCKED;
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
-            if (chiTiet.getMaNVKyThuat() == null) {
+            if (chiTiet.getKyThuatVien() == null) {
                 statement.setNull(1, Types.VARCHAR);
             } else {
-                statement.setString(1, chiTiet.getMaNVKyThuat());
+                statement.setString(1, chiTiet.getKyThuatVien().getMaNV());
             }
             statement.setDouble(2, chiTiet.getTienCongThucTe());
-            statement.setString(3, chiTiet.getMaPhieuTNSC());
-            statement.setString(4, chiTiet.getMaDichVu());
+            statement.setString(3, chiTiet.getPhieu().getMaPhieuTNSC());
+            statement.setString(4, chiTiet.getDichVu().getMaDichVu());
             return statement.executeUpdate() == 1;
         }
     }
@@ -107,7 +115,7 @@ public class ChiTietSuaChua_DichVu_Dao {
                 NhatKy_Dao nhatKy = new NhatKy_Dao();
                 for (ChiTietSuaChua_DichVu d : dong) {
                     doc.setString(1, maPhieu);
-                    doc.setString(2, d.getMaDichVu());
+                    doc.setString(2, d.getDichVu().getMaDichVu());
                     double cu;
                     try (ResultSet rs = doc.executeQuery()) {
                         if (!rs.next()) {
@@ -116,16 +124,16 @@ public class ChiTietSuaChua_DichVu_Dao {
                         }
                         cu = rs.getDouble(1);
                     }
-                    ghi.setString(1, d.getMaNVKyThuat());
+                    ghi.setString(1, d.getKyThuatVien() == null ? null : d.getKyThuatVien().getMaNV());
                     ghi.setDouble(2, d.getTienCongThucTe());
                     ghi.setString(3, maPhieu);
-                    ghi.setString(4, d.getMaDichVu());
+                    ghi.setString(4, d.getDichVu().getMaDichVu());
                     if (ghi.executeUpdate() != 1) {
                         connection.rollback();
                         return false;
                     }
                     if (cu != d.getTienCongThucTe()) {
-                        nhatKy.ghi(connection, tenDangNhap, "Sửa tiền công", maPhieu + " / " + d.getMaDichVu(),
+                        nhatKy.ghi(connection, tenDangNhap, "Sửa tiền công", maPhieu + " / " + d.getDichVu().getMaDichVu(),
                                 String.valueOf((long) cu), String.valueOf((long) d.getTienCongThucTe()));
                     }
                 }

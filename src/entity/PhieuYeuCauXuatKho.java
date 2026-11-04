@@ -7,14 +7,14 @@ public class PhieuYeuCauXuatKho {
     private String maPhieuYC;
     private LocalDateTime ngayYeuCau;
     private LocalDateTime ngayXuat;
-    private String trangThai;
-    private String maPhieuTNSC;
-    private String maNVKyThuat;
-    private String maNVThuKho;
+    private TrangThaiYeuCauXuat trangThai;
+    private PhieuTiepNhanVaSuaChua phieu;
+    private NhanVien kyThuatVien;
+    private NhanVien thuKho;
 
     public PhieuYeuCauXuatKho() {
         this.ngayYeuCau = LocalDateTime.now();
-        this.trangThai = "Chờ xuất";
+        this.trangThai = TrangThaiYeuCauXuat.CHO_XUAT;
     }
 
     public PhieuYeuCauXuatKho(String maPhieuYC) {
@@ -23,14 +23,14 @@ public class PhieuYeuCauXuatKho {
     }
 
     public PhieuYeuCauXuatKho(String maPhieuYC, LocalDateTime ngayYeuCau, LocalDateTime ngayXuat,
-                              String trangThai, String maPhieuTNSC, String maNVKyThuat, String maNVThuKho) {
+                              TrangThaiYeuCauXuat trangThai, PhieuTiepNhanVaSuaChua phieu, NhanVien kyThuatVien, NhanVien thuKho) {
         setMaPhieuYC(maPhieuYC);
         setNgayYeuCau(ngayYeuCau);
         setNgayXuat(ngayXuat);
         setTrangThai(trangThai);
-        setMaPhieuTNSC(maPhieuTNSC);
-        setMaNVKyThuat(maNVKyThuat);
-        this.maNVThuKho = maNVThuKho;
+        setPhieu(phieu);
+        setKyThuatVien(kyThuatVien);
+        this.thuKho = thuKho;
     }
 
     public String getMaPhieuYC() {
@@ -63,41 +63,42 @@ public class PhieuYeuCauXuatKho {
         this.ngayXuat = ngayXuat;
     }
 
-    public String getTrangThai() {
+    public TrangThaiYeuCauXuat getTrangThai() {
         return trangThai;
     }
-    public void setTrangThai(String trangThai) {
-        if (trangThai == null || (!trangThai.equals("Chờ xuất") && !trangThai.equals("Đã xuất") && !trangThai.equals("Từ chối"))) {
+    public void setTrangThai(TrangThaiYeuCauXuat trangThai) {
+        if (trangThai == null) {
             throw new IllegalArgumentException("Trạng thái phiếu yêu cầu không hợp lệ.");
         }
         this.trangThai = trangThai;
     }
 
-    public String getMaPhieuTNSC() {
-        return maPhieuTNSC;
+    public PhieuTiepNhanVaSuaChua getPhieu() {
+        return phieu;
     }
-    public void setMaPhieuTNSC(String maPhieuTNSC) {
-        if (maPhieuTNSC == null || maPhieuTNSC.trim().isEmpty()) {
+    public void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
+        if (phieu == null) {
             throw new IllegalArgumentException("Mã phiếu tiếp nhận sửa chữa không được để trống.");
         }
-        this.maPhieuTNSC = maPhieuTNSC.trim();
+        this.phieu = phieu;
     }
 
-    public String getMaNVKyThuat() {
-        return maNVKyThuat;
+    public NhanVien getKyThuatVien() {
+        return kyThuatVien;
     }
-    public void setMaNVKyThuat(String maNVKyThuat) {
-        if (maNVKyThuat == null || maNVKyThuat.trim().isEmpty()) {
+    public void setKyThuatVien(NhanVien kyThuatVien) {
+        if (kyThuatVien == null) {
             throw new IllegalArgumentException("Kỹ thuật viên yêu cầu không được để trống.");
         }
-        this.maNVKyThuat = maNVKyThuat.trim();
+        this.kyThuatVien = kyThuatVien;
     }
 
-    public String getMaNVThuKho() {
-        return maNVThuKho;
+    /** Null khi chưa có thủ kho duyệt. */
+    public NhanVien getThuKho() {
+        return thuKho;
     }
-    public void setMaNVThuKho(String maNVThuKho) {
-        this.maNVThuKho = maNVThuKho;
+    public void setThuKho(NhanVien thuKho) {
+        this.thuKho = thuKho;
     }
 
     @Override
@@ -115,6 +116,6 @@ public class PhieuYeuCauXuatKho {
 
     @Override
     public String toString() {
-        return maPhieuYC + " - " + maPhieuTNSC + " (" + trangThai + ")";
+        return maPhieuYC + " - " + (phieu == null ? null : phieu.getMaPhieuTNSC()) + " (" + trangThai + ")";
     }
 }

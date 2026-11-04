@@ -1,6 +1,7 @@
 package controller;
 
 import entity.PhienDangNhap;
+import entity.VaiTro;
 import gui.ChiTietHoaDon;
 import gui.ChiTietPhieuSuaChua;
 import gui.DangNhap;
@@ -57,7 +58,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
 
     private static final Map<String, String> TIEU_DE = new HashMap<>();
     private static final Map<String, Loai> ICON = new HashMap<>();
-    private static final Map<String, List<String>> MENU_THEO_VAI_TRO = new HashMap<>();
+    private static final Map<VaiTro, List<String>> MENU_THEO_VAI_TRO = new HashMap<>();
 
     static {
         muc("TRANG_CHU_QL", "Trang chủ", Loai.HOME);
@@ -82,14 +83,14 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         muc(CARD_TRO_GIUP, "Trợ giúp", Loai.HELP);
         muc(CARD_GIOI_THIEU, "Giới thiệu", Loai.INFO);
 
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_CHU_CUA_HANG, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.CHU_CUA_HANG, Arrays.asList(
                 "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_TIEN_DO", "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
                 "QL_NHAP_KHO", "QL_DUYET_XUAT", "QL_HOA_DON", "QL_BAN_GIAO", "QL_KHUYEN_MAI", "QL_THONG_KE",
                 "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_LE_TAN, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.LE_TAN, Arrays.asList(
                 "TRANG_CHU_LT", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_HOA_DON", "QL_BAN_GIAO"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
-        MENU_THEO_VAI_TRO.put(PhienDangNhap.VAI_TRO_THU_KHO, Arrays.asList(
+        MENU_THEO_VAI_TRO.put(VaiTro.KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
+        MENU_THEO_VAI_TRO.put(VaiTro.THU_KHO, Arrays.asList(
                 "TRANG_CHU_KHO", "QL_PHU_TUNG", "QL_NHAP_KHO", "QL_DUYET_XUAT"));
     }
 
@@ -105,6 +106,8 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     private QLTiepNhanSuaChua manHinhTiepNhan;
     private QLPhieuSuaChua manHinhPhieu;
     private JPanel manHinhChiTiet;
+    private TrangChuQuanLy manHinhQuanLy;
+    private TrangChuLeTan manHinhLeTan;
     private QLHoaDon manHinhHoaDon;
     private JPanel manHinhChiTietHoaDon;
 
@@ -115,7 +118,10 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
 
     private void initController() {
         // Màn hình chưa có ở đây sẽ hiện thông báo tạm; thành viên khác chỉ cần thêm một dòng nhaMay.put.
-        nhaMay.put("TRANG_CHU_QL", () -> TrangChuQuanLy.createPanel(this));
+        nhaMay.put("TRANG_CHU_QL", () -> {
+            manHinhQuanLy = (TrangChuQuanLy) TrangChuQuanLy.createPanel(this);
+            return manHinhQuanLy;
+        });
         nhaMay.put("TRANG_CHU_LT", this::taoTrangChuLeTan);
         nhaMay.put("QL_HO_SO_XE", QLHoSoXe::createPanel);
         nhaMay.put(CARD_TIEP_NHAN, () -> {
@@ -180,6 +186,13 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         TrangChuLeTan panel = (TrangChuLeTan) TrangChuLeTan.createPanel();
         panel.setTenNguoiDung(PhienDangNhap.getHienTai().getHoTen());
         panel.setDieuHuongListener((card, maPhieu) -> moManHinh(card));
+        panel.getController().setMoTiepNhan(tuKhoa -> {
+            moManHinh(CARD_TIEP_NHAN);
+            if (manHinhTiepNhan != null) {
+                manHinhTiepNhan.getController().traCuuTheo(tuKhoa);
+            }
+        });
+        manHinhLeTan = panel;
         return panel;
     }
 
@@ -206,46 +219,23 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         }
     }
 
+    /** Chỉ các trang chủ tự làm mới khi quay lại; màn hình danh sách chỉ tải khi bấm Tải dữ liệu. */
     private void lamMoiManHinh(String card) {
         switch (card) {
+            case "TRANG_CHU_QL":
+                manHinhQuanLy.getController().taiDuLieu();
+                break;
+            case "TRANG_CHU_LT":
+                manHinhLeTan.getController().load();
+                break;
             case "TRANG_CHU_KTV":
                 if (TrangChuKyThuatVien.getActiveController() != null) {
                     TrangChuKyThuatVien.getActiveController().loadData();
                 }
                 break;
-            case "QL_TIEN_DO":
-                if (QLTienDoSuaChua.getActiveController() != null) {
-                    QLTienDoSuaChua.getActiveController().loadDanhSachPhieu(null);
-                }
-                break;
             case "TRANG_CHU_KHO":
                 if (TrangChuThuKho.getActiveController() != null) {
                     TrangChuThuKho.getActiveController().loadData();
-                }
-                break;
-            case "QL_PHU_TUNG":
-                if (QLPhuTung.getActiveController() != null) {
-                    QLPhuTung.getActiveController().loadData();
-                }
-                break;
-            case "QL_NHAP_KHO":
-                if (QLNhapKho.getActiveController() != null) {
-                    QLNhapKho.getActiveController().loadData();
-                }
-                break;
-            case "QL_DUYET_XUAT":
-                if (QLDuyetXuatKho.getActiveController() != null) {
-                    QLDuyetXuatKho.getActiveController().loadDanhSach(null);
-                }
-                break;
-            case CARD_PHIEU:
-                if (manHinhPhieu != null && manHinhPhieu.getController() != null) {
-                    manHinhPhieu.getController().taiDanhSach();
-                }
-                break;
-            case CARD_HOA_DON:
-                if (manHinhHoaDon != null && manHinhHoaDon.getController() != null) {
-                    manHinhHoaDon.getController().taiDuLieu();
                 }
                 break;
             default:
@@ -288,7 +278,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     @Override
     public void moDanhSach() {
         moManHinh(CARD_PHIEU);
-        manHinhPhieu.getController().taiDanhSach();
+        manHinhPhieu.getController().taiLai();
     }
 
     @Override
@@ -324,7 +314,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     @Override
     public void moDanhSachHoaDon() {
         moManHinh(CARD_HOA_DON);
-        manHinhHoaDon.getController().taiDuLieu();
+        manHinhHoaDon.getController().taiLai();
     }
 
     private void hienChiTietHoaDon(JPanel panel) {
