@@ -8,6 +8,7 @@ import entity.KhachHang;
 import entity.LoaiKhachHang;
 import entity.MucUuTien;
 import entity.NhanVien;
+import entity.PhanCongTuDong;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
@@ -307,7 +308,7 @@ public class QLTiepNhanSuaChuaController {
         return true;
     }
 
-    private static String moTaPhanCong(PhanCong_Dao.KetQua ketQua) {
+    private static String moTaPhanCong(PhanCongTuDong.KetQua ketQua) {
         StringBuilder mo = new StringBuilder();
         for (java.util.Map.Entry<DichVu, NhanVien> dong : ketQua.getPhanCong().entrySet()) {
             if (dong.getValue() != null) {

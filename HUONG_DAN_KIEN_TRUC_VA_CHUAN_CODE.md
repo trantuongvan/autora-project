@@ -68,7 +68,7 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
 |                                                                                 |
 |   +------------------------------+            +-----------------------------+   |
 |   |     package dao (Xxx_Dao)    |            |        package entity       |   |
-|   |  - PreparedStatement JDBC    |<---------->|  - POJO đóng gói dữ liệu    |   |
+|   |  - PreparedStatement JDBC    |<---------->|  - Dữ liệu và quy tắc       |   |
 |   |  - try-with-resources        |            |  - Validation nghiệp vụ     |   |
 |   |  - CRUD & Truy vấn nâng cao  |            |  - toString, equals, hash   |   |
 |   +--------------+---------------+            +-----------------------------+   |
@@ -90,7 +90,7 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
 | Package | Nhiệm vụ kỹ thuật |
 | :--- | :--- |
 | **`connection`** | Chứa duy nhất class `ConnectDB.java` hiện thực Singleton kết nối SQL Server qua JDBC. |
-| **`entity`** | Chứa các POJO đại diện cho bảng CSDL, đóng gói dữ liệu, có validation nghiệp vụ trong setter. |
+| **`entity`** | Chứa các đối tượng nghiệp vụ: đóng gói dữ liệu, có validation trong setter, tự thực hiện phép tính và quy tắc không cần CSDL. Không chứa SQL. |
 | **`dao`** | Chứa các lớp Data Access Object (hậu tố `_Dao.java`). Thực thi JDBC PreparedStatement trong `try-with-resources`. |
 | **`controller`** | Chứa các Controller lắng nghe sự kiện từ View, validate form, điều phối giữa GUI và DAO. |
 | **`gui`** | Chứa giao diện Java Swing (`GiaoDienChinh`, các `JPanel` nghiệp vụ, các `JDialog` popup). |
@@ -172,6 +172,7 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
    - Tiền bạc, số lượng, % nhiên liệu: không được âm.
 4. Ghi đè `equals()` và `hashCode()` theo Khóa chính.
 5. Ghi đè `toString()`.
+6. Phép tính và quy tắc không cần CSDL đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL; DAO chỉ giữ SQL, transaction và khóa dữ liệu.
 
 ```java
 // CODE MẪU CHUẨN ENTITY

@@ -65,15 +65,6 @@ public class QLNhapKhoController {
     private boolean nccDoNguoiChon;
     private boolean dangTuChonNcc;
 
-    /** Đưa tồn kho lên gấp đôi ngưỡng cảnh báo, tối thiểu bằng ngưỡng và không dưới 1. */
-    public static int soLuongNhapMacDinh(int nguongCanhBao, int soLuongTon) {
-        return Math.max(1, Math.max(nguongCanhBao * 2 - soLuongTon, nguongCanhBao));
-    }
-
-    private static int soLuongNhapMacDinh(PhuTung pt) {
-        return soLuongNhapMacDinh(pt.getNguongCanhBao(), pt.getSoLuongTon());
-    }
-
     private void goiYNhaCungCap() {
         if (nccDoNguoiChon || dsChiTietModal.isEmpty()) {
             return;
@@ -88,10 +79,6 @@ public class QLNhapKhoController {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-    }
-
-    private static double thanhTien(ChiTietNhapKho ct) {
-        return ct.getSoLuongNhap() * ct.getGiaNhapThucTe();
     }
 
     public QLNhapKhoController(QLNhapKho view) {
@@ -243,7 +230,7 @@ public class QLNhapKhoController {
             if (maSKUMacDinh != null && !maSKUMacDinh.isEmpty()) {
                 PhuTung pt = phuTungDao.findById(maSKUMacDinh);
                 if (pt != null) {
-                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapMacDinh(pt), pt.getGiaNhap()));
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, pt.soLuongNhapDeXuat(), pt.getGiaNhap()));
                 }
             } else {
                 List<PhuTung> dsCanNhap = phuTungDao.findDuoiNguongCanhBao("");
@@ -251,7 +238,7 @@ public class QLNhapKhoController {
                 int count = 0;
                 for (PhuTung pt : dsCanNhap) {
                     if (count >= 2) break;
-                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapMacDinh(pt), pt.getGiaNhap()));
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, pt.soLuongNhapDeXuat(), pt.getGiaNhap()));
                     count++;
                 }
             }
@@ -316,7 +303,7 @@ public class QLNhapKhoController {
         dsInputDonGia.add(txtGia);
         row.add(txtGia, QLNhapKho.cotModal(3, 0.14));
 
-        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(thanhTien(ct)), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
+        JLabel lblThanhTien = UIComponents.label(FormatUtil.formatCurrency(ct.thanhTien()), UIConstants.FONT_FORM_LABEL.deriveFont(13f), UIConstants.TEXT_DARK);
         dsLabelThanhTien.add(lblThanhTien);
         row.add(lblThanhTien, QLNhapKho.cotModal(4, 0.16));
 
@@ -373,6 +360,13 @@ public class QLNhapKhoController {
             try {
                 gia = FormatUtil.parseCurrency(txtGia.getText());
                 if (gia <= 0) throw new NumberFormatException();
+                if (!ct.getPhuTung().giaNhapHopLe(gia)) {
+                    loiGia = true;
+                    if (thongBaoLoi == null) {
+                        thongBaoLoi = "Đơn giá nhập của mã " + ct.getPhuTung().getMaSKU()
+                                + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.";
+                    }
+                }
             } catch (NumberFormatException ex) {
                 loiGia = true;
                 if (thongBaoLoi == null) thongBaoLoi = "Đơn giá nhập phải lớn hơn 0";
@@ -386,7 +380,7 @@ public class QLNhapKhoController {
             if (!loiSL && !loiGia) {
                 ct.setSoLuongNhap(sl);
                 ct.setGiaNhapThucTe(gia);
-                double tt = thanhTien(ct);
+                double tt = ct.thanhTien();
                 tongTien += tt;
                 lblTT.setText(FormatUtil.formatCurrency(tt));
             } else {
@@ -492,7 +486,7 @@ public class QLNhapKhoController {
                 dsChiTietModal.add(new ChiTietNhapKho(
                         new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()),
                         ptChon,
-                        soLuongNhapMacDinh(ptChon),
+                        ptChon.soLuongNhapDeXuat(),
                         ptChon.getGiaNhap()
                 ));
                 veBangChiTietModal();
@@ -584,6 +578,9 @@ public class QLNhapKhoController {
         if (gia <= 0) {
             return "đơn giá \"" + donGia + "\" không hợp lệ.";
         }
+        if (!pt.giaNhapHopLe(gia)) {
+            return "đơn giá \"" + donGia + "\" cao hơn giá bán lẻ của mã " + pt.getMaSKU() + ".";
+        }
         maTrongFile.add(pt.getMaSKU());
         for (ChiTietNhapKho daCo : dsChiTietModal) {
             if (daCo.getPhuTung().getMaSKU().equalsIgnoreCase(pt.getMaSKU())) {
@@ -608,7 +605,7 @@ public class QLNhapKhoController {
 
         double tongTien = 0;
         for (ChiTietNhapKho ct : dsChiTietModal) {
-            tongTien += thanhTien(ct);
+            tongTien += ct.thanhTien();
         }
 
         try {
@@ -642,7 +639,7 @@ public class QLNhapKhoController {
                         ct.getPhuTung().getTenPhuTung(),
                         ct.getSoLuongNhap(),
                         FormatUtil.formatCurrency(ct.getGiaNhapThucTe()),
-                        FormatUtil.formatCurrency(thanhTien(ct))
+                        FormatUtil.formatCurrency(ct.thanhTien())
                 });
             }
             JTable tblCT = new JTable(modelCT);

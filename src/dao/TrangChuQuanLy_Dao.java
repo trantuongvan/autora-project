@@ -1,6 +1,8 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.DoanhThuNgay;
+import entity.ThongKeChoThanhToan;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -79,11 +81,7 @@ public class TrangChuQuanLy_Dao {
         }
     }
 
-    /**
-     * {số việc chờ thanh toán, tổng tiền còn nợ}. Số việc gồm hóa đơn công nợ và phiếu đã hoàn thành chưa có hóa đơn;
-     * tổng tiền chỉ tính công nợ vì phiếu chưa lập hóa đơn chưa có khuyến mãi và thuế nên chưa biết số tiền cuối.
-     */
-    public Object[] hoaDonChoThanhToan() throws SQLException {
+    public ThongKeChoThanhToan hoaDonChoThanhToan() throws SQLException {
         String sql = "SELECT (SELECT COUNT(*) FROM HoaDon WHERE " + CONG_NO + ") "
                 + "+ (SELECT COUNT(*) FROM PhieuTiepNhanVaSuaChua p WHERE p.trangThai = N'Hoàn thành' "
                 + "AND NOT EXISTS (SELECT 1 FROM HoaDon h WHERE h.maPhieuTNSC = p.maPhieuTNSC "
@@ -93,7 +91,7 @@ public class TrangChuQuanLy_Dao {
              PreparedStatement p = c.prepareStatement(sql);
              ResultSet r = p.executeQuery()) {
             r.next();
-            return new Object[]{r.getInt("soLuong"), r.getDouble("tongTien")};
+            return new ThongKeChoThanhToan(r.getInt("soLuong"), r.getDouble("tongTien"));
         }
     }
 
@@ -138,7 +136,7 @@ public class TrangChuQuanLy_Dao {
     }
 
     /** {LocalDate ngày, int số phiếu, double tiền công, double phụ tùng, double VAT, double tổng} theo ngày. */
-    public List<Object[]> bangDoanhThu(LocalDate tu, LocalDate den) throws SQLException {
+    public List<DoanhThuNgay> bangDoanhThu(LocalDate tu, LocalDate den) throws SQLException {
         String sql = "SELECT CAST(ngayThanhToan AS DATE) AS ngay, COUNT(*) AS soPhieu, "
                 + "COALESCE(SUM(tongTienCong), 0) AS tienCong, "
                 + "COALESCE(SUM(tongTienPhuTung), 0) AS phuTung, "
@@ -148,42 +146,21 @@ public class TrangChuQuanLy_Dao {
                 + "GROUP BY CAST(ngayThanhToan AS DATE) ORDER BY CAST(ngayThanhToan AS DATE) DESC";
         Timestamp tuTS = Timestamp.valueOf(tu.atStartOfDay());
         Timestamp denTS = Timestamp.valueOf(den.plusDays(1).atStartOfDay());
-        List<Object[]> ketQua = new ArrayList<>();
+        List<DoanhThuNgay> ketQua = new ArrayList<>();
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql)) {
             p.setTimestamp(1, tuTS);
             p.setTimestamp(2, denTS);
             try (ResultSet r = p.executeQuery()) {
                 while (r.next()) {
-                    ketQua.add(new Object[]{
+                    ketQua.add(new DoanhThuNgay(
                             r.getDate("ngay").toLocalDate(),
                             r.getInt("soPhieu"),
                             r.getDouble("tienCong"),
                             r.getDouble("phuTung"),
                             r.getDouble("vat"),
-                            r.getDouble("tong")
-                    });
+                            r.getDouble("tong")));
                 }
-            }
-        }
-        return ketQua;
-    }
-
-    /** {maSKU, tenPhuTung, soLuongTon, nguongCanhBao} của phụ tùng đã chạm ngưỡng cảnh báo. */
-    public List<Object[]> canhBaoTonKho() throws SQLException {
-        String sql = "SELECT maSKU, tenPhuTung, soLuongTon, nguongCanhBao FROM PhuTung "
-                + "WHERE soLuongTon <= nguongCanhBao ORDER BY soLuongTon ASC, maSKU ASC";
-        List<Object[]> ketQua = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement p = c.prepareStatement(sql);
-             ResultSet r = p.executeQuery()) {
-            while (r.next()) {
-                ketQua.add(new Object[]{
-                        r.getString("maSKU"),
-                        r.getString("tenPhuTung"),
-                        r.getInt("soLuongTon"),
-                        r.getInt("nguongCanhBao")
-                });
             }
         }
         return ketQua;

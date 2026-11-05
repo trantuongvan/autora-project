@@ -1,9 +1,11 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.HoaDon;
 import entity.NhanVien;
 import entity.PhieuBanGiao;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
 
@@ -18,11 +20,10 @@ import java.util.List;
 /** Truy vấn danh sách bàn giao, kiểm tra điều kiện và ghi nhận bàn giao trong transaction. */
 public class PhieuBanGiao_Dao {
 
-    private static final String LIST_SQL = "SELECT p.maPhieuTNSC, x.bienSo, k.hoTen, "
-            + "k.soDienThoai, CONCAT(x.hangXe, ' ', x.dongXe) AS xe, "
-            + "COALESCE(ti.leHoanTat, 0) AS tienDo, "
+    private static final String LIST_SQL = "SELECT p.maPhieuTNSC, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", "
+            + "COALESCE(ti.leHoanTat, 0) AS tienDo, ti.soHangMuc, ti.soHangMucXong, "
             + "COALESCE(h.trangThaiThanhToan, N'Chưa lập hóa đơn') AS thanhToan, "
-            + "COALESCE(h.tongThanhToan, 0) AS tong, k.duocGhiNo, COALESCE(h.maHD, '') AS maHD, "
+            + "COALESCE(h.tongThanhToan, 0) AS tong, COALESCE(h.maHD, '') AS maHD, "
             + "COALESCE(h.tongTienCong, 0) AS tienCong, "
             + "COALESCE(h.tongTienPhuTung, 0) AS tienPhuTung, "
             + "COALESCE(h.tongTienGiam, 0) AS giam, COALESCE(h.tongTienVAT, 0) AS vat, "
@@ -40,7 +41,9 @@ public class PhieuBanGiao_Dao {
             + "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 "
             + "ELSE CONVERT(INT, FLOOR(100.0 * SUM(CASE "
             + "WHEN d.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END) / COUNT(*))) "
-            + "END AS leHoanTat FROM ChiTietSuaChua_DichVu d "
+            + "END AS leHoanTat, COUNT(*) AS soHangMuc, "
+            + "COALESCE(SUM(CASE WHEN d.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END), 0) AS soHangMucXong "
+            + "FROM ChiTietSuaChua_DichVu d "
             + "WHERE d.maPhieuTNSC = p.maPhieuTNSC) ti";
 
     public PhieuBanGiao findById(String maPhieuBG) throws SQLException {
@@ -69,7 +72,7 @@ public class PhieuBanGiao_Dao {
         }
     }
 
-    public List<Object[]> findDanhSach(String tuKhoa, String loc) throws SQLException {
+    public List<PhieuTiepNhanVaSuaChua> findDanhSach(String tuKhoa, String loc) throws SQLException {
         String sql = LIST_SQL
                 + " WHERE p.trangThai <> N'Đã hủy' "
                 + "AND (? = '' OR p.maPhieuTNSC LIKE ? OR x.bienSo LIKE ? OR k.hoTen LIKE ?)"
@@ -81,7 +84,7 @@ public class PhieuBanGiao_Dao {
                 + " ORDER BY p.thoiGianTiepNhan DESC";
         String query = tuKhoa == null ? "" : tuKhoa.trim();
         String filter = loc == null ? "Tất cả" : loc;
-        List<Object[]> rows = new ArrayList<>();
+        List<PhieuTiepNhanVaSuaChua> rows = new ArrayList<>();
 
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -94,30 +97,7 @@ public class PhieuBanGiao_Dao {
             statement.setString(7, filter);
             try (ResultSet result = statement.executeQuery()) {
                 while (result.next()) {
-                    int progress = result.getInt("tienDo");
-                    String payment = result.getString("thanhToan");
-                    boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
-                    boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
-                    boolean ready = progress == 100 && (paid || debt);
-                    String invoice;
-                    if (paid) {
-                        invoice = "Đã thanh toán";
-                    } else if (debt) {
-                        invoice = "Công nợ hợp lệ";
-                    } else {
-                        invoice = payment;
-                    }
-                    String condition = ready ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện";
-                    rows.add(new Object[]{
-                            result.getString("maPhieuTNSC"),
-                            result.getString("bienSo"),
-                            result.getString("hoTen"),
-                            result.getString("xe"),
-                            progress + "%",
-                            invoice,
-                            format(result.getDouble("tong")) + " đ",
-                            condition
-                    });
+                    rows.add(docPhieu(result));
                 }
             }
         }
@@ -188,75 +168,27 @@ public class PhieuBanGiao_Dao {
         }
     }
 
-    /**
-     * Trả chi tiết theo thứ tự: biển số, xe, khách, tiến độ, tiền công, phụ tùng,
-     * giảm giá, VAT, tổng tiền, hóa đơn, đủ điều kiện, trạng thái, thuế, SĐT,
-     * mã bàn giao, thời gian bàn giao, nhân viên bàn giao, được ghi nợ.
-     */
-    public Object[] findChiTiet(String maPhieu) throws SQLException {
+    public PhieuTiepNhanVaSuaChua findChiTiet(String maPhieu) throws SQLException {
         String sql = LIST_SQL + " WHERE p.maPhieuTNSC = ?";
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
             try (ResultSet result = statement.executeQuery()) {
-                if (!result.next()) {
-                    return null;
-                }
-                int progress = result.getInt("tienDo");
-                String payment = result.getString("thanhToan");
-                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(payment);
-                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(payment) && result.getBoolean("duocGhiNo");
-                return new Object[]{
-                        result.getString("bienSo"), result.getString("xe"),
-                        result.getString("hoTen"), progress, result.getDouble("tienCong"),
-                        result.getDouble("tienPhuTung"), result.getDouble("giam"),
-                        result.getDouble("vat"), result.getDouble("tong"),
-                        result.getString("maHD"), progress == 100 && (paid || debt), payment,
-                        result.getDouble("thueSuat"), result.getString("soDienThoai"),
-                        result.getString("maPhieuBG"), result.getTimestamp("ngayBanGiao"),
-                        result.getString("tenNVBanGiao"), result.getBoolean("duocGhiNo")
-                };
+                return result.next() ? docPhieu(result) : null;
             }
         }
     }
 
-    public List<Object[]> findDashboardJobs() throws SQLException {
+    public List<PhieuTiepNhanVaSuaChua> findDashboardJobs() throws SQLException {
         String sql = LIST_SQL.replaceFirst("SELECT ", "SELECT TOP 7 ")
                 + " WHERE p.trangThai <> N'Đã hủy' AND bg.maPhieuBG IS NULL "
                 + "ORDER BY p.thoiGianTiepNhan DESC";
-        List<Object[]> rows = new ArrayList<>();
+        List<PhieuTiepNhanVaSuaChua> rows = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
              ResultSet result = statement.executeQuery()) {
             while (result.next()) {
-                int progress = result.getInt("tienDo");
-                boolean paid = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(result.getString("thanhToan"));
-                boolean debt = TrangThaiHoaDon.CONG_NO.getText().equals(result.getString("thanhToan"))
-                        && result.getBoolean("duocGhiNo");
-                boolean ready = progress == 100 && (paid || debt);
-                String status;
-                if (ready) {
-                    status = "Chờ bàn giao";
-                } else if (TrangThaiPhieu.fromDb(result.getString("trangThai")) == TrangThaiPhieu.CHO_KIEM_TRA) {
-                    status = "Chờ tiếp nhận";
-                } else if (progress == 100) {
-                    status = "Chờ xử lý hóa đơn";
-                } else {
-                    status = "Đang sửa • " + progress + "%";
-                }
-
-                String action;
-                if (ready) {
-                    action = "Bàn giao →";
-                } else if (progress == 0) {
-                    action = "Hồ sơ xe";
-                } else {
-                    action = "Xem phiếu";
-                }
-                rows.add(new Object[]{
-                        result.getString("maPhieuTNSC"), result.getString("bienSo"),
-                        result.getString("hoTen"), result.getString("xe"), status, action
-                });
+                rows.add(docPhieu(result));
             }
         }
         return rows;
@@ -290,9 +222,38 @@ public class PhieuBanGiao_Dao {
         }
     }
 
-    private static String format(double amount) {
-        return String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f", amount)
-                .replace(',', '.');
+    /** Một dòng của LIST_SQL thành phiếu kèm xe, chủ xe, hóa đơn còn hiệu lực và phiếu bàn giao. */
+    private static PhieuTiepNhanVaSuaChua docPhieu(ResultSet result) throws SQLException {
+        PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(result.getString("maPhieuTNSC"));
+        phieu.setXe(PhieuTiepNhanVaSuaChua_Dao.docXe(result));
+        phieu.setTrangThai(TrangThaiPhieu.fromDb(result.getString("trangThai")));
+        phieu.setTongSoHangMuc(result.getInt("soHangMuc"));
+        phieu.setSoHangMucHoanThanh(result.getInt("soHangMucXong"));
+        String maHD = result.getString("maHD");
+        if (!maHD.isEmpty()) {
+            HoaDon hoaDon = new HoaDon(maHD);
+            hoaDon.setTongTienCong(result.getDouble("tienCong"));
+            hoaDon.setTongTienPhuTung(result.getDouble("tienPhuTung"));
+            hoaDon.setTongTienGiam(result.getDouble("giam"));
+            hoaDon.setTongTienVAT(result.getDouble("vat"));
+            hoaDon.setTongThanhToan(result.getDouble("tong"));
+            hoaDon.setTrangThaiThanhToan(TrangThaiHoaDon.fromDb(result.getString("thanhToan")));
+            Thue thue = new Thue();
+            thue.setThueSuat(result.getDouble("thueSuat"));
+            hoaDon.setThue(thue);
+            phieu.setHoaDon(hoaDon);
+        }
+        String maBanGiao = result.getString("maPhieuBG");
+        if (!maBanGiao.isEmpty()) {
+            PhieuBanGiao banGiao = new PhieuBanGiao(maBanGiao);
+            Timestamp ngay = result.getTimestamp("ngayBanGiao");
+            banGiao.setNgayBanGiao(ngay == null ? null : ngay.toLocalDateTime());
+            NhanVien nhanVien = new NhanVien(result.getString("maNV_BanGiao"));
+            nhanVien.setHoTen(result.getString("tenNVBanGiao"));
+            banGiao.setNhanVienBanGiao(nhanVien);
+            phieu.setBanGiao(banGiao);
+        }
+        return phieu;
     }
 
     private PhieuBanGiao mapPhieuBanGiao(ResultSet result) throws SQLException {

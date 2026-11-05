@@ -177,7 +177,7 @@ public class ChiTietHoaDonController {
     private List<Object[]> dongPhuTung(List<ChiTietSuaChua_PhuTung> nguon) {
         List<Object[]> dong = new ArrayList<>();
         for (ChiTietSuaChua_PhuTung d : nguon) {
-            double thanhTien = HoaDon_Dao.thanhTien(d);
+            double thanhTien = d.thanhTien();
             tongTienPhuTung += thanhTien;
             dong.add(new Object[] {d.getPhuTung().getTenPhuTung(), d.getPhuTung().getMaSKU(), d.getSoLuongSuDung(),
                 tien(d.getGiaBanThucTe()), tien(thanhTien)});
@@ -204,11 +204,11 @@ public class ChiTietHoaDonController {
         }
         view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
         view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
-        if (d.phieu.getXe().getKhachHang().isDuocGhiNo()) {
+        if (d.phieu.getXe().getKhachHang().duocThanhToanBang(HinhThucThanhToan.CONG_NO)) {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         // Mặc định chọn khuyến mãi giảm nhiều nhất; nhân viên vẫn đổi hoặc bỏ chọn được.
-        view.getCboKhuyenMai().setSelectedItem(HoaDon_Dao.khuyenMaiTotNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
+        view.getCboKhuyenMai().setSelectedItem(KhuyenMai.totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
         view.getCboThue().addActionListener(e -> tinhLaiXemTruoc());
         ganSuKienThanhToan();
@@ -258,13 +258,14 @@ public class ChiTietHoaDonController {
 
     /** Chỉ để xem trước; số tiền thật được tính lại khi lưu. */
     private void tinhLaiXemTruoc() {
-        KhuyenMai km = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
-        double thueSuat = thue == null ? 0 : thue.getThueSuat();
-        HoaDon_Dao.TienHoaDon t = HoaDon_Dao.tinhTien(tongTienCong, tongTienPhuTung, km == null ? null : km.getHinhThuc(),
-                km == null ? 0 : km.getGiaTri(), km == null ? null : km.getPhamViApDung(), thueSuat);
-        tongHienTai = t.tong;
-        hienTongHop(t.cong, t.phuTung, t.giam, thueSuat, t.vat, t.tong);
+        HoaDon xemTruoc = new HoaDon();
+        xemTruoc.setKhuyenMai((KhuyenMai) view.getCboKhuyenMai().getSelectedItem());
+        xemTruoc.setThue(thue);
+        xemTruoc.tinhTongThanhToan(tongTienCong, tongTienPhuTung);
+        tongHienTai = xemTruoc.getTongThanhToan();
+        hienTongHop(xemTruoc.getTongTienCong(), xemTruoc.getTongTienPhuTung(), xemTruoc.getTongTienGiam(),
+                thue == null ? 0 : thue.getThueSuat(), xemTruoc.getTongTienVAT(), tongHienTai);
         capNhatTheoHinhThuc();
     }
 

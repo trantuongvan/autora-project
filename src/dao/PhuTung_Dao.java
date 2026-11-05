@@ -198,16 +198,52 @@ public class PhuTung_Dao {
         }
     }
 
+    /**
+     * Đọc tồn và giá nhập trong transaction của người gọi. Khóa dòng để hai máy đổi cùng phụ tùng phải chờ nhau,
+     * máy sau đọc được số tồn mới nên không ghi đè mất thay đổi của máy trước.
+     * Người gọi phải khóa phụ tùng trước khi ghi bảng khác, nếu không nhiều máy cùng lúc sẽ deadlock.
+     * CAST vì driver gửi chuỗi kiểu NVARCHAR; so sánh trực tiếp với cột VARCHAR cũng gây deadlock khi kiểm thử.
+     */
+    static PhuTung docDeDoiTon(Connection c, String maSKU) throws SQLException {
+        String sql = "SELECT soLuongTon, giaNhap, giaBanLe FROM PhuTung WITH (UPDLOCK, ROWLOCK) WHERE maSKU = CAST(? AS VARCHAR(30))";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, maSKU);
+            try (ResultSet r = p.executeQuery()) {
+                if (!r.next()) {
+                    throw new SQLException("Phụ tùng " + maSKU + " không tồn tại.");
+                }
+                PhuTung pt = new PhuTung(maSKU);
+                pt.setSoLuongTon(r.getInt("soLuongTon"));
+                pt.setGiaBanLe(r.getDouble("giaBanLe"));
+                pt.setGiaNhap(r.getDouble("giaNhap"));
+                return pt;
+            }
+        }
+    }
+
+    static void luuTon(Connection c, PhuTung pt) throws SQLException {
+        String sql = "UPDATE PhuTung SET soLuongTon = ?, giaNhap = ? WHERE maSKU = CAST(? AS VARCHAR(30))";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, pt.getSoLuongTon());
+            p.setDouble(2, pt.getGiaNhap());
+            p.setString(3, pt.getMaSKU());
+            p.executeUpdate();
+        }
+    }
+
+    /**
+     * Đặt giá bán trước giá nhập để dòng cũ có giá nhập vượt giá bán vẫn đọc được:
+     * một dòng như vậy không được làm hỏng cả danh sách, và thủ kho cần thấy nó để sửa.
+     */
     private PhuTung mapPhuTung(ResultSet r) throws SQLException {
-        return new PhuTung(
-                r.getString("maSKU"),
-                r.getString("tenPhuTung"),
-                r.getString("hangSanXuat"),
-                r.getString("viTriLuuKho"),
-                r.getDouble("giaNhap"),
-                r.getDouble("giaBanLe"),
-                r.getInt("soLuongTon"),
-                r.getInt("nguongCanhBao")
-        );
+        PhuTung pt = new PhuTung(r.getString("maSKU"));
+        pt.setTenPhuTung(r.getString("tenPhuTung"));
+        pt.setHangSanXuat(r.getString("hangSanXuat"));
+        pt.setViTriLuuKho(r.getString("viTriLuuKho"));
+        pt.setGiaBanLe(r.getDouble("giaBanLe"));
+        pt.setGiaNhap(r.getDouble("giaNhap"));
+        pt.setSoLuongTon(r.getInt("soLuongTon"));
+        pt.setNguongCanhBao(r.getInt("nguongCanhBao"));
+        return pt;
     }
 }

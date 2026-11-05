@@ -172,7 +172,7 @@ public class TrangChuKyThuatVienController {
             String tt = p.getTrangThaiHienThiKTV();
             String nhanTrangThai = tt;
             if (p.getTrangThai() == TrangThaiPhieu.DANG_SUA) {
-                nhanTrangThai = "Đang sửa • " + TienDoSuaChua_Dao.phanTramTienDo(p) + "%";
+                nhanTrangThai = "Đang sửa • " + p.phanTramTienDo() + "%";
             }
 
             String thaoTac;
