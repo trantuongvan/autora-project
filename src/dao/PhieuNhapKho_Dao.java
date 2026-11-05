@@ -191,6 +191,12 @@ public class PhieuNhapKho_Dao {
             try (PreparedStatement psPhieu = c.prepareStatement(sqlPhieu);
                  PreparedStatement psCT = c.prepareStatement(sqlCT)) {
 
+                for (ChiTietNhapKho ct : chiTietList) {
+                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
+                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
+                    PhuTung_Dao.luuTon(c, phuTung);
+                }
+
                 psPhieu.setString(1, phieu.getMaPhieuNhap());
                 psPhieu.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
                 psPhieu.setDouble(3, phieu.getTongTienNhap());
@@ -206,12 +212,6 @@ public class PhieuNhapKho_Dao {
                     psCT.addBatch();
                 }
                 psCT.executeBatch();
-
-                for (ChiTietNhapKho ct : chiTietList) {
-                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
-                    PhuTung_Dao.luuTon(c, phuTung);
-                }
 
                 c.commit();
                 c.setAutoCommit(oldAuto);
