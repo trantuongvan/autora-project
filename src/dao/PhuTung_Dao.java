@@ -205,7 +205,7 @@ public class PhuTung_Dao {
      * CAST vì driver gửi chuỗi kiểu NVARCHAR; so sánh trực tiếp với cột VARCHAR cũng gây deadlock khi kiểm thử.
      */
     static PhuTung docDeDoiTon(Connection c, String maSKU) throws SQLException {
-        String sql = "SELECT soLuongTon, giaNhap FROM PhuTung WITH (UPDLOCK, ROWLOCK) WHERE maSKU = CAST(? AS VARCHAR(30))";
+        String sql = "SELECT soLuongTon, giaNhap, giaBanLe FROM PhuTung WITH (UPDLOCK, ROWLOCK) WHERE maSKU = CAST(? AS VARCHAR(30))";
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, maSKU);
             try (ResultSet r = p.executeQuery()) {
@@ -214,6 +214,7 @@ public class PhuTung_Dao {
                 }
                 PhuTung pt = new PhuTung(maSKU);
                 pt.setSoLuongTon(r.getInt("soLuongTon"));
+                pt.setGiaBanLe(r.getDouble("giaBanLe"));
                 pt.setGiaNhap(r.getDouble("giaNhap"));
                 return pt;
             }
@@ -230,16 +231,19 @@ public class PhuTung_Dao {
         }
     }
 
+    /**
+     * Đặt giá bán trước giá nhập để dòng cũ có giá nhập vượt giá bán vẫn đọc được:
+     * một dòng như vậy không được làm hỏng cả danh sách, và thủ kho cần thấy nó để sửa.
+     */
     private PhuTung mapPhuTung(ResultSet r) throws SQLException {
-        return new PhuTung(
-                r.getString("maSKU"),
-                r.getString("tenPhuTung"),
-                r.getString("hangSanXuat"),
-                r.getString("viTriLuuKho"),
-                r.getDouble("giaNhap"),
-                r.getDouble("giaBanLe"),
-                r.getInt("soLuongTon"),
-                r.getInt("nguongCanhBao")
-        );
+        PhuTung pt = new PhuTung(r.getString("maSKU"));
+        pt.setTenPhuTung(r.getString("tenPhuTung"));
+        pt.setHangSanXuat(r.getString("hangSanXuat"));
+        pt.setViTriLuuKho(r.getString("viTriLuuKho"));
+        pt.setGiaBanLe(r.getDouble("giaBanLe"));
+        pt.setGiaNhap(r.getDouble("giaNhap"));
+        pt.setSoLuongTon(r.getInt("soLuongTon"));
+        pt.setNguongCanhBao(r.getInt("nguongCanhBao"));
+        return pt;
     }
 }

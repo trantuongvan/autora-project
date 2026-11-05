@@ -2,7 +2,6 @@ package dao;
 
 import connection.ConnectDB;
 import entity.DoanhThuNgay;
-import entity.PhuTung;
 import entity.ThongKeChoThanhToan;
 
 import java.sql.Connection;
@@ -162,25 +161,6 @@ public class TrangChuQuanLy_Dao {
                             r.getDouble("vat"),
                             r.getDouble("tong")));
                 }
-            }
-        }
-        return ketQua;
-    }
-
-    /** Chỉ đọc các cột cần hiển thị, nên một phụ tùng có giá nhập vượt giá bán không làm hỏng trang chủ. */
-    public List<PhuTung> canhBaoTonKho() throws SQLException {
-        String sql = "SELECT maSKU, tenPhuTung, soLuongTon, nguongCanhBao FROM PhuTung "
-                + "WHERE soLuongTon <= nguongCanhBao ORDER BY soLuongTon ASC, maSKU ASC";
-        List<PhuTung> ketQua = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement p = c.prepareStatement(sql);
-             ResultSet r = p.executeQuery()) {
-            while (r.next()) {
-                PhuTung phuTung = new PhuTung(r.getString("maSKU"));
-                phuTung.setTenPhuTung(r.getString("tenPhuTung"));
-                phuTung.setSoLuongTon(r.getInt("soLuongTon"));
-                phuTung.setNguongCanhBao(r.getInt("nguongCanhBao"));
-                ketQua.add(phuTung);
             }
         }
         return ketQua;
