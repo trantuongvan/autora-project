@@ -104,6 +104,11 @@ public class PhuTung {
         this.nguongCanhBao = nguongCanhBao;
     }
 
+    /** Đưa tồn kho lên gấp đôi ngưỡng cảnh báo, tối thiểu bằng ngưỡng và không dưới 1. */
+    public int soLuongNhapDeXuat() {
+        return Math.max(1, Math.max(nguongCanhBao * 2 - soLuongTon, nguongCanhBao));
+    }
+
     public boolean kiemTraCanhBaoTon() {
         return soLuongTon <= nguongCanhBao;
     }
