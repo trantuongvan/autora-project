@@ -255,7 +255,6 @@ public class PhieuYeuCauXuatKho_Dao {
             throw new SQLException("Phiếu sửa chữa " + maPhieuTNSC + " đã có hóa đơn còn hiệu lực. Vui lòng hủy hóa đơn trước khi duyệt xuất kho!");
         }
 
-        String sqlTruTon = "UPDATE PhuTung SET soLuongTon = soLuongTon - ? WHERE maSKU = ? AND soLuongTon >= ?";
         String sqlUpsertCTPT = "IF EXISTS (SELECT 1 FROM ChiTietSuaChua_PhuTung WHERE maPhieuTNSC = ? AND maSKU = ?) "
                 + "UPDATE ChiTietSuaChua_PhuTung SET soLuongSuDung = soLuongSuDung + ? WHERE maPhieuTNSC = ? AND maSKU = ? "
                 + "ELSE INSERT INTO ChiTietSuaChua_PhuTung(maPhieuTNSC, maSKU, soLuongSuDung, giaBanThucTe) "
@@ -266,8 +265,7 @@ public class PhieuYeuCauXuatKho_Dao {
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAuto = c.getAutoCommit();
             c.setAutoCommit(false);
-            try (PreparedStatement psTru = c.prepareStatement(sqlTruTon);
-                 PreparedStatement psCTPT = c.prepareStatement(sqlUpsertCTPT);
+            try (PreparedStatement psCTPT = c.prepareStatement(sqlUpsertCTPT);
                  PreparedStatement psYC = c.prepareStatement(sqlUpdateYC);
                  PreparedStatement psPTNSC = c.prepareStatement(TRA_PHIEU_VE_DANG_SUA)) {
 
@@ -279,13 +277,12 @@ public class PhieuYeuCauXuatKho_Dao {
                 }
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
-                    psTru.setInt(1, ct.getSoLuong());
-                    psTru.setString(2, ct.getPhuTung().getMaSKU());
-                    psTru.setInt(3, ct.getSoLuong());
-                    int affected = psTru.executeUpdate();
-                    if (affected == 0) {
+                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
+                    if (!phuTung.duTon(ct.getSoLuong())) {
                         throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
                     }
+                    phuTung.xuatKho(ct.getSoLuong());
+                    PhuTung_Dao.luuTon(c, phuTung);
 
                     psCTPT.setString(1, maPhieuTNSC);
                     psCTPT.setString(2, ct.getPhuTung().getMaSKU());
@@ -307,7 +304,7 @@ public class PhieuYeuCauXuatKho_Dao {
                 c.commit();
                 c.setAutoCommit(oldAuto);
                 return true;
-            } catch (SQLException ex) {
+            } catch (SQLException | RuntimeException ex) {
                 c.rollback();
                 c.setAutoCommit(oldAuto);
                 throw ex;

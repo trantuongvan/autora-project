@@ -468,7 +468,7 @@ public class QLTienDoSuaChuaController {
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
         JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getPhuTung().getSoLuongTon() <= item.getPhuTung().getNguongCanhBao()) {
+        if (item.getPhuTung().kiemTraCanhBaoTon()) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));
