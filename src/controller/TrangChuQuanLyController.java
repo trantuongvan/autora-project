@@ -1,6 +1,9 @@
 package controller;
 
 import dao.TrangChuQuanLy_Dao;
+import entity.DoanhThuNgay;
+import entity.PhuTung;
+import entity.ThongKeChoThanhToan;
 import gui.TrangChuQuanLy;
 import util.XuatFile;
 
@@ -139,7 +142,7 @@ public class TrangChuQuanLyController {
         view.setDoanhThuNgay(tien(s.homNay), moTaXuHuong(s.homNay, s.homQua, "hôm qua"));
         view.setDoanhThuThang("Doanh thu tháng " + thang, tien(s.thangNay), moTaXuHuong(s.thangNay, s.thangTruoc, "tháng " + thangTruoc));
         view.setLuotXe(s.luotXe[0], s.luotXe[1], s.luotXe[2]);
-        view.setHoaDonCho((Integer) s.hoaDonCho[0], tien((Double) s.hoaDonCho[1]) + " công nợ");
+        view.setHoaDonCho(s.hoaDonCho.getSoLuong(), tien(s.hoaDonCho.getTongTien()) + " công nợ");
 
         double tong = s.tyTrong[0] + s.tyTrong[1];
         view.setTyTrong("Tỷ trọng doanh thu - Tháng " + thang, s.tyTrong[0], s.tyTrong[1],
@@ -158,34 +161,35 @@ public class TrangChuQuanLyController {
 
         view.setBangDoanhThu("Doanh thu từ " + tu.format(NGAY_THANG) + " đến " + den.format(NGAY_THANG), dongDoanhThu(s.bang, tu, den));
         List<Object[]> tonKho = new ArrayList<>();
-        for (Object[] r : s.tonKho) {
-            tonKho.add(new Object[] {r[0], r[1], r[2], r[3], "Cần nhập hàng"});
+        for (PhuTung pt : s.tonKho) {
+            tonKho.add(new Object[] {pt.getMaSKU(), pt.getTenPhuTung(), pt.getSoLuongTon(), pt.getNguongCanhBao(), "Cần nhập hàng"});
         }
         view.setBangTonKho(tonKho);
     }
 
-    private static List<Object[]> dongDoanhThu(List<Object[]> bang, LocalDate tu, LocalDate den) {
-        Map<LocalDate, Object[]> theoNgay = new HashMap<>();
-        for (Object[] r : bang) {
-            theoNgay.put((LocalDate) r[0], r);
+    private static List<Object[]> dongDoanhThu(List<DoanhThuNgay> bang, LocalDate tu, LocalDate den) {
+        Map<LocalDate, DoanhThuNgay> theoNgay = new HashMap<>();
+        for (DoanhThuNgay r : bang) {
+            theoNgay.put(r.getNgay(), r);
         }
         int tongPhieu = 0;
-        double[] tong = new double[4];
+        double tongCong = 0;
+        double tongPhuTung = 0;
+        double tongVAT = 0;
+        double tongTien = 0;
         List<Object[]> dong = new ArrayList<>();
         for (LocalDate ngay : cacNgay(tu, den)) {
-            Object[] r = theoNgay.get(ngay);
-            int soPhieu = r == null ? 0 : (Integer) r[1];
-            Object[] hienThi = {ngay.format(DINH_DANG_NGAY), soPhieu, "", "", "", ""};
-            tongPhieu += soPhieu;
-            for (int i = 0; i < 4; i++) {
-                double giaTri = r == null ? 0 : (Double) r[i + 2];
-                tong[i] += giaTri;
-                hienThi[i + 2] = DINH_DANG_SO.format(giaTri);
-            }
-            dong.add(hienThi);
+            DoanhThuNgay r = theoNgay.getOrDefault(ngay, new DoanhThuNgay(ngay, 0, 0, 0, 0, 0));
+            tongPhieu += r.getSoPhieu();
+            tongCong += r.getTienCong();
+            tongPhuTung += r.getTienPhuTung();
+            tongVAT += r.getTienVAT();
+            tongTien += r.getTongTien();
+            dong.add(new Object[] {ngay.format(DINH_DANG_NGAY), r.getSoPhieu(), DINH_DANG_SO.format(r.getTienCong()),
+                DINH_DANG_SO.format(r.getTienPhuTung()), DINH_DANG_SO.format(r.getTienVAT()), DINH_DANG_SO.format(r.getTongTien())});
         }
-        dong.add(new Object[] {"Tổng cộng", tongPhieu, DINH_DANG_SO.format(tong[0]), DINH_DANG_SO.format(tong[1]),
-            DINH_DANG_SO.format(tong[2]), DINH_DANG_SO.format(tong[3])});
+        dong.add(new Object[] {"Tổng cộng", tongPhieu, DINH_DANG_SO.format(tongCong), DINH_DANG_SO.format(tongPhuTung),
+            DINH_DANG_SO.format(tongVAT), DINH_DANG_SO.format(tongTien)});
         return dong;
     }
 
@@ -247,10 +251,10 @@ public class TrangChuQuanLyController {
         double thangNay;
         double thangTruoc;
         int[] luotXe;
-        Object[] hoaDonCho;
+        ThongKeChoThanhToan hoaDonCho;
         double[] tyTrong;
         Map<LocalDate, Double> bayNgay;
-        List<Object[]> bang;
-        List<Object[]> tonKho;
+        List<DoanhThuNgay> bang;
+        List<PhuTung> tonKho;
     }
 }

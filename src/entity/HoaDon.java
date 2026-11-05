@@ -204,6 +204,19 @@ public class HoaDon {
         setTongThanhToan(sauGiam + vat);
     }
 
+    public boolean daThanhToan() {
+        return trangThaiThanhToan == TrangThaiHoaDon.DA_THANH_TOAN;
+    }
+
+    /** Đã trả đủ, hoặc còn nợ nhưng khách được phép ghi nợ. */
+    public boolean daThanhToanHopLe(KhachHang khachHang) {
+        return daThanhToan() || laCongNoHopLe(khachHang);
+    }
+
+    public boolean laCongNoHopLe(KhachHang khachHang) {
+        return trangThaiThanhToan == TrangThaiHoaDon.CONG_NO && khachHang.duocThanhToanBang(HinhThucThanhToan.CONG_NO);
+    }
+
     /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
     static double phanTram(double coSo, double tyLe) {
         return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))

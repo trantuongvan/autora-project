@@ -5,6 +5,7 @@ import dao.LichHen_Dao;
 import entity.KhachHang;
 import entity.LichHen;
 import entity.LoaiKhachHang;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiLichHen;
 import entity.Xe;
 import gui.LichHenFormDialog;
@@ -201,18 +202,16 @@ public class QLKhachHangController {
             view.setLichSu(new ArrayList<>());
             return;
         }
-        new SwingWorker<List<List<Object[]>>, Void>() {
+        new SwingWorker<List<PhieuTiepNhanVaSuaChua>, Void>() {
+            private final List<Object[]> dongXe = new ArrayList<>();
+
             @Override
-            protected List<List<Object[]>> doInBackground() throws Exception {
-                List<List<Object[]>> ketQua = new ArrayList<>();
-                List<Object[]> dongXe = new ArrayList<>();
+            protected List<PhieuTiepNhanVaSuaChua> doInBackground() throws Exception {
                 for (Xe x : dao.xeLienKet(ma)) {
                     dongXe.add(new Object[] {x.getBienSo(), x.getSoVIN(), x.getHangXe(), x.getDongXe(), x.getDoiXe(),
                         x.getMauSon()});
                 }
-                ketQua.add(dongXe);
-                ketQua.add(dao.lichSuSuaChua(ma));
-                return ketQua;
+                return dao.lichSuSuaChua(ma);
             }
 
             @Override
@@ -221,8 +220,9 @@ public class QLKhachHangController {
                     return;
                 }
                 try {
-                    view.setXeLienKet(get().get(0));
-                    view.setLichSu(thanhDongLichSu(get().get(1)));
+                    List<PhieuTiepNhanVaSuaChua> lichSu = get();
+                    view.setXeLienKet(dongXe);
+                    view.setLichSu(thanhDongLichSu(lichSu));
                 } catch (Exception ex) {
                     view.setXeLienKet(new ArrayList<>());
                     view.setLichSu(new ArrayList<>());
@@ -359,11 +359,13 @@ public class QLKhachHangController {
         taiLai();
     }
 
-    private List<Object[]> thanhDongLichSu(List<Object[]> lichSu) {
+    private List<Object[]> thanhDongLichSu(List<PhieuTiepNhanVaSuaChua> lichSu) {
         List<Object[]> dong = new ArrayList<>();
-        for (Object[] r : lichSu) {
-            dong.add(new Object[] {r[0], r[1] == null ? KHONG_CO : ((LocalDateTime) r[1]).format(DINH_DANG_NGAY),
-                r[2] == null ? KHONG_CO : xuongDong((String) r[2]), r[3] == null ? KHONG_CO : dinhDangTien.format(r[3]) + " đ"});
+        for (PhieuTiepNhanVaSuaChua p : lichSu) {
+            dong.add(new Object[] {p.getMaPhieuTNSC(),
+                p.getThoiGianTiepNhan() == null ? KHONG_CO : p.getThoiGianTiepNhan().format(DINH_DANG_NGAY),
+                p.getTomTatHangMuc() == null ? KHONG_CO : xuongDong(p.getTomTatHangMuc()),
+                p.getHoaDon() == null ? KHONG_CO : dinhDangTien.format(p.getHoaDon().getTongThanhToan()) + " đ"});
         }
         return dong;
     }

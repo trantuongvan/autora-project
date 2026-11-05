@@ -14,6 +14,7 @@ import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhamViKhuyenMai;
+import entity.ThongKeChoThanhToan;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
@@ -358,28 +359,28 @@ public class TestHoaDon {
 
     private static void kiemTraBoDemChoThanhToan() throws Exception {
         TrangChuQuanLy_Dao trangChu = new TrangChuQuanLy_Dao();
-        Object[] goc = trangChu.hoaDonChoThanhToan();
-        int so = (Integer) goc[0];
-        double tien = (Double) goc[1];
+        ThongKeChoThanhToan goc = trangChu.hoaDonChoThanhToan();
+        int so = goc.getSoLuong();
+        double tien = goc.getTongTien();
         taoPhieu(XE_CO_NO, TrangThaiPhieu.DANG_SUA, 100000);
-        kiem("Phiếu chưa xong không tính", (Integer) trangChu.hoaDonChoThanhToan()[0] == so);
+        kiem("Phiếu chưa xong không tính", trangChu.hoaDonChoThanhToan().getSoLuong() == so);
 
         String tra = taoPhieu(XE_CO_NO, TrangThaiPhieu.HOAN_THANH, 100000);
-        Object[] coPhieu = trangChu.hoaDonChoThanhToan();
-        kiem("Phiếu xong chưa hóa đơn được tính", (Integer) coPhieu[0] == so + 1);
-        kiem("Phiếu chưa hóa đơn không cộng tiền nợ", (Double) coPhieu[1] == tien);
+        ThongKeChoThanhToan coPhieu = trangChu.hoaDonChoThanhToan();
+        kiem("Phiếu xong chưa hóa đơn được tính", coPhieu.getSoLuong() == so + 1);
+        kiem("Phiếu chưa hóa đơn không cộng tiền nợ", coPhieu.getTongTien() == tien);
         lap(tra, null, HinhThucThanhToan.CHUYEN_KHOAN);
-        kiem("Trả ngay thì hết chờ", (Integer) trangChu.hoaDonChoThanhToan()[0] == so);
+        kiem("Trả ngay thì hết chờ", trangChu.hoaDonChoThanhToan().getSoLuong() == so);
 
         String no = taoPhieu(XE_CO_NO, TrangThaiPhieu.HOAN_THANH, 100000);
         String maNo = lap(no, null, HinhThucThanhToan.CONG_NO);
-        Object[] coNo = trangChu.hoaDonChoThanhToan();
-        kiem("Công nợ được tính một lần", (Integer) coNo[0] == so + 1);
-        kiem("Công nợ cộng tiền", (Double) coNo[1] > tien);
+        ThongKeChoThanhToan coNo = trangChu.hoaDonChoThanhToan();
+        kiem("Công nợ được tính một lần", coNo.getSoLuong() == so + 1);
+        kiem("Công nợ cộng tiền", coNo.getTongTien() > tien);
         dao.huy(maNo, "Lập sai", "admin");
-        Object[] daHuy = trangChu.hoaDonChoThanhToan();
-        kiem("Hủy hóa đơn nợ thì phiếu lại chờ", (Integer) daHuy[0] == so + 1);
-        kiem("Hủy hóa đơn nợ thì hết tiền nợ", (Double) daHuy[1] == tien);
+        ThongKeChoThanhToan daHuy = trangChu.hoaDonChoThanhToan();
+        kiem("Hủy hóa đơn nợ thì phiếu lại chờ", daHuy.getSoLuong() == so + 1);
+        kiem("Hủy hóa đơn nợ thì hết tiền nợ", daHuy.getTongTien() == tien);
     }
 
     private static String lap(String maPhieu, String maKM, HinhThucThanhToan hinhThuc) throws SQLException {
