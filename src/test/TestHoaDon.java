@@ -69,18 +69,18 @@ public class TestHoaDon {
     }
 
     private static void kiemTraTinhTien() {
-        tien("Hóa đơn mẫu 1.506.600", HoaDon_Dao.tinhTien(750000, 800000, PT, 10, TONG, 8), 155000, 111600, 1506600);
-        tien("% chỉ trên nhóm dịch vụ", HoaDon_Dao.tinhTien(750000, 800000, PT, 10, DICH_VU, 8), 75000, 118000, 1593000);
-        tien("% chỉ trên phụ tùng", HoaDon_Dao.tinhTien(750000, 800000, PT, 10, PHU_TUNG, 8), 80000, 117600, 1587600);
-        tien("Tiền mặt bị chặn theo cơ sở dịch vụ", HoaDon_Dao.tinhTien(100000, 800000, TM, 500000, DICH_VU, 10), 100000, 80000, 880000);
-        tien("Tiền mặt bị chặn theo cơ sở phụ tùng", HoaDon_Dao.tinhTien(100000, 50000, TM, 500000, PHU_TUNG, 0), 50000, 0, 100000);
-        tien("Tiền mặt bị chặn theo tổng", HoaDon_Dao.tinhTien(100000, 50000, TM, 500000, TONG, 8), 150000, 0, 0);
-        tien("Giảm 100%", HoaDon_Dao.tinhTien(750000, 800000, PT, 100, TONG, 8), 1550000, 0, 0);
-        tien("Không có phụ tùng", HoaDon_Dao.tinhTien(500000, 0, null, 0, null, 10), 0, 50000, 550000);
-        tien("Khuyến mãi phụ tùng khi không có phụ tùng", HoaDon_Dao.tinhTien(500000, 0, PT, 50, PHU_TUNG, 10), 0, 50000, 550000);
-        tien("Làm tròn nửa đồng lên", HoaDon_Dao.tinhTien(1005, 0, null, 0, null, 10), 0, 101, 1106);
-        loi("Tiền âm", () -> HoaDon_Dao.tinhTien(-1, 0, null, 0, null, 8));
-        loi("Phạm vi lạ", () -> HoaDon_Dao.tinhTien(1, 0, PT, 10, null, 8));
+        tien("Hóa đơn mẫu 1.506.600", tinh(750000, 800000, PT, 10, TONG, 8), 155000, 111600, 1506600);
+        tien("% chỉ trên nhóm dịch vụ", tinh(750000, 800000, PT, 10, DICH_VU, 8), 75000, 118000, 1593000);
+        tien("% chỉ trên phụ tùng", tinh(750000, 800000, PT, 10, PHU_TUNG, 8), 80000, 117600, 1587600);
+        tien("Tiền mặt bị chặn theo cơ sở dịch vụ", tinh(100000, 800000, TM, 500000, DICH_VU, 10), 100000, 80000, 880000);
+        tien("Tiền mặt bị chặn theo cơ sở phụ tùng", tinh(100000, 50000, TM, 500000, PHU_TUNG, 0), 50000, 0, 100000);
+        tien("Tiền mặt bị chặn theo tổng", tinh(100000, 50000, TM, 500000, TONG, 8), 150000, 0, 0);
+        tien("Giảm 100%", tinh(750000, 800000, PT, 100, TONG, 8), 1550000, 0, 0);
+        tien("Không có phụ tùng", tinh(500000, 0, null, 0, null, 10), 0, 50000, 550000);
+        tien("Khuyến mãi phụ tùng khi không có phụ tùng", tinh(500000, 0, PT, 50, PHU_TUNG, 10), 0, 50000, 550000);
+        tien("Làm tròn nửa đồng lên", tinh(1005, 0, null, 0, null, 10), 0, 101, 1106);
+        loi("Tiền âm", () -> tinh(-1, 0, null, 0, null, 8));
+        loi("Phạm vi lạ", () -> tinh(1, 0, PT, 10, null, 8));
     }
 
     private static void kiemTraEntityVaTienNhap() {
@@ -89,7 +89,7 @@ public class TestHoaDon {
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
         loi("Tổng âm", () -> new HoaDon().setTongThanhToan(-1));
         loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
-        kiem("Thuế tính tiền", Thue_Dao.tinhTienThue(new Thue("X", "A", 8), 1395000) == 111600);
+        kiem("Thuế tính tiền", new Thue("X", "A", 8).tinhTienThue(1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
         kiem("Tiền không dấu", ChiTietHoaDonController.docTien("1500000") == 1500000);
         loi("Tiền có chữ", () -> ChiTietHoaDonController.docTien("15a"));
@@ -497,9 +497,25 @@ public class TestHoaDon {
         }
     }
 
-    private static void tien(String ten, HoaDon_Dao.TienHoaDon t, double giam, double vat, double tong) {
-        kiem(ten + " (giam=" + t.giam + ", vat=" + t.vat + ", tong=" + t.tong + ")",
-                t.giam == giam && t.vat == vat && t.tong == tong);
+    /** hinhThuc null là hóa đơn không có khuyến mãi. */
+    private static HoaDon tinh(double cong, double phuTung, HinhThucKhuyenMai hinhThuc, double giaTri,
+            PhamViKhuyenMai phamVi, double thueSuat) {
+        HoaDon hd = new HoaDon();
+        if (hinhThuc != null) {
+            KhuyenMai km = new KhuyenMai("KMX");
+            km.setHinhThuc(hinhThuc);
+            km.setGiaTri(giaTri);
+            km.setPhamViApDung(phamVi);
+            hd.setKhuyenMai(km);
+        }
+        hd.setThue(new Thue("X", "A", thueSuat));
+        hd.tinhTongThanhToan(cong, phuTung);
+        return hd;
+    }
+
+    private static void tien(String ten, HoaDon t, double giam, double vat, double tong) {
+        kiem(ten + " (giam=" + t.getTongTienGiam() + ", vat=" + t.getTongTienVAT() + ", tong=" + t.getTongThanhToan() + ")",
+                t.getTongTienGiam() == giam && t.getTongTienVAT() == vat && t.getTongThanhToan() == tong);
     }
 
     private static void kiem(String ten, boolean dat) {

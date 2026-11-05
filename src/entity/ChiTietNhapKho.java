@@ -54,6 +54,10 @@ public class ChiTietNhapKho {
         this.giaNhapThucTe = giaNhapThucTe;
     }
 
+    public double thanhTien() {
+        return soLuongNhap * giaNhapThucTe;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

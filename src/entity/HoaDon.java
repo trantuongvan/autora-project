@@ -1,5 +1,7 @@
 package entity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -180,6 +182,32 @@ public class HoaDon {
 
     public void setThue(Thue thue) {
         this.thue = thue;
+    }
+
+    /**
+     * Tính lại mọi khoản từ tiền công, tiền phụ tùng, khuyến mãi và thuế của hóa đơn, làm tròn tới đồng.
+     * Chưa có khuyến mãi hoặc thuế thì khoản đó bằng 0. Màn hình xem trước và lúc lưu dùng cùng công thức này.
+     */
+    public void tinhTongThanhToan(double tienCong, double tienPhuTung) {
+        if (tienCong < 0 || tienPhuTung < 0) {
+            throw new IllegalArgumentException("Số tiền không được âm.");
+        }
+        double cong = Math.round(tienCong);
+        double phuTung = Math.round(tienPhuTung);
+        double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
+        double sauGiam = cong + phuTung - giam;
+        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
+        setTongTienCong(cong);
+        setTongTienPhuTung(phuTung);
+        setTongTienGiam(giam);
+        setTongTienVAT(vat);
+        setTongThanhToan(sauGiam + vat);
+    }
+
+    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
+    static double phanTram(double coSo, double tyLe) {
+        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     @Override

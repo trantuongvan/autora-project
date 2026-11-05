@@ -56,27 +56,34 @@ public class TestTuDongHoa {
         KhuyenMai chiPhuTung = km("KM05", HinhThucKhuyenMai.PHAN_TRAM, 50, PhamViKhuyenMai.PHU_TUNG);
         KhuyenMai chiCong = km("KM06", HinhThucKhuyenMai.PHAN_TRAM, 5, PhamViKhuyenMai.NHOM_DICH_VU);
 
-        dung("Giảm nhiều nhất thắng", HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
+        dung("Giảm nhiều nhất thắng", KhuyenMai.totNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
         dung("Phần trăm và tiền mặt so theo số tiền thật",
-                HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
-                && HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
-        dung("Hòa thì lấy cái đứng trước", HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
-                && HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
-        dung("Danh sách rỗng cho null", HoaDon_Dao.khuyenMaiTotNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
-        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
-        dung("Phạm vi công khi không có công cho null", HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(chiCong), 0, 500000) == null);
+                KhuyenMai.totNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
+                && KhuyenMai.totNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
+        dung("Hòa thì lấy cái đứng trước", KhuyenMai.totNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
+                && KhuyenMai.totNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
+        dung("Danh sách rỗng cho null", KhuyenMai.totNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
+        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", KhuyenMai.totNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
+        dung("Phạm vi công khi không có công cho null", KhuyenMai.totNhat(Arrays.asList(chiCong), 0, 500000) == null);
         dung("Bỏ qua khuyến mãi không giảm, chọn cái có giảm",
-                HoaDon_Dao.khuyenMaiTotNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
+                KhuyenMai.totNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
+    }
+
+    private static int deXuat(int nguong, int ton) {
+        PhuTung pt = new PhuTung("SKU_X");
+        pt.setNguongCanhBao(nguong);
+        pt.setSoLuongTon(ton);
+        return pt.soLuongNhapDeXuat();
     }
 
     private static void kiemTraSoLuongNhap() {
-        dung("Dưới ngưỡng: 6*2-4", QLNhapKhoController.soLuongNhapMacDinh(6, 4) == 8);
-        dung("Đúng ngưỡng lấy bằng ngưỡng", QLNhapKhoController.soLuongNhapMacDinh(5, 5) == 5);
-        dung("Tồn sát ngưỡng gấp đôi vẫn lấy ngưỡng", QLNhapKhoController.soLuongNhapMacDinh(5, 8) == 5);
-        dung("Tồn rất cao vẫn lấy ngưỡng", QLNhapKhoController.soLuongNhapMacDinh(5, 500) == 5);
-        dung("Hết hàng: gấp đôi ngưỡng", QLNhapKhoController.soLuongNhapMacDinh(5, 0) == 10);
-        dung("Ngưỡng 0 vẫn ít nhất 1", QLNhapKhoController.soLuongNhapMacDinh(0, 0) == 1
-                && QLNhapKhoController.soLuongNhapMacDinh(0, 30) == 1);
+        dung("Dưới ngưỡng: 6*2-4", deXuat(6, 4) == 8);
+        dung("Đúng ngưỡng lấy bằng ngưỡng", deXuat(5, 5) == 5);
+        dung("Tồn sát ngưỡng gấp đôi vẫn lấy ngưỡng", deXuat(5, 8) == 5);
+        dung("Tồn rất cao vẫn lấy ngưỡng", deXuat(5, 500) == 5);
+        dung("Hết hàng: gấp đôi ngưỡng", deXuat(5, 0) == 10);
+        dung("Ngưỡng 0 vẫn ít nhất 1", deXuat(0, 0) == 1
+                && deXuat(0, 30) == 1);
     }
 
     private static void phieuNhap(PhieuNhapKho_Dao dao, String ma, LocalDateTime gio, String maNCC, String maSKU) throws Exception {

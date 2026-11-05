@@ -14,8 +14,6 @@ import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -173,11 +171,6 @@ public class HoaDon_Dao {
         }
     }
 
-    /** Thành tiền của một dòng phụ tùng. */
-    public static double thanhTien(ChiTietSuaChua_PhuTung dong) {
-        return dong.getSoLuongSuDung() * dong.getGiaBanThucTe();
-    }
-
     public List<KhuyenMai> findKhuyenMaiHopLe() throws SQLException {
         String sql = "SELECT maKM, tenChuongTrinh, hinhThuc, giaTri, thoiGianBatDau, thoiGianKetThuc, trangThai, phamViApDung "
                 + "FROM KhuyenMai WHERE " + KHUYEN_MAI_HOP_LE + " ORDER BY maKM";
@@ -209,26 +202,25 @@ public class HoaDon_Dao {
     /** Lập hóa đơn trong một transaction, không đổi tồn kho vì phụ tùng đã trừ lúc duyệt xuất kho. tienKhachDua chỉ dùng cho tiền mặt. Trả về mã hóa đơn. */
     public String lapHoaDon(String maPhieu, String maKM, String maThue, HinhThucThanhToan hinhThuc, Double tienKhachDua,
             String maNV) throws SQLException {
-        new HoaDon().setHinhThucThanhToan(hinhThuc);
+        HoaDon hoaDon = new HoaDon();
+        hoaDon.setHinhThucThanhToan(hinhThuc);
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
                 kiemTraPhieu(connection, maPhieu, hinhThuc);
-                KhuyenMai km = maKM == null ? null : docKhuyenMai(connection, maKM);
-                double thueSuat = docThueSuat(connection, maThue);
+                hoaDon.setKhuyenMai(maKM == null ? null : docKhuyenMai(connection, maKM));
+                hoaDon.setThue(docThue(connection, maThue));
 
                 // HOLDLOCK: không ai sửa được dòng đã tính tiền trước khi hóa đơn được ghi.
                 double tienPhuTung = 0;
                 for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu, "WITH (HOLDLOCK)")) {
-                    tienPhuTung += thanhTien(d);
+                    tienPhuTung += d.thanhTien();
                 }
-                TienHoaDon tien = tinhTien(docTienCong(connection, maPhieu), tienPhuTung,
-                        km == null ? null : km.getHinhThuc(), km == null ? 0 : km.getGiaTri(),
-                        km == null ? null : km.getPhamViApDung(), thueSuat);
-                kiemTraTienMat(hinhThuc, tienKhachDua, tien.tong);
+                hoaDon.tinhTongThanhToan(docTienCong(connection, maPhieu), tienPhuTung);
+                kiemTraTienMat(hinhThuc, tienKhachDua, hoaDon.getTongThanhToan());
 
                 String maHD = sinhMaHD(connection);
-                themHoaDon(connection, maHD, maPhieu, maNV, maKM, maThue, hinhThuc, tien);
+                themHoaDon(connection, maHD, maPhieu, maNV, hoaDon);
                 connection.commit();
                 return maHD;
             } catch (SQLException | RuntimeException ex) {
@@ -291,17 +283,17 @@ public class HoaDon_Dao {
         }
     }
 
-    private static double docThueSuat(Connection connection, String maThue) throws SQLException {
+    private static Thue docThue(Connection connection, String maThue) throws SQLException {
         if (maThue == null) {
             throw new IllegalArgumentException("Vui lòng chọn loại thuế.");
         }
-        try (PreparedStatement statement = connection.prepareStatement("SELECT thueSuat FROM Thue WHERE maThue = ?")) {
+        try (PreparedStatement statement = connection.prepareStatement("SELECT tenLoaiThue, thueSuat FROM Thue WHERE maThue = ?")) {
             statement.setString(1, maThue);
             try (ResultSet rs = statement.executeQuery()) {
                 if (!rs.next()) {
                     throw new SQLException("Loại thuế " + maThue + " không tồn tại.");
                 }
-                return rs.getDouble(1);
+                return new Thue(maThue, rs.getString(1), rs.getDouble(2));
             }
         }
     }
@@ -351,8 +343,9 @@ public class HoaDon_Dao {
         }
     }
 
-    private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, String maKM,
-            String maThue, HinhThucThanhToan hinhThuc, TienHoaDon tien) throws SQLException {
+    private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, HoaDon hoaDon)
+            throws SQLException {
+        HinhThucThanhToan hinhThuc = hoaDon.getHinhThucThanhToan();
         // Hóa đơn công nợ chưa thu tiền nên chưa có ngày thanh toán và chưa tính vào doanh thu.
         String sql = "INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, "
                 + "tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan, ngayThanhToan) "
@@ -362,17 +355,17 @@ public class HoaDon_Dao {
             statement.setString(1, maHD);
             statement.setString(2, maPhieu);
             statement.setString(3, maNV);
-            if (maKM == null) {
+            if (hoaDon.getKhuyenMai() == null) {
                 statement.setNull(4, Types.VARCHAR);
             } else {
-                statement.setString(4, maKM);
+                statement.setString(4, hoaDon.getKhuyenMai().getMaKM());
             }
-            statement.setString(5, maThue);
-            statement.setDouble(6, tien.cong);
-            statement.setDouble(7, tien.phuTung);
-            statement.setDouble(8, tien.giam);
-            statement.setDouble(9, tien.vat);
-            statement.setDouble(10, tien.tong);
+            statement.setString(5, hoaDon.getThue().getMaThue());
+            statement.setDouble(6, hoaDon.getTongTienCong());
+            statement.setDouble(7, hoaDon.getTongTienPhuTung());
+            statement.setDouble(8, hoaDon.getTongTienGiam());
+            statement.setDouble(9, hoaDon.getTongTienVAT());
+            statement.setDouble(10, hoaDon.getTongThanhToan());
             statement.setString(11, hinhThuc.getText());
             statement.setString(12, (hinhThuc == HinhThucThanhToan.CONG_NO ? TrangThaiHoaDon.CONG_NO : TrangThaiHoaDon.DA_THANH_TOAN).getText());
             statement.executeUpdate();
@@ -468,75 +461,6 @@ public class HoaDon_Dao {
                 throw ex;
             }
         }
-    }
-
-    /** Các khoản tiền đã làm tròn tới đồng. */
-    public static final class TienHoaDon {
-        public final double cong;
-        public final double phuTung;
-        public final double giam;
-        public final double vat;
-        public final double tong;
-
-        private TienHoaDon(double cong, double phuTung, double giam, double vat, double tong) {
-            this.cong = cong;
-            this.phuTung = phuTung;
-            this.giam = giam;
-            this.vat = vat;
-            this.tong = tong;
-        }
-    }
-
-    /** Khuyến mãi giảm nhiều tiền nhất theo cùng công thức tinhTien; hòa thì giữ cái đứng trước; không cái nào giảm > 0 thì null. */
-    public static KhuyenMai khuyenMaiTotNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
-        KhuyenMai tot = null;
-        double giamMax = 0;
-        for (KhuyenMai km : hopLe) {
-            double giam = tinhTien(tienCong, tienPhuTung, km.getHinhThuc(), km.getGiaTri(), km.getPhamViApDung(), 0).giam;
-            if (giam > giamMax) {
-                giamMax = giam;
-                tot = km;
-            }
-        }
-        return tot;
-    }
-
-    /** Hàm thuần để màn hình xem trước và lúc lưu dùng cùng một công thức. hinhThucKM null là không có khuyến mãi. */
-    public static TienHoaDon tinhTien(double tienCong, double tienPhuTung, HinhThucKhuyenMai hinhThucKM, double giaTriKM,
-            PhamViKhuyenMai phamViKM, double thueSuat) {
-        if (tienCong < 0 || tienPhuTung < 0 || giaTriKM < 0 || thueSuat < 0) {
-            throw new IllegalArgumentException("Số tiền và thuế suất không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = hinhThucKM == null ? 0 : tinhGiam(cong, phuTung, hinhThucKM, giaTriKM, phamViKM);
-        double sauGiam = cong + phuTung - giam;
-        double vat = phanTram(sauGiam, thueSuat);
-        return new TienHoaDon(cong, phuTung, giam, vat, sauGiam + vat);
-    }
-
-    private static double tinhGiam(double cong, double phuTung, HinhThucKhuyenMai hinhThucKM, double giaTriKM,
-            PhamViKhuyenMai phamViKM) {
-        double coSo;
-        if (phamViKM == PhamViKhuyenMai.TONG_HOA_DON) {
-            coSo = cong + phuTung;
-        } else if (phamViKM == PhamViKhuyenMai.NHOM_DICH_VU) {
-            coSo = cong;
-        } else if (phamViKM == PhamViKhuyenMai.PHU_TUNG) {
-            coSo = phuTung;
-        } else {
-            throw new IllegalArgumentException("Phạm vi khuyến mãi không hợp lệ.");
-        }
-        if (hinhThucKM == HinhThucKhuyenMai.PHAN_TRAM) {
-            return Math.min(coSo, phanTram(coSo, giaTriKM));
-        }
-        return Math.min(coSo, Math.round(giaTriKM));
-    }
-
-    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
-    public static double phanTram(double coSo, double tyLe) {
-        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     private HoaDon mapHoaDon(ResultSet rs) throws SQLException {
