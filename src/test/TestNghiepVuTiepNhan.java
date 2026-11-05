@@ -1,6 +1,5 @@
 package test;
 
-import controller.ChiTietPhieuSuaChuaController;
 import controller.DangNhapController;
 import controller.QLKhuyenMaiController;
 import controller.QLTiepNhanSuaChuaController;
@@ -120,10 +119,31 @@ public class TestNghiepVuTiepNhan {
         loi("Dự kiến trước tiếp nhận", q::kiemTraHopLe);
     }
 
+    private static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
+        PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
+        p.setDanhSachDichVu(dong);
+        return p.coTheHoanThanh();
+    }
+
+    private static int tienDo(TrangThaiPhieu trangThai, int tong, int xong) {
+        PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
+        p.setTrangThai(trangThai);
+        p.setTongSoHangMuc(tong);
+        p.setSoHangMucHoanThanh(xong);
+        return p.phanTramTienDo();
+    }
+
     private static void kiemTraDieuKienHoanThanh() {
-        dung("Phiếu rỗng không hoàn thành được", !ChiTietPhieuSuaChuaController.coTheHoanThanh(new ArrayList<>()));
-        dung("Còn dòng chưa xong", !ChiTietPhieuSuaChuaController.coTheHoanThanh(Arrays.asList(dong(TrangThaiTienDo.HOAN_THANH), dong(TrangThaiTienDo.DANG_SUA))));
-        dung("Mọi dòng đã xong", ChiTietPhieuSuaChuaController.coTheHoanThanh(Arrays.asList(dong(TrangThaiTienDo.HOAN_THANH))));
+        dung("Tiến độ: xong là 100", tienDo(TrangThaiPhieu.HOAN_THANH, 2, 0) == 100);
+        dung("Tiến độ: chờ kiểm tra chưa làm là 0", tienDo(TrangThaiPhieu.CHO_KIEM_TRA, 2, 0) == 0);
+        dung("Tiến độ: đang sửa theo hạng mục", tienDo(TrangThaiPhieu.DANG_SUA, 4, 1) == 25);
+        dung("Tiến độ: đang sửa chưa xong mục nào là 50", tienDo(TrangThaiPhieu.DANG_SUA, 4, 0) == 50
+                && tienDo(TrangThaiPhieu.DANG_SUA, 0, 0) == 50);
+        dung("Tiến độ: chờ phụ tùng theo hạng mục", tienDo(TrangThaiPhieu.CHO_PHU_TUNG, 2, 1) == 50
+                && tienDo(TrangThaiPhieu.CHO_PHU_TUNG, 0, 0) == 0);
+        dung("Phiếu rỗng không hoàn thành được", !coTheHoanThanh(new ArrayList<>()));
+        dung("Còn dòng chưa xong", !coTheHoanThanh(Arrays.asList(dong(TrangThaiTienDo.HOAN_THANH), dong(TrangThaiTienDo.DANG_SUA))));
+        dung("Mọi dòng đã xong", coTheHoanThanh(Arrays.asList(dong(TrangThaiTienDo.HOAN_THANH))));
     }
 
     private static void kiemTraHoTro() {
@@ -139,12 +159,12 @@ public class TestNghiepVuTiepNhan {
         dung("Mật khẩu rõ còn sót không đăng nhập được", !MatKhauUtil.kiemTra("123456", "123456"));
         dung("Giá trị băm hỏng", !MatKhauUtil.kiemTra("a", "pbkdf2$x$y$z") && !MatKhauUtil.kiemTra("a", null));
 
-        dung("Luồng hợp lệ", PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA)
-                && PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.HOAN_THANH)
-                && PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.CHO_PHU_TUNG, TrangThaiPhieu.DANG_SUA));
-        dung("Luồng không hợp lệ", !PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH)
-                && !PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA)
-                && !PhieuTiepNhanVaSuaChua.coTheChuyen(TrangThaiPhieu.DA_HUY, TrangThaiPhieu.DANG_SUA));
+        dung("Luồng hợp lệ", TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
+                && TrangThaiPhieu.DANG_SUA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
+                && TrangThaiPhieu.CHO_PHU_TUNG.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
+        dung("Luồng không hợp lệ", !TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
+                && !TrangThaiPhieu.HOAN_THANH.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
+                && !TrangThaiPhieu.DA_HUY.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
         loi("Tiếp nhận ở tương lai", () -> new PhieuTiepNhanVaSuaChua().setThoiGianTiepNhan(LocalDateTime.now().plusDays(1)));
 
         dung("VIN đúng", QLTiepNhanSuaChuaController.soVinHopLe("1HGCR2F83HA001234"));

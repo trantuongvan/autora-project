@@ -51,19 +51,6 @@ public class ChiTietPhieuSuaChuaController {
         taiDuLieu();
     }
 
-    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
-    public static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
-        if (dong.isEmpty()) {
-            return false;
-        }
-        for (ChiTietSuaChua_DichVu d : dong) {
-            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     private void initController() {
         view.getBtnThemDichVu().addActionListener(e -> themDong());
         view.getBtnXoaDichVu().addActionListener(e -> xoaDong());
@@ -257,11 +244,12 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi(null);
             return;
         }
-        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(hienTai, trangThai)) {
+        if (!hienTai.coTheChuyenSang(trangThai)) {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
-        if (trangThai == TrangThaiPhieu.HOAN_THANH && !coTheHoanThanh(danhSach)) {
+        phieu.setDanhSachDichVu(danhSach);
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !phieu.coTheHoanThanh()) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }

@@ -6,6 +6,7 @@ import entity.ChiTietSuaChua_PhuTung;
 import entity.HinhThucKhuyenMai;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
+import entity.KhachHang;
 import entity.KhuyenMai;
 import entity.PhamViKhuyenMai;
 import entity.PhieuTiepNhanVaSuaChua;
@@ -243,7 +244,9 @@ public class HoaDon_Dao {
                 if (TrangThaiPhieu.fromDb(rs.getString(1)) != TrangThaiPhieu.HOAN_THANH) {
                     throw new SQLException("Phiếu " + maPhieu + " chưa hoàn thành nên chưa lập được hóa đơn.");
                 }
-                if (hinhThuc == HinhThucThanhToan.CONG_NO && !rs.getBoolean(2)) {
+                KhachHang khach = new KhachHang();
+                khach.setDuocGhiNo(rs.getBoolean(2));
+                if (!khach.duocThanhToanBang(hinhThuc)) {
                     throw new SQLException("Khách hàng của phiếu " + maPhieu + " không được phép ghi nợ.");
                 }
             }
@@ -330,7 +333,7 @@ public class HoaDon_Dao {
     }
 
     private static void kiemTraTienMat(HinhThucThanhToan hinhThuc, Double tienKhachDua, double tong) throws SQLException {
-        if (hinhThuc == HinhThucThanhToan.TIEN_MAT && (tienKhachDua == null || tienKhachDua < tong)) {
+        if (!hinhThuc.duTien(tienKhachDua, tong)) {
             throw new SQLException("Tiền khách đưa chưa đủ tổng thanh toán.");
         }
     }

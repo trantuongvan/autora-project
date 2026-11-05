@@ -204,7 +204,7 @@ public class ChiTietHoaDonController {
         }
         view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
         view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
-        if (d.phieu.getXe().getKhachHang().isDuocGhiNo()) {
+        if (d.phieu.getXe().getKhachHang().duocThanhToanBang(HinhThucThanhToan.CONG_NO)) {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         // Mặc định chọn khuyến mãi giảm nhiều nhất; nhân viên vẫn đổi hoặc bỏ chọn được.
