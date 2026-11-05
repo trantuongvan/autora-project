@@ -296,7 +296,7 @@ public class ChiTietPhieuSuaChuaController {
         boolean chay() throws SQLException;
     }
 
-    /** DAO trả về false khi phiếu vừa bị khóa bởi hóa đơn lập ở máy khác. */
+    /** DAO trả về false khi phiếu đã bị khóa bởi hóa đơn. */
     private void ghi(ThaoTacGhi thaoTac) {
         try {
             view.hienLoi(null);

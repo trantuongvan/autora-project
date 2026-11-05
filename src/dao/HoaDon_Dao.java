@@ -148,12 +148,12 @@ public class HoaDon_Dao {
 
     public boolean coHoaDonHieuLuc(String maPhieu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
-            return coHoaDonHieuLuc(connection, maPhieu, "");
+            return coHoaDonHieuLuc(connection, maPhieu);
         }
     }
 
-    private static boolean coHoaDonHieuLuc(Connection connection, String maPhieu, String khoa) throws SQLException {
-        String sql = "SELECT 1 FROM HoaDon " + khoa + " WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy'";
+    private static boolean coHoaDonHieuLuc(Connection connection, String maPhieu) throws SQLException {
+        String sql = "SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy'";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
@@ -168,7 +168,7 @@ public class HoaDon_Dao {
 
     public List<ChiTietSuaChua_PhuTung> findPhuTung(String maPhieu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
-            return docPhuTung(connection, maPhieu, "");
+            return docPhuTung(connection, maPhieu);
         }
     }
 
@@ -190,7 +190,7 @@ public class HoaDon_Dao {
         return ketQua;
     }
 
-    /** Mã dự kiến để in lên nội dung QR trước khi lưu; máy khác có thể lấy mất nên không dùng để ghi. */
+    /** Mã dự kiến để in lên nội dung QR trước khi lưu. */
     public String duDoanMaHD() throws SQLException {
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(SINH_MA_HD);
@@ -212,9 +212,8 @@ public class HoaDon_Dao {
                 hoaDon.setKhuyenMai(maKM == null ? null : docKhuyenMai(connection, maKM));
                 hoaDon.setThue(docThue(connection, maThue));
 
-                // HOLDLOCK: không ai sửa được dòng đã tính tiền trước khi hóa đơn được ghi.
                 double tienPhuTung = 0;
-                for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu, "WITH (HOLDLOCK)")) {
+                for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu)) {
                     tienPhuTung += d.thanhTien();
                 }
                 hoaDon.tinhTongThanhToan(docTienCong(connection, maPhieu), tienPhuTung);
@@ -232,8 +231,7 @@ public class HoaDon_Dao {
     }
 
     private static void kiemTraPhieu(Connection connection, String maPhieu, HinhThucThanhToan hinhThuc) throws SQLException {
-        // Khóa dòng phiếu để hai máy không cùng lập hóa đơn cho một phiếu.
-        String sql = "SELECT p.trangThai, k.duocGhiNo FROM PhieuTiepNhanVaSuaChua p WITH (UPDLOCK, ROWLOCK) "
+        String sql = "SELECT p.trangThai, k.duocGhiNo FROM PhieuTiepNhanVaSuaChua p "
                 + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = p.maKH WHERE p.maPhieuTNSC = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
@@ -262,14 +260,13 @@ public class HoaDon_Dao {
                 }
             }
         }
-        if (coHoaDonHieuLuc(connection, maPhieu, "WITH (UPDLOCK, HOLDLOCK)")) {
+        if (coHoaDonHieuLuc(connection, maPhieu)) {
             throw new SQLException("Phiếu " + maPhieu + " đã có hóa đơn còn hiệu lực.");
         }
     }
 
-    /** Khóa dòng khuyến mãi để hai hóa đơn không cùng dùng lượt cuối. */
     private static KhuyenMai docKhuyenMai(Connection connection, String maKM) throws SQLException {
-        String sql = "SELECT hinhThuc, giaTri, phamViApDung FROM KhuyenMai WITH (UPDLOCK, ROWLOCK) "
+        String sql = "SELECT hinhThuc, giaTri, phamViApDung FROM KhuyenMai "
                 + "WHERE maKM = ? AND " + KHUYEN_MAI_HOP_LE;
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maKM);
@@ -302,7 +299,7 @@ public class HoaDon_Dao {
     }
 
     private static double docTienCong(Connection connection, String maPhieu) throws SQLException {
-        String sql = "SELECT COALESCE(SUM(tienCongThucTe), 0) FROM ChiTietSuaChua_DichVu WITH (HOLDLOCK) WHERE maPhieuTNSC = ?";
+        String sql = "SELECT COALESCE(SUM(tienCongThucTe), 0) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
@@ -312,9 +309,9 @@ public class HoaDon_Dao {
         }
     }
 
-    private static List<ChiTietSuaChua_PhuTung> docPhuTung(Connection connection, String maPhieu, String khoa) throws SQLException {
+    private static List<ChiTietSuaChua_PhuTung> docPhuTung(Connection connection, String maPhieu) throws SQLException {
         String sql = "SELECT t.maSKU, t.tenPhuTung, c.soLuongSuDung, c.giaBanThucTe "
-                + "FROM ChiTietSuaChua_PhuTung c " + khoa + " JOIN PhuTung t ON t.maSKU = c.maSKU "
+                + "FROM ChiTietSuaChua_PhuTung c JOIN PhuTung t ON t.maSKU = c.maSKU "
                 + "WHERE c.maPhieuTNSC = ? ORDER BY c.maSKU";
         List<ChiTietSuaChua_PhuTung> ketQua = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -339,7 +336,7 @@ public class HoaDon_Dao {
     }
 
     private static String sinhMaHD(Connection connection) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement(SINH_MA_HD + "WITH (UPDLOCK, HOLDLOCK)");
+        try (PreparedStatement statement = connection.prepareStatement(SINH_MA_HD);
                 ResultSet rs = statement.executeQuery()) {
             rs.next();
             return rs.getString(1);
@@ -385,7 +382,7 @@ public class HoaDon_Dao {
             connection.setAutoCommit(false);
             try {
                 double tong;
-                String doc = "SELECT tongThanhToan FROM HoaDon WITH (UPDLOCK, ROWLOCK) "
+                String doc = "SELECT tongThanhToan FROM HoaDon "
                         + "WHERE maHD = ? AND trangThaiThanhToan = N'Công nợ'";
                 try (PreparedStatement statement = connection.prepareStatement(doc)) {
                     statement.setString(1, maHD);
@@ -427,7 +424,7 @@ public class HoaDon_Dao {
             try {
                 String trangThaiCu;
                 String maPhieu;
-                String doc = "SELECT trangThaiThanhToan, maPhieuTNSC FROM HoaDon WITH (UPDLOCK, ROWLOCK) WHERE maHD = ?";
+                String doc = "SELECT trangThaiThanhToan, maPhieuTNSC FROM HoaDon WHERE maHD = ?";
                 try (PreparedStatement statement = connection.prepareStatement(doc)) {
                     statement.setString(1, maHD);
                     try (ResultSet rs = statement.executeQuery()) {
@@ -438,7 +435,7 @@ public class HoaDon_Dao {
                         maPhieu = rs.getString(2);
                     }
                 }
-                String coBanGiao = "SELECT 1 FROM PhieuBanGiao WITH (UPDLOCK, HOLDLOCK) WHERE maPhieuTNSC = ?";
+                String coBanGiao = "SELECT 1 FROM PhieuBanGiao WHERE maPhieuTNSC = ?";
                 try (PreparedStatement statement = connection.prepareStatement(coBanGiao)) {
                     statement.setString(1, maPhieu);
                     try (ResultSet rs = statement.executeQuery()) {

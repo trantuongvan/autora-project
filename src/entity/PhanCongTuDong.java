@@ -13,7 +13,6 @@ import java.util.Map;
 public class PhanCongTuDong {
     // shortcut: ca chạy mọi ngày nên KTV nghỉ phép vẫn được giao việc, thêm bảng lịch trực/nghỉ khi chủ cửa hàng cần.
     // shortcut: việc đang sửa dở tính đủ thời lượng vào hàng đợi, trừ phần đã làm khi có giờ bắt đầu thực tế.
-    // shortcut: hai lễ tân lưu cùng lúc có thể chọn cùng một KTV (chỉ lệch tải, không sai dữ liệu), khóa lại khi có nhiều quầy.
 
     /** Kết quả chọn: KTV từng dịch vụ (null khi không ai làm được), ghi chú cần chú ý, người phụ trách và giờ dự kiến xong. */
     public static class KetQua {

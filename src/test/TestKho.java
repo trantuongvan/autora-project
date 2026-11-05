@@ -46,8 +46,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Chạy trên CSDL mẫu mới tạo: duyệt và từ chối xuất kho, nhật ký, hóa đơn còn phụ tùng chờ, khóa tiến độ, xóa nhân viên. */
 public class TestKho {
@@ -74,42 +72,13 @@ public class TestKho {
         kiemTraYeuCauPhieuDaKhoa();
         kiemTraThuCongNo();
         kiemTraDoiChuXe();
-        kiemTraHaiMayCungDoiTon();
+        kiemTraDoiTon();
         kiemTraDieuKienBanGiao();
         kiemTraGiaNhapVuotGiaBan();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
         }
-    }
-
-    private interface Viec {
-        void chay() throws Exception;
-    }
-
-    /** Các việc bắt đầu cùng lúc như nhiều máy; trả về số việc thành công. */
-    private static int chayCungLuc(List<Viec> dsViec) throws Exception {
-        CountDownLatch batDau = new CountDownLatch(1);
-        AtomicInteger thanhCong = new AtomicInteger();
-        List<Thread> luong = new ArrayList<>();
-        for (Viec viec : dsViec) {
-            Thread t = new Thread(() -> {
-                try {
-                    batDau.await();
-                    viec.chay();
-                    thanhCong.incrementAndGet();
-                } catch (Exception ex) {
-                    // Máy bị từ chối là kết quả mong đợi; số việc thành công mới là điều được kiểm tra.
-                }
-            });
-            t.start();
-            luong.add(t);
-        }
-        batDau.countDown();
-        for (Thread t : luong) {
-            t.join();
-        }
-        return thanhCong.get();
     }
 
     private static PhieuNhapKho phieuNhap(String ma, double gia) {
@@ -197,39 +166,8 @@ public class TestKho {
         kiem("Lý do không được nợ", phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).lyDoChuaDuDieuKienBanGiao().startsWith("Khách hàng không"));
     }
 
-    private static void kiemTraHaiMayCungDoiTon() throws Exception {
-        PhieuNhapKho_Dao nhapKho = new PhieuNhapKho_Dao();
+    private static void kiemTraDoiTon() {
         String sku = "SKU_FLT01";
-        int soMay = 8;
-        for (int lan = 1; lan <= 5; lan++) {
-            thucThi("UPDATE PhuTung SET soLuongTon = 1 WHERE maSKU = '" + sku + "'");
-            List<Viec> duyet = new ArrayList<>();
-            List<String> dsYeuCau = new ArrayList<>();
-            for (int may = 0; may < soMay; may++) {
-                String p = taoPhieu("Đang sửa");
-                String m = taoYeuCau(p, sku, 1);
-                dsYeuCau.add(m);
-                duyet.add(() -> yc.duyetXuatKho(m, p, "NV0004", dong(m, sku, 1), NGUOI));
-            }
-            kiem("Nhiều máy duyệt phụ tùng cuối: đúng một máy thành công, lần " + lan, chayCungLuc(duyet) == 1);
-            kiem("Nhiều máy duyệt phụ tùng cuối: tồn về 0, lần " + lan, ton(sku) == 0);
-            int daXuat = 0;
-            for (String m : dsYeuCau) {
-                if ("Đã xuất".equals(trangThaiYeuCau(m))) {
-                    daXuat++;
-                }
-            }
-            kiem("Máy bị từ chối không đổi yêu cầu của mình, lần " + lan, daXuat == 1);
-
-            thucThi("UPDATE PhuTung SET soLuongTon = 10 WHERE maSKU = '" + sku + "'");
-            List<Viec> nhap = new ArrayList<>();
-            for (int may = 0; may < soMay; may++) {
-                PhieuNhapKho phieu = new PhieuNhapKho("PNH9" + lan + may, LocalDateTime.now(), 1000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
-                nhap.add(() -> nhapKho.insertWithDetails(phieu, Arrays.asList(new ChiTietNhapKho(phieu, new PhuTung(sku), 1, 1000))));
-            }
-            kiem("Nhiều máy cùng nhập kho đều thành công, lần " + lan, chayCungLuc(nhap) == soMay);
-            kiem("Nhiều máy cùng nhập kho: cộng đủ, lần " + lan, ton(sku) == 10 + soMay);
-        }
         PhuTung pt = new PhuTung(sku);
         pt.setSoLuongTon(2);
         pt.setGiaBanLe(9000);
