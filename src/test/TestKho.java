@@ -7,19 +7,23 @@ import dao.HoaDon_Dao;
 import dao.KhachHang_Dao;
 import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
+import dao.PhieuNhapKho_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import dao.TienDoSuaChua_Dao;
 import dao.TrangChuQuanLy_Dao;
 import dao.Xe_Dao;
+import entity.ChiTietNhapKho;
 import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietYeuCauXuatKho;
 import entity.DichVu;
 import entity.HinhThucThanhToan;
 import entity.KhachHang;
 import entity.MucUuTien;
+import entity.NhaCungCap;
 import entity.NhanVien;
+import entity.PhieuNhapKho;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhieuYeuCauXuatKho;
 import entity.PhuTung;
@@ -37,8 +41,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Chạy trên CSDL mẫu mới tạo: duyệt và từ chối xuất kho, nhật ký, hóa đơn còn phụ tùng chờ, khóa tiến độ, xóa nhân viên. */
 public class TestKho {
@@ -65,9 +72,80 @@ public class TestKho {
         kiemTraYeuCauPhieuDaKhoa();
         kiemTraThuCongNo();
         kiemTraDoiChuXe();
+        kiemTraHaiMayCungDoiTon();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
+        }
+    }
+
+    private interface Viec {
+        void chay() throws Exception;
+    }
+
+    /** Hai việc bắt đầu cùng lúc như hai máy; trả về số việc thành công. */
+    private static int chayCungLuc(Viec a, Viec b) throws Exception {
+        CountDownLatch batDau = new CountDownLatch(1);
+        AtomicInteger thanhCong = new AtomicInteger();
+        List<Thread> luong = new ArrayList<>();
+        for (Viec viec : Arrays.asList(a, b)) {
+            Thread t = new Thread(() -> {
+                try {
+                    batDau.await();
+                    viec.chay();
+                    thanhCong.incrementAndGet();
+                } catch (Exception ex) {
+                    System.out.println("Một máy bị từ chối: " + ex.getMessage());
+                }
+            });
+            t.start();
+            luong.add(t);
+        }
+        batDau.countDown();
+        for (Thread t : luong) {
+            t.join();
+        }
+        return thanhCong.get();
+    }
+
+    private static void kiemTraHaiMayCungDoiTon() throws Exception {
+        PhieuNhapKho_Dao nhapKho = new PhieuNhapKho_Dao();
+        String sku = "SKU_FLT01";
+        for (int lan = 1; lan <= 5; lan++) {
+            thucThi("UPDATE PhuTung SET soLuongTon = 1 WHERE maSKU = '" + sku + "'");
+            String p1 = taoPhieu("Đang sửa");
+            String p2 = taoPhieu("Đang sửa");
+            String m1 = taoYeuCau(p1, sku, 1);
+            String m2 = taoYeuCau(p2, sku, 1);
+            int thanhCong = chayCungLuc(
+                    () -> yc.duyetXuatKho(m1, p1, "NV0004", dong(m1, sku, 1), NGUOI),
+                    () -> yc.duyetXuatKho(m2, p2, "NV0004", dong(m2, sku, 1), NGUOI));
+            kiem("Hai máy duyệt phụ tùng cuối: đúng một máy thành công, lần " + lan, thanhCong == 1);
+            kiem("Hai máy duyệt phụ tùng cuối: tồn về 0, lần " + lan, ton(sku) == 0);
+            kiem("Máy thua không làm đổi yêu cầu của mình, lần " + lan,
+                    "Đã xuất".equals(trangThaiYeuCau(m1)) != "Đã xuất".equals(trangThaiYeuCau(m2)));
+
+            thucThi("UPDATE PhuTung SET soLuongTon = 10 WHERE maSKU = '" + sku + "'");
+            PhieuNhapKho a = new PhieuNhapKho("PNH9" + lan + "01", LocalDateTime.now(), 3000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
+            PhieuNhapKho b = new PhieuNhapKho("PNH9" + lan + "02", LocalDateTime.now(), 4000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
+            thanhCong = chayCungLuc(
+                    () -> nhapKho.insertWithDetails(a, Arrays.asList(new ChiTietNhapKho(a, new PhuTung(sku), 3, 1000))),
+                    () -> nhapKho.insertWithDetails(b, Arrays.asList(new ChiTietNhapKho(b, new PhuTung(sku), 4, 1000))));
+            kiem("Hai máy cùng nhập kho đều thành công, lần " + lan, thanhCong == 2);
+            kiem("Hai máy cùng nhập kho: cộng đủ cả hai, lần " + lan, ton(sku) == 17);
+        }
+        PhuTung pt = new PhuTung(sku);
+        pt.setSoLuongTon(2);
+        kiem("Đủ tồn", pt.duTon(2) && !pt.duTon(3));
+        pt.nhapKho(1, 5000);
+        kiem("Nhập kho cộng tồn và đổi giá nhập", pt.getSoLuongTon() == 3 && pt.getGiaNhap() == 5000);
+        pt.xuatKho(3);
+        kiem("Xuất kho trừ tồn", pt.getSoLuongTon() == 0);
+        try {
+            pt.xuatKho(1);
+            kiem("Xuất quá tồn phải báo lỗi", false);
+        } catch (IllegalArgumentException ex) {
+            kiem("Xuất quá tồn giữ nguyên số tồn", pt.getSoLuongTon() == 0);
         }
     }
 

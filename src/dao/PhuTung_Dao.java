@@ -198,6 +198,36 @@ public class PhuTung_Dao {
         }
     }
 
+    /**
+     * Đọc tồn và giá nhập trong transaction của người gọi. Khóa dòng để hai máy đổi cùng phụ tùng phải chờ nhau,
+     * máy sau đọc được số tồn mới nên không ghi đè mất thay đổi của máy trước.
+     */
+    static PhuTung docDeDoiTon(Connection c, String maSKU) throws SQLException {
+        String sql = "SELECT soLuongTon, giaNhap FROM PhuTung WITH (UPDLOCK, ROWLOCK) WHERE maSKU = ?";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setString(1, maSKU);
+            try (ResultSet r = p.executeQuery()) {
+                if (!r.next()) {
+                    throw new SQLException("Phụ tùng " + maSKU + " không tồn tại.");
+                }
+                PhuTung pt = new PhuTung(maSKU);
+                pt.setSoLuongTon(r.getInt("soLuongTon"));
+                pt.setGiaNhap(r.getDouble("giaNhap"));
+                return pt;
+            }
+        }
+    }
+
+    static void luuTon(Connection c, PhuTung pt) throws SQLException {
+        String sql = "UPDATE PhuTung SET soLuongTon = ?, giaNhap = ? WHERE maSKU = ?";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, pt.getSoLuongTon());
+            p.setDouble(2, pt.getGiaNhap());
+            p.setString(3, pt.getMaSKU());
+            p.executeUpdate();
+        }
+    }
+
     private PhuTung mapPhuTung(ResultSet r) throws SQLException {
         return new PhuTung(
                 r.getString("maSKU"),

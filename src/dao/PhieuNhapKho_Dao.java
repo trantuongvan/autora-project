@@ -184,14 +184,12 @@ public class PhieuNhapKho_Dao {
     public boolean insertWithDetails(PhieuNhapKho phieu, List<ChiTietNhapKho> chiTietList) throws SQLException {
         String sqlPhieu = "INSERT INTO PhieuNhapKho(maPhieuNhap, ngayNhap, tongTienNhap, maNCC, maNV_ThuKho) VALUES(?, ?, ?, ?, ?)";
         String sqlCT = "INSERT INTO ChiTietNhapKho(maPhieuNhap, maSKU, soLuongNhap, giaNhapThucTe) VALUES(?, ?, ?, ?)";
-        String sqlCongTon = "UPDATE PhuTung SET soLuongTon = soLuongTon + ?, giaNhap = ? WHERE maSKU = ?";
 
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAuto = c.getAutoCommit();
             c.setAutoCommit(false);
             try (PreparedStatement psPhieu = c.prepareStatement(sqlPhieu);
-                 PreparedStatement psCT = c.prepareStatement(sqlCT);
-                 PreparedStatement psTon = c.prepareStatement(sqlCongTon)) {
+                 PreparedStatement psCT = c.prepareStatement(sqlCT)) {
 
                 psPhieu.setString(1, phieu.getMaPhieuNhap());
                 psPhieu.setTimestamp(2, Timestamp.valueOf(phieu.getNgayNhap()));
@@ -206,19 +204,19 @@ public class PhieuNhapKho_Dao {
                     psCT.setInt(3, ct.getSoLuongNhap());
                     psCT.setDouble(4, ct.getGiaNhapThucTe());
                     psCT.addBatch();
-
-                    psTon.setInt(1, ct.getSoLuongNhap());
-                    psTon.setDouble(2, ct.getGiaNhapThucTe());
-                    psTon.setString(3, ct.getPhuTung().getMaSKU());
-                    psTon.addBatch();
                 }
                 psCT.executeBatch();
-                psTon.executeBatch();
+
+                for (ChiTietNhapKho ct : chiTietList) {
+                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
+                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
+                    PhuTung_Dao.luuTon(c, phuTung);
+                }
 
                 c.commit();
                 c.setAutoCommit(oldAuto);
                 return true;
-            } catch (SQLException ex) {
+            } catch (SQLException | RuntimeException ex) {
                 c.rollback();
                 c.setAutoCommit(oldAuto);
                 throw ex;
