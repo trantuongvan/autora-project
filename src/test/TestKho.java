@@ -19,6 +19,7 @@ import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietYeuCauXuatKho;
 import entity.DichVu;
 import entity.HinhThucThanhToan;
+import entity.HoaDon;
 import entity.KhachHang;
 import entity.MucUuTien;
 import entity.NhaCungCap;
@@ -27,6 +28,7 @@ import entity.PhieuNhapKho;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhieuYeuCauXuatKho;
 import entity.PhuTung;
+import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
 import entity.TrangThaiTienDo;
 import entity.TrangThaiYeuCauXuat;
@@ -73,6 +75,7 @@ public class TestKho {
         kiemTraThuCongNo();
         kiemTraDoiChuXe();
         kiemTraHaiMayCungDoiTon();
+        kiemTraDieuKienBanGiao();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
@@ -106,6 +109,40 @@ public class TestKho {
             t.join();
         }
         return thanhCong.get();
+    }
+
+    private static PhieuTiepNhanVaSuaChua phieuBanGiao(int tong, int xong, TrangThaiHoaDon hoaDon, boolean duocGhiNo) {
+        KhachHang khach = new KhachHang();
+        khach.setDuocGhiNo(duocGhiNo);
+        Xe xe = new Xe();
+        xe.setKhachHang(khach);
+        PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
+        p.setXe(xe);
+        p.setTongSoHangMuc(tong);
+        p.setSoHangMucHoanThanh(xong);
+        if (hoaDon != null) {
+            HoaDon hd = new HoaDon();
+            hd.setTrangThaiThanhToan(hoaDon);
+            p.setHoaDon(hd);
+        }
+        return p;
+    }
+
+    private static void kiemTraDieuKienBanGiao() {
+        kiem("Xong hết và đã trả thì được bàn giao", phieuBanGiao(2, 2, TrangThaiHoaDon.DA_THANH_TOAN, false).duDieuKienBanGiao());
+        kiem("Khách được nợ thì được bàn giao", phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true).duDieuKienBanGiao());
+        kiem("Khách không được nợ thì không bàn giao", !phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).duDieuKienBanGiao());
+        kiem("Chưa có hóa đơn thì không bàn giao", !phieuBanGiao(2, 2, null, true).duDieuKienBanGiao());
+        kiem("Còn hạng mục thì không bàn giao", !phieuBanGiao(3, 2, TrangThaiHoaDon.DA_THANH_TOAN, true).duDieuKienBanGiao());
+        kiem("Không có hạng mục thì không bàn giao", !phieuBanGiao(0, 0, TrangThaiHoaDon.DA_THANH_TOAN, true).duDieuKienBanGiao());
+        kiem("Tiến độ làm tròn xuống", phieuBanGiao(3, 2, null, true).phanTramHoanTat() == 66);
+        kiem("Nhãn công nợ hợp lệ", "Công nợ hợp lệ".equals(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true).getNhanHoaDonBanGiao()));
+        kiem("Nhãn công nợ không hợp lệ", "Công nợ".equals(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).getNhanHoaDonBanGiao()));
+        kiem("Nhãn chưa có hóa đơn", "Chưa lập hóa đơn".equals(phieuBanGiao(2, 2, null, true).getNhanHoaDonBanGiao()));
+        kiem("Lý do còn hạng mục", phieuBanGiao(4, 3, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Còn 25%"));
+        kiem("Lý do chưa có hạng mục xong", phieuBanGiao(4, 0, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Chưa có hạng mục"));
+        kiem("Lý do chưa có hóa đơn", phieuBanGiao(2, 2, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Phiếu chưa có"));
+        kiem("Lý do không được nợ", phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).lyDoChuaDuDieuKienBanGiao().startsWith("Khách hàng không"));
     }
 
     private static void kiemTraHaiMayCungDoiTon() throws Exception {
@@ -355,9 +392,9 @@ public class TestKho {
         kiem("Phiếu đã hủy không có trong danh sách", !coPhieu(dao.findDanhSach("", "Tất cả"), h));
     }
 
-    private static boolean coPhieu(List<Object[]> dong, String ma) {
-        for (Object[] d : dong) {
-            if (ma.equals(d[0])) {
+    private static boolean coPhieu(List<PhieuTiepNhanVaSuaChua> dong, String ma) {
+        for (PhieuTiepNhanVaSuaChua d : dong) {
+            if (ma.equals(d.getMaPhieuTNSC())) {
                 return true;
             }
         }

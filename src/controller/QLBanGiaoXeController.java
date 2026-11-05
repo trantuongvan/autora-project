@@ -2,8 +2,9 @@ package controller;
 
 import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
+import entity.HoaDon;
 import entity.NhanVien;
-import entity.TrangThaiHoaDon;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
@@ -13,6 +14,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -54,9 +56,9 @@ public class QLBanGiaoXeController {
         final int version = ++loadVersion;
         final String query = view.getTxtTimKiem().getText();
         final String filter = String.valueOf(view.getCboLoc().getSelectedItem());
-        new SwingWorker<List<Object[]>, Void>() {
+        new SwingWorker<List<PhieuTiepNhanVaSuaChua>, Void>() {
             @Override
-            protected List<Object[]> doInBackground() throws Exception {
+            protected List<PhieuTiepNhanVaSuaChua> doInBackground() throws Exception {
                 return dao.findDanhSach(query, filter);
             }
 
@@ -66,7 +68,7 @@ public class QLBanGiaoXeController {
                     return;
                 }
                 try {
-                    List<Object[]> rows = get();
+                    List<Object[]> rows = thanhDong(get());
                     view.setDanhSach(rows);
                     loadErrorShown = false;
                     view.anThongBaoThanhCong();
@@ -99,33 +101,51 @@ public class QLBanGiaoXeController {
                 "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
     }
 
+    private static List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
+        List<Object[]> rows = new ArrayList<>();
+        for (PhieuTiepNhanVaSuaChua p : dsPhieu) {
+            rows.add(new Object[]{
+                    p.getMaPhieuTNSC(),
+                    p.getXe().getBienSo(),
+                    p.getXe().getKhachHang().getHoTen(),
+                    p.getTenXe(),
+                    p.phanTramHoanTat() + "%",
+                    p.getNhanHoaDonBanGiao(),
+                    money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan()),
+                    p.duDieuKienBanGiao() ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
+            });
+        }
+        return rows;
+    }
+
     private void detail(String id) {
         try {
-            Object[] data = dao.findChiTiet(id);
-            if (data == null) {
+            PhieuTiepNhanVaSuaChua p = dao.findChiTiet(id);
+            if (p == null) {
                 return;
             }
+            HoaDon hoaDon = p.getHoaDon() == null ? new HoaDon() : p.getHoaDon();
+            double taxRate = hoaDon.getThue() == null ? 0 : hoaDon.getThue().getThueSuat();
             QLBanGiaoXe.ChiTietBanGiao detail = new QLBanGiaoXe.ChiTietBanGiao();
-            detail.xe = data[0] + " • " + data[1];
-            detail.chuXeVaPhieu = data[2] + " • " + id;
-            detail.nhanTienDo = "Hoàn tất " + data[3] + "%";
-            detail.hoanTat100 = ((Number) data[3]).intValue() == 100;
-            detail.tienCong = money(data[4]);
-            detail.phuTung = money(data[5]);
-            detail.giamGia = "− " + money(data[6]);
-            double taxRate = ((Number) data[12]).doubleValue();
+            detail.xe = p.getXe().getBienSo() + " • " + p.getTenXe();
+            detail.chuXeVaPhieu = p.getXe().getKhachHang().getHoTen() + " • " + id;
+            detail.nhanTienDo = "Hoàn tất " + p.phanTramHoanTat() + "%";
+            detail.hoanTat100 = p.phanTramHoanTat() == 100;
+            detail.tienCong = money(hoaDon.getTongTienCong());
+            detail.phuTung = money(hoaDon.getTongTienPhuTung());
+            detail.giamGia = "− " + money(hoaDon.getTongTienGiam());
             detail.nhanVAT = String.format(
                     java.util.Locale.forLanguageTag("vi-VN"), "VAT (%.0f%%)", taxRate);
-            detail.vat = money(data[7]);
-            detail.tongThanhToan = money(data[8]);
-            detail.duDieuKien = (Boolean) data[10];
-            detail.daBanGiao = !String.valueOf(data[14]).isEmpty();
+            detail.vat = money(hoaDon.getTongTienVAT());
+            detail.tongThanhToan = money(hoaDon.getTongThanhToan());
+            detail.duDieuKien = p.duDieuKienBanGiao();
+            detail.daBanGiao = p.getBanGiao() != null;
             if (detail.daBanGiao) {
                 detail.thongBao = "Phiếu đã bàn giao, có thể xem và in lại phiếu xuất xưởng.";
             } else if (detail.duDieuKien) {
-                detail.thongBao = data[9] + " đã xử lý. Đủ điều kiện bàn giao.";
+                detail.thongBao = hoaDon.getMaHD() + " đã xử lý. Đủ điều kiện bàn giao.";
             } else {
-                detail.thongBao = lyDoChuaDuDieuKien(data);
+                detail.thongBao = p.lyDoChuaDuDieuKienBanGiao();
             }
             view.hienChiTiet(detail);
         } catch (SQLException ex) {
@@ -133,26 +153,6 @@ public class QLBanGiaoXeController {
                     "Không thể tải chi tiết phiếu: " + ex.getMessage(),
                     "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private String lyDoChuaDuDieuKien(Object[] data) {
-        int progress = ((Number) data[3]).intValue();
-        if (progress < 100) {
-            return progress == 0
-                    ? "Chưa có hạng mục sửa chữa hoàn tất."
-                    : "Còn " + (100 - progress) + "% hạng mục sửa chữa chưa hoàn tất.";
-        }
-        String payment = String.valueOf(data[11]);
-        if (String.valueOf(data[9]).isEmpty()) {
-            return "Phiếu chưa có hóa đơn.";
-        }
-        if (TrangThaiHoaDon.DA_HUY.getText().equals(payment)) {
-            return "Hóa đơn đã bị hủy.";
-        }
-        if (TrangThaiHoaDon.CONG_NO.getText().equals(payment) && !Boolean.TRUE.equals(data[17])) {
-            return "Khách hàng không được phép ghi nợ.";
-        }
-        return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
     }
 
     private void confirm() {
@@ -185,27 +185,26 @@ public class QLBanGiaoXeController {
             return;
         }
         try {
-            Object[] data = dao.findChiTiet(selected);
-            if (data == null) {
+            PhieuTiepNhanVaSuaChua p = dao.findChiTiet(selected);
+            if (p == null) {
                 return;
             }
             InPhieuXuatXuongDialog.ThongTinPhieu receipt =
                     new InPhieuXuatXuongDialog.ThongTinPhieu();
             receipt.maPhieuTNSC = selected;
-            receipt.maPhieuBG = String.valueOf(data[14]).isEmpty()
-                    ? "Chưa xác nhận bàn giao" : String.valueOf(data[14]);
-            receipt.bienSo = String.valueOf(data[0]);
-            receipt.xe = String.valueOf(data[1]);
-            receipt.tenKhach = String.valueOf(data[2]);
-            receipt.soDienThoai = String.valueOf(data[13]);
-            receipt.tongThanhToan = money(data[8]);
-            receipt.trangThaiHoaDon = String.valueOf(data[11]);
-            java.sql.Timestamp deliveredAt = (java.sql.Timestamp) data[15];
-            receipt.ngayBanGiao = deliveredAt == null
+            receipt.maPhieuBG = p.getBanGiao() == null
+                    ? "Chưa xác nhận bàn giao" : p.getBanGiao().getMaPhieuBG();
+            receipt.bienSo = p.getXe().getBienSo();
+            receipt.xe = p.getTenXe();
+            receipt.tenKhach = p.getXe().getKhachHang().getHoTen();
+            receipt.soDienThoai = p.getXe().getKhachHang().getSoDienThoai();
+            receipt.tongThanhToan = money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan());
+            receipt.trangThaiHoaDon = p.getTrangThaiHoaDonHienThi();
+            receipt.ngayBanGiao = p.getBanGiao() == null || p.getBanGiao().getNgayBanGiao() == null
                     ? "Chưa xác nhận bàn giao"
-                    : deliveredAt.toLocalDateTime().format(
+                    : p.getBanGiao().getNgayBanGiao().format(
                             DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-            receipt.nhanVienBanGiao = data[16] == null ? "" : String.valueOf(data[16]);
+            receipt.nhanVienBanGiao = p.getBanGiao() == null ? "" : p.getBanGiao().getNhanVienBanGiao().getHoTen();
             new InPhieuXuatXuongDialog(SwingUtilities.getWindowAncestor(view), receipt)
                     .setVisible(true);
         } catch (SQLException ex) {

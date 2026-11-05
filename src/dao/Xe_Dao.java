@@ -1,8 +1,11 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.HoaDon;
 import entity.KhachHang;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiHoaDon;
+import entity.TrangThaiPhieu;
 import entity.Xe;
 
 import java.sql.*;
@@ -217,43 +220,40 @@ public class Xe_Dao {
         return ds;
     }
 
-    public List<Object[]> findLichSu(String bienSo) throws SQLException {
-        String sql = "SELECT p.maPhieuTNSC, "
-                + "CONVERT(VARCHAR(10), p.thoiGianTiepNhan, 103) AS ngay, "
-                + "p.yeuCauBanDau, p.trangThai, COALESCE(h.tongThanhToan, 0) AS tong, "
-                + "h.trangThaiThanhToan, COALESCE(ti.hoanTat, 0) AS hoanTat "
+    public List<PhieuTiepNhanVaSuaChua> findLichSu(String bienSo) throws SQLException {
+        String sql = "SELECT p.maPhieuTNSC, p.thoiGianTiepNhan, p.yeuCauBanDau, p.trangThai, "
+                + "h.tongThanhToan, h.trangThaiThanhToan, ti.soHangMuc, ti.soHangMucXong "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon h ON h.maPhieuTNSC = p.maPhieuTNSC "
                 + "AND h.trangThaiThanhToan <> N'Đã hủy' "
-                + "OUTER APPLY (SELECT SUM(CASE WHEN d.trangThaiTienDo = N'Hoàn thành' "
-                + "THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(*), 0) AS hoanTat "
+                + "OUTER APPLY (SELECT COUNT(*) AS soHangMuc, "
+                + "COALESCE(SUM(CASE WHEN d.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END), 0) AS soHangMucXong "
                 + "FROM ChiTietSuaChua_DichVu d WHERE d.maPhieuTNSC = p.maPhieuTNSC) ti "
                 + "WHERE p.bienSo = ? ORDER BY p.thoiGianTiepNhan DESC";
-        List<Object[]> ds = new ArrayList<>();
+        List<PhieuTiepNhanVaSuaChua> ds = new ArrayList<>();
         try (Connection c = ConnectDB.getConnection();
              PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, bienSo);
             try (ResultSet r = p.executeQuery()) {
                 while (r.next()) {
-                    String paid = r.getString("trangThaiThanhToan");
-                    String status = TrangThaiHoaDon.DA_THANH_TOAN.getText().equals(paid)
-                            ? "Hoàn tất " + r.getInt("hoanTat") + "% • Đã thanh toán"
-                            : r.getString("trangThai");
-                    ds.add(new Object[]{
-                            r.getString("maPhieuTNSC"),
-                            r.getString("ngay"),
-                            r.getString("yeuCauBanDau"),
-                            status,
-                            money(r.getDouble("tong")) + " đ"
-                    });
+                    PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(r.getString("maPhieuTNSC"));
+                    Timestamp tiepNhan = r.getTimestamp("thoiGianTiepNhan");
+                    phieu.setThoiGianTiepNhan(tiepNhan == null ? null : tiepNhan.toLocalDateTime());
+                    phieu.setYeuCauBanDau(r.getString("yeuCauBanDau"));
+                    phieu.setTrangThai(TrangThaiPhieu.fromDb(r.getString("trangThai")));
+                    phieu.setTongSoHangMuc(r.getInt("soHangMuc"));
+                    phieu.setSoHangMucHoanThanh(r.getInt("soHangMucXong"));
+                    String trangThaiHoaDon = r.getString("trangThaiThanhToan");
+                    if (trangThaiHoaDon != null) {
+                        HoaDon hoaDon = new HoaDon();
+                        hoaDon.setTongThanhToan(r.getDouble("tongThanhToan"));
+                        hoaDon.setTrangThaiThanhToan(TrangThaiHoaDon.fromDb(trangThaiHoaDon));
+                        phieu.setHoaDon(hoaDon);
+                    }
+                    ds.add(phieu);
                 }
             }
         }
         return ds;
-    }
-
-    private static String money(double amount) {
-        return String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f", amount)
-                .replace(',', '.');
     }
 }

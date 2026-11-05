@@ -2,19 +2,21 @@ package controller;
 
 import dao.Xe_Dao;
 import entity.KhachHang;
-import entity.TrangThaiHoaDon;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.Xe;
 import gui.QLHoSoXe;
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.sql.SQLException;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /** Tìm kiếm và CRUD hồ sơ xe, danh sách chủ xe và biểu mẫu dữ liệu. */
 public class QLHoSoXeController {
+    private static final DateTimeFormatter NGAY = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private final QLHoSoXe view;
     private final Xe_Dao dao = new Xe_Dao();
     private String selectedPlate;
@@ -135,11 +137,23 @@ public class QLHoSoXeController {
     private void showHistory(int modelRow) {
         try {
             String plate = String.valueOf(view.getTableModel().getValueAt(modelRow, 0));
-            List<Object[]> history = dao.findLichSu(plate);
+            List<Object[]> history = new ArrayList<>();
+            boolean paid = false;
+            for (PhieuTiepNhanVaSuaChua p : dao.findLichSu(plate)) {
+                boolean daTra = p.getHoaDon() != null && p.getHoaDon().daThanhToan();
+                paid |= daTra;
+                history.add(new Object[]{
+                        p.getMaPhieuTNSC(),
+                        p.getThoiGianTiepNhan() == null ? "" : p.getThoiGianTiepNhan().format(NGAY),
+                        p.getYeuCauBanDau(),
+                        daTra ? "Hoàn tất " + p.phanTramHoanTat() + "% • Đã thanh toán" : p.getTrangThai().getText(),
+                        String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ",
+                                p.getHoaDon() == null ? 0d : p.getHoaDon().getTongThanhToan()).replace(',', '.')
+                });
+            }
             String owner = String.valueOf(view.getTableModel().getValueAt(modelRow, 4));
             String info = String.valueOf(view.getTableModel().getValueAt(modelRow, 5)) + " • "
                     + view.getTableModel().getValueAt(modelRow, 1) + " " + view.getTableModel().getValueAt(modelRow, 2);
-            boolean paid = history.stream().anyMatch(h -> String.valueOf(h[3]).contains(TrangThaiHoaDon.DA_THANH_TOAN.getText()));
             view.hienThiLichSu(plate, owner, info, history,
                     paid ? "Phiếu đã thanh toán: nội dung sửa chữa được khóa, không thể thay đổi." : null);
         } catch (SQLException ex) {

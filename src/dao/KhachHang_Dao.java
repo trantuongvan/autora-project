@@ -1,9 +1,11 @@
 package dao;
 
 import connection.ConnectDB;
+import entity.HoaDon;
 import entity.KhachHang;
 import entity.LichHen;
 import entity.LoaiKhachHang;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.Xe;
 
 import java.sql.Connection;
@@ -198,7 +200,7 @@ public class KhachHang_Dao {
      * Mỗi dòng: {maPhieu, LocalDateTime tiepNhan, hangMuc, Double tongTien}, mới nhất trước.
      * tongTien là null khi phiếu chưa có hóa đơn còn hiệu lực.
      */
-    public List<Object[]> lichSuSuaChua(String maKH) throws SQLException {
+    public List<PhieuTiepNhanVaSuaChua> lichSuSuaChua(String maKH) throws SQLException {
         // FOR XML PATH thay cho STRING_AGG để chạy được trên SQL Server cũ; TYPE/value giữ nguyên ký tự & trong tên dịch vụ.
         String sql = "SELECT p.maPhieuTNSC, p.thoiGianTiepNhan, "
                 + "STUFF((SELECT N', ' + d.tenDichVu FROM ChiTietSuaChua_DichVu ct "
@@ -208,15 +210,23 @@ public class KhachHang_Dao {
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon hd ON hd.maPhieuTNSC = p.maPhieuTNSC AND hd.trangThaiThanhToan <> N'Đã hủy' "
                 + "WHERE p.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
-        List<Object[]> ketQua = new ArrayList<>();
+        List<PhieuTiepNhanVaSuaChua> ketQua = new ArrayList<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maKH);
             try (ResultSet rs = statement.executeQuery()) {
                 while (rs.next()) {
+                    PhieuTiepNhanVaSuaChua phieu = new PhieuTiepNhanVaSuaChua(rs.getString(1));
                     Timestamp tiepNhan = rs.getTimestamp(2);
-                    ketQua.add(new Object[] {rs.getString(1), tiepNhan == null ? null : tiepNhan.toLocalDateTime(),
-                        rs.getString(3), rs.getObject(4)});
+                    phieu.setThoiGianTiepNhan(tiepNhan == null ? null : tiepNhan.toLocalDateTime());
+                    phieu.setTomTatHangMuc(rs.getString(3));
+                    double tong = rs.getDouble(4);
+                    if (!rs.wasNull()) {
+                        HoaDon hoaDon = new HoaDon();
+                        hoaDon.setTongThanhToan(tong);
+                        phieu.setHoaDon(hoaDon);
+                    }
+                    ketQua.add(phieu);
                 }
             }
         }

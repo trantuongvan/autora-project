@@ -3,6 +3,8 @@ package controller;
 import dao.LichHen_Dao;
 import dao.PhieuBanGiao_Dao;
 import entity.LichHen;
+import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiPhieu;
 import gui.TrangChuLeTan;
 
 import javax.swing.JOptionPane;
@@ -96,8 +98,8 @@ public class TrangChuLeTanController {
                 try {
                     Object[] result = get();
                     @SuppressWarnings("unchecked")
-                    List<Object[]> jobs = (List<Object[]>) result[0];
-                    all = jobs;
+                    List<PhieuTiepNhanVaSuaChua> jobs = (List<PhieuTiepNhanVaSuaChua>) result[0];
+                    all = thanhDong(jobs);
                     int[] stats = (int[]) result[1];
                     view.setSoLieu(stats[0], stats[1], stats[2], stats[3]);
                     @SuppressWarnings("unchecked")
@@ -113,6 +115,36 @@ public class TrangChuLeTanController {
                 }
             }
         }.execute();
+    }
+
+    private static List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
+        List<Object[]> rows = new ArrayList<>();
+        for (PhieuTiepNhanVaSuaChua p : dsPhieu) {
+            boolean ready = p.duDieuKienBanGiao();
+            int progress = p.phanTramHoanTat();
+            String status;
+            if (ready) {
+                status = "Chờ bàn giao";
+            } else if (p.getTrangThai() == TrangThaiPhieu.CHO_KIEM_TRA) {
+                status = "Chờ tiếp nhận";
+            } else if (progress == 100) {
+                status = "Chờ xử lý hóa đơn";
+            } else {
+                status = "Đang sửa • " + progress + "%";
+            }
+
+            String action;
+            if (ready) {
+                action = "Bàn giao →";
+            } else if (progress == 0) {
+                action = "Hồ sơ xe";
+            } else {
+                action = "Xem phiếu";
+            }
+            rows.add(new Object[]{p.getMaPhieuTNSC(), p.getXe().getBienSo(),
+                p.getXe().getKhachHang().getHoTen(), p.getTenXe(), status, action});
+        }
+        return rows;
     }
 
     private void hienLichHen(List<LichHen> homNay) {
