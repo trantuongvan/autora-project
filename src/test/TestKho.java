@@ -160,7 +160,7 @@ public class TestKho {
     }
 
     private static void kiemTraKhoaTienDo() throws Exception {
-        kiem("Nhãn Chờ sửa là Chờ kiểm tra", TienDoSuaChua_Dao.chuanHoaTrangThaiDB("Chờ sửa") == TrangThaiPhieu.CHO_KIEM_TRA);
+        kiem("Nhãn Chờ sửa là Chờ kiểm tra", TrangThaiPhieu.tuNhan("Chờ sửa") == TrangThaiPhieu.CHO_KIEM_TRA);
 
         String p = taoPhieu("Đang sửa");
         thucThi("INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, trangThaiTienDo) VALUES ('" + p + "', 'DV0002', 1000, N'Chờ sửa')");

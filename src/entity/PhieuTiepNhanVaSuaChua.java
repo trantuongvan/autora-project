@@ -166,22 +166,6 @@ public class PhieuTiepNhanVaSuaChua {
         this.nhanVienLap = nhanVienLap;
     }
 
-    public static boolean coTheChuyen(TrangThaiPhieu cu, TrangThaiPhieu moi) {
-        if (cu == null) {
-            return false;
-        }
-        switch (cu) {
-            case CHO_KIEM_TRA:
-                return moi == TrangThaiPhieu.DANG_SUA || moi == TrangThaiPhieu.CHO_PHU_TUNG;
-            case DANG_SUA:
-                return moi == TrangThaiPhieu.CHO_PHU_TUNG || moi == TrangThaiPhieu.HOAN_THANH;
-            case CHO_PHU_TUNG:
-                return moi == TrangThaiPhieu.DANG_SUA;
-            default:
-                return false;
-        }
-    }
-
     public String getDanhGiaNoiThat() {
         return danhGiaNoiThat;
     }
@@ -263,6 +247,34 @@ public class PhieuTiepNhanVaSuaChua {
 
     public void setDanhSachDichVu(List<ChiTietSuaChua_DichVu> danhSachDichVu) {
         this.danhSachDichVu = danhSachDichVu != null ? danhSachDichVu : new ArrayList<>();
+    }
+
+    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
+    public boolean coTheHoanThanh() {
+        if (danhSachDichVu.isEmpty()) {
+            return false;
+        }
+        for (ChiTietSuaChua_DichVu d : danhSachDichVu) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong. */
+    public int phanTramTienDo() {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH) {
+            return 100;
+        }
+        if (trangThai == TrangThaiPhieu.CHO_KIEM_TRA) {
+            return tongSoHangMuc > 0 && soHangMucHoanThanh > 0 ? Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc) : 0;
+        }
+        if (tongSoHangMuc > 0) {
+            int phanTram = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            return trangThai == TrangThaiPhieu.DANG_SUA && phanTram == 0 ? 50 : phanTram;
+        }
+        return trangThai == TrangThaiPhieu.DANG_SUA ? 50 : 0;
     }
 
     public void kiemTraHopLe() throws IllegalArgumentException {

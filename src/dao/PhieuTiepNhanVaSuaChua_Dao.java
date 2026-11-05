@@ -362,7 +362,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
 
     /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ, nên hai máy cùng sửa không vượt luồng được. */
     public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi, String tenDangNhap) throws SQLException {
-        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
+        if (!cu.coTheChuyenSang(moi)) {
             return false;
         }
         String sql = "UPDATE p SET trangThai = ? "
