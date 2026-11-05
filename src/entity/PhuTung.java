@@ -104,6 +104,44 @@ public class PhuTung {
         this.nguongCanhBao = nguongCanhBao;
     }
 
+    public boolean duTon(int soLuong) {
+        return soLuongTon >= soLuong;
+    }
+
+    /** Trừ tồn khi duyệt xuất kho. */
+    public void xuatKho(int soLuong) {
+        if (soLuong <= 0) {
+            throw new IllegalArgumentException("Số lượng xuất phải lớn hơn 0.");
+        }
+        if (!duTon(soLuong)) {
+            throw new IllegalArgumentException("Tồn kho trên hệ thống không đủ cho mã " + maSKU);
+        }
+        soLuongTon -= soLuong;
+    }
+
+    /** Giá bán lẻ không được thấp hơn giá nhập, kể cả khi giá nhập tăng lúc nhập kho. */
+    public boolean giaNhapHopLe(double giaNhapMoi) {
+        return giaNhapMoi <= giaBanLe;
+    }
+
+    /** Cộng tồn khi nhập kho; giá nhập của phụ tùng lấy theo lần nhập này. */
+    public void nhapKho(int soLuong, double giaNhapMoi) {
+        if (soLuong <= 0) {
+            throw new IllegalArgumentException("Số lượng nhập phải lớn hơn 0.");
+        }
+        if (!giaNhapHopLe(giaNhapMoi)) {
+            throw new IllegalArgumentException("Giá nhập của mã " + maSKU
+                    + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.");
+        }
+        setGiaNhap(giaNhapMoi);
+        soLuongTon += soLuong;
+    }
+
+    /** Đưa tồn kho lên gấp đôi ngưỡng cảnh báo, tối thiểu bằng ngưỡng và không dưới 1. */
+    public int soLuongNhapDeXuat() {
+        return Math.max(1, Math.max(nguongCanhBao * 2 - soLuongTon, nguongCanhBao));
+    }
+
     public boolean kiemTraCanhBaoTon() {
         return soLuongTon <= nguongCanhBao;
     }

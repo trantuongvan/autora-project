@@ -8,7 +8,6 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import dao.HoaDon_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietSuaChua_PhuTung;
 import entity.HoaDon;
@@ -154,7 +153,7 @@ public final class PdfExporter {
                 bangPhuTung.addCell(new Phrase(d.getPhuTung().getMaSKU(), thuong));
                 bangPhuTung.addCell(new Phrase(String.valueOf(d.getSoLuongSuDung()), thuong));
                 bangPhuTung.addCell(new Phrase(tien.format(d.getGiaBanThucTe()), thuong));
-                bangPhuTung.addCell(new Phrase(tien.format(HoaDon_Dao.thanhTien(d)), thuong));
+                bangPhuTung.addCell(new Phrase(tien.format(d.thanhTien()), thuong));
             }
             tai.add(bangPhuTung);
             tai.add(new Paragraph(" ", thuong));

@@ -9,6 +9,7 @@ import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
 import entity.NhanVien;
+import entity.PhanCongTuDong;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
@@ -49,19 +50,6 @@ public class ChiTietPhieuSuaChuaController {
         this.dieuHuong = dieuHuong;
         initController();
         taiDuLieu();
-    }
-
-    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
-    public static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
-        if (dong.isEmpty()) {
-            return false;
-        }
-        for (ChiTietSuaChua_DichVu d : dong) {
-            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private void initController() {
@@ -200,7 +188,7 @@ public class ChiTietPhieuSuaChuaController {
             dichVu.add(danhSach.get(i).getDichVu());
         }
         try {
-            PhanCong_Dao.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
+            PhanCongTuDong.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
             for (int i : dong) {
                 NhanVien tho = ketQua.getPhanCong().get(danhSach.get(i).getDichVu());
                 if (tho != null) {
@@ -257,11 +245,12 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi(null);
             return;
         }
-        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(hienTai, trangThai)) {
+        if (!hienTai.coTheChuyenSang(trangThai)) {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
-        if (trangThai == TrangThaiPhieu.HOAN_THANH && !coTheHoanThanh(danhSach)) {
+        phieu.setDanhSachDichVu(danhSach);
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !phieu.coTheHoanThanh()) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }

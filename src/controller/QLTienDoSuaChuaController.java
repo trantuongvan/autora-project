@@ -261,7 +261,7 @@ public class QLTienDoSuaChuaController {
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
         String tt = p.getTrangThaiHienThiKTV();
-        int pct = TienDoSuaChua_Dao.phanTramTienDo(p);
+        int pct = p.phanTramTienDo();
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
@@ -301,17 +301,17 @@ public class QLTienDoSuaChuaController {
         String rawSelected = (String) view.getCboTrangThaiMoi().getSelectedItem();
         if (rawSelected == null) return;
         String nhanMoi = rawSelected.replace("Trạng thái mới:", "").trim();
-        TrangThaiPhieu moi = TienDoSuaChua_Dao.chuanHoaTrangThaiDB(nhanMoi);
+        TrangThaiPhieu moi = TrangThaiPhieu.tuNhan(nhanMoi);
         TrangThaiPhieu cu = phieuDangChon.getTrangThai();
         view.getPnlHopLoiTrangThai().setVisible(false);
         if (moi == cu) return;
 
-        if (!PhieuTiepNhanVaSuaChua.coTheChuyen(cu, moi)) {
+        if (!cu.coTheChuyenSang(moi)) {
             hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
                     + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-        if (moi == TrangThaiPhieu.HOAN_THANH && !ChiTietPhieuSuaChuaController.coTheHoanThanh(phieuDangChon.getDanhSachDichVu())) {
+        if (moi == TrangThaiPhieu.HOAN_THANH && !phieuDangChon.coTheHoanThanh()) {
             hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
             return;
         }
@@ -468,7 +468,7 @@ public class QLTienDoSuaChuaController {
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
         JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getPhuTung().getSoLuongTon() <= item.getPhuTung().getNguongCanhBao()) {
+        if (item.getPhuTung().kiemTraCanhBaoTon()) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));

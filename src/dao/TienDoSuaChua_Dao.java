@@ -205,37 +205,6 @@ public class TienDoSuaChua_Dao {
         }
     }
 
-    /** Nhãn "Chờ sửa" chỉ để hiển thị; trong CSDL phiếu đó là "Chờ kiểm tra". */
-    public static TrangThaiPhieu chuanHoaTrangThaiDB(String tt) {
-        if (tt == null) return TrangThaiPhieu.CHO_KIEM_TRA;
-        String s = tt.trim();
-        if ("Chờ sửa".equalsIgnoreCase(s)) return TrangThaiPhieu.CHO_KIEM_TRA;
-        for (TrangThaiPhieu t : TrangThaiPhieu.values()) {
-            if (t.getText().equalsIgnoreCase(s)) return t;
-        }
-        throw new IllegalArgumentException("Trạng thái phiếu không hợp lệ: " + s);
-    }
-
-    /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong. */
-    public static int phanTramTienDo(PhieuTiepNhanVaSuaChua p) {
-        TrangThaiPhieu tt = p.getTrangThai();
-        int tong = p.getTongSoHangMuc();
-        int xong = p.getSoHangMucHoanThanh();
-        if (tt == TrangThaiPhieu.HOAN_THANH) return 100;
-        if (tt == TrangThaiPhieu.CHO_KIEM_TRA) {
-            if (tong > 0 && xong > 0) {
-                return Math.round((xong * 100f) / tong);
-            }
-            return 0;
-        }
-        if (tong > 0) {
-            int pct = Math.round((xong * 100f) / tong);
-            if (tt == TrangThaiPhieu.DANG_SUA && pct == 0) return 50;
-            return pct;
-        }
-        return tt == TrangThaiPhieu.DANG_SUA ? 50 : 0;
-    }
-
     private PhieuTiepNhanVaSuaChua mapPhieu(ResultSet rs) throws SQLException {
         Timestamp tsTiepNhan = rs.getTimestamp("thoiGianTiepNhan");
         Timestamp tsDuKien = rs.getTimestamp("thoiGianDuKien");

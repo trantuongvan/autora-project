@@ -12,6 +12,7 @@ import entity.LoaiKhachHang;
 import entity.NhanVien;
 import entity.NhatKyHoatDong;
 import entity.PhienDangNhap;
+import entity.PhieuTiepNhanVaSuaChua;
 import entity.TaiKhoan;
 import entity.VaiTro;
 import entity.Xe;
@@ -132,8 +133,8 @@ public class TestKhachHangTaiKhoan {
     }
 
     private static void lichSu() throws Exception {
-        dung("Lịch sử mẫu: hóa đơn còn hiệu lực", Double.valueOf(1506600).equals(hangLichSu("KH0001", "PTNSC00001")[3]));
-        dung("Lịch sử mẫu: chưa có hóa đơn", hangLichSu("KH0002", "PTNSC00002")[3] == null);
+        dung("Lịch sử mẫu: hóa đơn còn hiệu lực", Double.valueOf(1506600).equals(tongHoaDon(hangLichSu("KH0001", "PTNSC00001"))));
+        dung("Lịch sử mẫu: chưa có hóa đơn", tongHoaDon(hangLichSu("KH0002", "PTNSC00002")) == null);
 
         chay("INSERT INTO PhieuTiepNhanVaSuaChua (maPhieuTNSC, bienSo, maKH, maNV_LapPhieu, thoiGianTiepNhan) VALUES "
                 + "('PTEST1', '60A-456.78', 'KH0003', 'NV0002', '2026-11-01'), ('PTEST2', '60A-456.78', 'KH0003', 'NV0002', '2026-11-02')");
@@ -141,18 +142,18 @@ public class TestKhachHangTaiKhoan {
                 + "('PTEST1', 'DV0002', 1), ('PTEST1', 'DV0003', 1)");
         chay("INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, tongThanhToan, trangThaiThanhToan) VALUES "
                 + "('HDTEST1', 'PTEST1', 'NV0002', 999, N'Đã hủy')");
-        Object[] phieu = hangLichSu("KH0003", "PTEST1");
-        dung("Hóa đơn đã hủy không tính tổng tiền", phieu[3] == null);
-        dung("Hạng mục giữ nguyên ký tự &, không bị mã hóa XML: " + phieu[2],
-                "Thay dầu động cơ & lọc nhớt, Vệ sinh kim phun buồng đốt".equals(phieu[2]));
-        dung("Phiếu không có dịch vụ thì hạng mục rỗng", hangLichSu("KH0003", "PTEST2")[2] == null);
+        PhieuTiepNhanVaSuaChua phieu = hangLichSu("KH0003", "PTEST1");
+        dung("Hóa đơn đã hủy không tính tổng tiền", phieu.getHoaDon() == null);
+        dung("Hạng mục giữ nguyên ký tự &, không bị mã hóa XML: " + phieu.getTomTatHangMuc(),
+                "Thay dầu động cơ & lọc nhớt, Vệ sinh kim phun buồng đốt".equals(phieu.getTomTatHangMuc()));
+        dung("Phiếu không có dịch vụ thì hạng mục rỗng", hangLichSu("KH0003", "PTEST2").getTomTatHangMuc() == null);
 
         chay("INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, tongThanhToan, trangThaiThanhToan) VALUES "
                 + "('HDTEST2', 'PTEST1', 'NV0002', 500, N'Công nợ')");
-        List<Object[]> dsPhieu = khDao.lichSuSuaChua("KH0003");
+        List<PhieuTiepNhanVaSuaChua> dsPhieu = khDao.lichSuSuaChua("KH0003");
         dung("Hủy rồi lập lại: một dòng, lấy hóa đơn còn hiệu lực",
-                dsPhieu.size() == 2 && Double.valueOf(500).equals(hangLichSu("KH0003", "PTEST1")[3]));
-        dung("Lịch sử mới nhất trước", "PTEST2".equals(dsPhieu.get(0)[0]));
+                dsPhieu.size() == 2 && Double.valueOf(500).equals(tongHoaDon(hangLichSu("KH0003", "PTEST1"))));
+        dung("Lịch sử mới nhất trước", "PTEST2".equals(dsPhieu.get(0).getMaPhieuTNSC()));
     }
 
     private static void taiKhoan() throws Exception {
@@ -355,9 +356,13 @@ public class TestKhachHangTaiKhoan {
         return String.join(", ", bienSo);
     }
 
-    private static Object[] hangLichSu(String maKH, String maPhieu) throws SQLException {
-        for (Object[] r : khDao.lichSuSuaChua(maKH)) {
-            if (maPhieu.equals(r[0])) {
+    private static Double tongHoaDon(PhieuTiepNhanVaSuaChua phieu) {
+        return phieu.getHoaDon() == null ? null : phieu.getHoaDon().getTongThanhToan();
+    }
+
+    private static PhieuTiepNhanVaSuaChua hangLichSu(String maKH, String maPhieu) throws SQLException {
+        for (PhieuTiepNhanVaSuaChua r : khDao.lichSuSuaChua(maKH)) {
+            if (maPhieu.equals(r.getMaPhieuTNSC())) {
                 return r;
             }
         }

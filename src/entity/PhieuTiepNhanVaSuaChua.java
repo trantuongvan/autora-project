@@ -28,6 +28,9 @@ public class PhieuTiepNhanVaSuaChua {
     private String tomTatHangMuc;
     private int tongSoHangMuc;
     private int soHangMucHoanThanh;
+
+    private HoaDon hoaDon;
+    private PhieuBanGiao banGiao;
     private List<ChiTietSuaChua_DichVu> danhSachDichVu = new ArrayList<>();
 
     public PhieuTiepNhanVaSuaChua() {
@@ -166,22 +169,6 @@ public class PhieuTiepNhanVaSuaChua {
         this.nhanVienLap = nhanVienLap;
     }
 
-    public static boolean coTheChuyen(TrangThaiPhieu cu, TrangThaiPhieu moi) {
-        if (cu == null) {
-            return false;
-        }
-        switch (cu) {
-            case CHO_KIEM_TRA:
-                return moi == TrangThaiPhieu.DANG_SUA || moi == TrangThaiPhieu.CHO_PHU_TUNG;
-            case DANG_SUA:
-                return moi == TrangThaiPhieu.CHO_PHU_TUNG || moi == TrangThaiPhieu.HOAN_THANH;
-            case CHO_PHU_TUNG:
-                return moi == TrangThaiPhieu.DANG_SUA;
-            default:
-                return false;
-        }
-    }
-
     public String getDanhGiaNoiThat() {
         return danhGiaNoiThat;
     }
@@ -263,6 +250,89 @@ public class PhieuTiepNhanVaSuaChua {
 
     public void setDanhSachDichVu(List<ChiTietSuaChua_DichVu> danhSachDichVu) {
         this.danhSachDichVu = danhSachDichVu != null ? danhSachDichVu : new ArrayList<>();
+    }
+
+    /** Hóa đơn còn hiệu lực; null khi chưa lập hoặc đã hủy. */
+    public HoaDon getHoaDon() {
+        return hoaDon;
+    }
+
+    public void setHoaDon(HoaDon hoaDon) {
+        this.hoaDon = hoaDon;
+    }
+
+    /** Null khi xe chưa được bàn giao. */
+    public PhieuBanGiao getBanGiao() {
+        return banGiao;
+    }
+
+    public void setBanGiao(PhieuBanGiao banGiao) {
+        this.banGiao = banGiao;
+    }
+
+    /** Làm tròn xuống: còn hạng mục chưa xong thì chưa đủ 100. */
+    public int phanTramHoanTat() {
+        return tongSoHangMuc == 0 ? 0 : soHangMucHoanThanh * 100 / tongSoHangMuc;
+    }
+
+    /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
+    public boolean duDieuKienBanGiao() {
+        return phanTramHoanTat() == 100 && hoaDon != null && hoaDon.daThanhToanHopLe(xe.getKhachHang());
+    }
+
+    public String getTrangThaiHoaDonHienThi() {
+        return hoaDon == null ? "Chưa lập hóa đơn" : hoaDon.getTrangThaiThanhToan().getText();
+    }
+
+    public String getNhanHoaDonBanGiao() {
+        return hoaDon != null && hoaDon.laCongNoHopLe(xe.getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi();
+    }
+
+    public String lyDoChuaDuDieuKienBanGiao() {
+        int tienDo = phanTramHoanTat();
+        if (tienDo < 100) {
+            return tienDo == 0
+                    ? "Chưa có hạng mục sửa chữa hoàn tất."
+                    : "Còn " + (100 - tienDo) + "% hạng mục sửa chữa chưa hoàn tất.";
+        }
+        if (hoaDon == null) {
+            return "Phiếu chưa có hóa đơn.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY) {
+            return "Hóa đơn đã bị hủy.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !hoaDon.laCongNoHopLe(xe.getKhachHang())) {
+            return "Khách hàng không được phép ghi nợ.";
+        }
+        return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
+    }
+
+    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
+    public boolean coTheHoanThanh() {
+        if (danhSachDichVu.isEmpty()) {
+            return false;
+        }
+        for (ChiTietSuaChua_DichVu d : danhSachDichVu) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong. */
+    public int phanTramTienDo() {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH) {
+            return 100;
+        }
+        if (trangThai == TrangThaiPhieu.CHO_KIEM_TRA) {
+            return tongSoHangMuc > 0 && soHangMucHoanThanh > 0 ? Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc) : 0;
+        }
+        if (tongSoHangMuc > 0) {
+            int phanTram = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            return trangThai == TrangThaiPhieu.DANG_SUA && phanTram == 0 ? 50 : phanTram;
+        }
+        return trangThai == TrangThaiPhieu.DANG_SUA ? 50 : 0;
     }
 
     public void kiemTraHopLe() throws IllegalArgumentException {
