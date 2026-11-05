@@ -31,12 +31,11 @@ public class HoaDon_Dao {
             "SELECT h.maHD, h.maPhieuTNSC, h.ngayLap, h.tongTienCong, h.tongTienPhuTung, h.tongTienGiam, "
             + "h.tongTienVAT, h.tongThanhToan, h.hinhThucThanhToan, h.trangThaiThanhToan, h.lyDoHuy, "
             + "h.maKM, t.maThue, t.tenLoaiThue, t.thueSuat, "
-            + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", " + NhanVien_Dao.cotNhanVien("n", "lap_") + " "
+            + PhieuTiepNhanVaSuaChua_Dao.COT_XE + " "
             + "FROM HoaDon h "
             + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = h.maPhieuTNSC "
             + "JOIN Xe x ON x.bienSo = p.bienSo "
             + "JOIN KhachHang k ON k.maKH = p.maKH "
-            + "JOIN NhanVien n ON n.maNV = h.maNV_Lap "
             + "LEFT JOIN Thue t ON t.maThue = h.maThue ";
 
     private static final String SINH_MA_HD =
@@ -416,9 +415,7 @@ public class HoaDon_Dao {
         if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
             throw new IllegalArgumentException("Vui lòng nhập lý do hủy.");
         }
-        HoaDon kiemTra = new HoaDon();
-        kiemTra.setLyDoHuy(lyDoHuy);
-        String lyDo = kiemTra.getLyDoHuy();
+        String lyDo = HoaDon.chuanHoaLyDoHuy(lyDoHuy);
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -474,7 +471,7 @@ public class HoaDon_Dao {
                 rs.getDouble("tongTienPhuTung"), rs.getDouble("tongTienGiam"), rs.getDouble("tongTienVAT"),
                 rs.getDouble("tongThanhToan"), HinhThucThanhToan.fromDb(rs.getString("hinhThucThanhToan")),
                 TrangThaiHoaDon.fromDb(rs.getString("trangThaiThanhToan")),
-                rs.getString("lyDoHuy"), NhanVien_Dao.docNhanVien(rs, "lap_"),
+                rs.getString("lyDoHuy"),
                 maKM == null ? null : new KhuyenMai(maKM),
                 maThue == null ? null : new Thue(maThue, rs.getString("tenLoaiThue"), rs.getDouble("thueSuat")));
     }

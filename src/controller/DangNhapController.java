@@ -1,7 +1,7 @@
 package controller;
 
 import dao.DangNhap_Dao;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.VaiTro;
 import gui.DangNhap;
 import gui.GiaoDienChinh;

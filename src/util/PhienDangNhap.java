@@ -1,4 +1,6 @@
-package entity;
+package util;
+
+import entity.VaiTro;
 
 /** Phiên làm việc của người dùng đang đăng nhập, dùng chung toàn ứng dụng. */
 public final class PhienDangNhap {

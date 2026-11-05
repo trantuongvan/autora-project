@@ -13,7 +13,7 @@ import entity.KhachHang;
 import entity.KyNang;
 import entity.MucUuTien;
 import entity.NhanVien;
-import entity.PhanCongTuDong;
+import util.PhanCongTuDong;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import entity.VaiTro;

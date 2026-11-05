@@ -18,7 +18,7 @@ public class PhieuNhapKho_Dao {
 
     /** Lấy Thủ kho mặc định từ DB (ưu tiên NV0004 - Bùi Thái Vy trong dữ liệu mẫu SQL). */
     public NhanVien findDefaultThuKho() throws SQLException {
-        entity.PhienDangNhap phien = entity.PhienDangNhap.getHienTai();
+        util.PhienDangNhap phien = util.PhienDangNhap.getHienTai();
         if (phien != null && phien.getMaNV() != null && !phien.getMaNV().trim().isEmpty()) {
             String sqlPhien = "SELECT maNV, hoTen, soDienThoai, diaChi, viTriLamViec FROM NhanVien WHERE maNV = ?";
             try (Connection c = ConnectDB.getConnection();

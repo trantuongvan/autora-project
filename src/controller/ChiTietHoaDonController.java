@@ -9,7 +9,7 @@ import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.KhachHang;
 import entity.KhuyenMai;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.Thue;
 import entity.TrangThaiHoaDon;

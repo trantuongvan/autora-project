@@ -11,7 +11,7 @@ import entity.KhachHang;
 import entity.LoaiKhachHang;
 import entity.NhanVien;
 import entity.NhatKyHoatDong;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TaiKhoan;
 import entity.VaiTro;

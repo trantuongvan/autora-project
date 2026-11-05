@@ -245,10 +245,7 @@ public class Xe_Dao {
                     phieu.setSoHangMucHoanThanh(r.getInt("soHangMucXong"));
                     String trangThaiHoaDon = r.getString("trangThaiThanhToan");
                     if (trangThaiHoaDon != null) {
-                        HoaDon hoaDon = new HoaDon();
-                        hoaDon.setTongThanhToan(r.getDouble("tongThanhToan"));
-                        hoaDon.setTrangThaiThanhToan(TrangThaiHoaDon.fromDb(trangThaiHoaDon));
-                        phieu.setHoaDon(hoaDon);
+                        phieu.setHoaDon(new HoaDon(TrangThaiHoaDon.fromDb(trangThaiHoaDon), r.getDouble("tongThanhToan")));
                     }
                     ds.add(phieu);
                 }

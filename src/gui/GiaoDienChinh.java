@@ -1,6 +1,6 @@
 package gui;
 
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.VaiTro;
 import util.UIComponents;
 import util.UIComponents.LineIcon;

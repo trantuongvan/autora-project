@@ -1,7 +1,7 @@
 package controller;
 
 import dao.PhieuTiepNhanVaSuaChua_Dao;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import gui.QLPhieuSuaChua;

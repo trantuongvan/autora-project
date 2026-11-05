@@ -6,6 +6,7 @@ import entity.KhachHang;
 import entity.LichHen;
 import entity.LoaiKhachHang;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiHoaDon;
 import entity.Xe;
 
 import java.sql.Connection;
@@ -206,7 +207,7 @@ public class KhachHang_Dao {
                 + "STUFF((SELECT N', ' + d.tenDichVu FROM ChiTietSuaChua_DichVu ct "
                 + "JOIN DichVu d ON d.maDichVu = ct.maDichVu WHERE ct.maPhieuTNSC = p.maPhieuTNSC "
                 + "ORDER BY d.tenDichVu FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS hangMuc, "
-                + "hd.tongThanhToan "
+                + "hd.tongThanhToan, hd.trangThaiThanhToan "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon hd ON hd.maPhieuTNSC = p.maPhieuTNSC AND hd.trangThaiThanhToan <> N'Đã hủy' "
                 + "WHERE p.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
@@ -220,11 +221,9 @@ public class KhachHang_Dao {
                     Timestamp tiepNhan = rs.getTimestamp(2);
                     phieu.setThoiGianTiepNhan(tiepNhan == null ? null : tiepNhan.toLocalDateTime());
                     phieu.setTomTatHangMuc(rs.getString(3));
-                    double tong = rs.getDouble(4);
-                    if (!rs.wasNull()) {
-                        HoaDon hoaDon = new HoaDon();
-                        hoaDon.setTongThanhToan(tong);
-                        phieu.setHoaDon(hoaDon);
+                    String trangThaiHoaDon = rs.getString(5);
+                    if (trangThaiHoaDon != null) {
+                        phieu.setHoaDon(new HoaDon(TrangThaiHoaDon.fromDb(trangThaiHoaDon), rs.getDouble(4)));
                     }
                     ketQua.add(phieu);
                 }
