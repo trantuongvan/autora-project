@@ -6,7 +6,7 @@ import entity.CaLamViec;
 import entity.DichVu;
 import entity.KyNang;
 import entity.NhanVien;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.VaiTro;
 import gui.QLNhanVien;
 

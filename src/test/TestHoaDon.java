@@ -14,7 +14,7 @@ import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhamViKhuyenMai;
-import entity.ThongKeChoThanhToan;
+import dao.TrangChuQuanLy_Dao.ThongKeChoThanhToan;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
@@ -85,7 +85,7 @@ public class TestHoaDon {
         loi("Mã HĐ sai dạng", () -> new HoaDon("HD1"));
         loi("Hình thức lạ", () -> HinhThucThanhToan.fromDb("Séc"));
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
-        loi("Tổng âm", () -> new HoaDon().setTongThanhToan(-1));
+        loi("Tổng âm", () -> new HoaDon(TrangThaiHoaDon.DA_THANH_TOAN, -1));
         loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
         kiem("Thuế tính tiền", new Thue("X", "A", 8).tinhTienThue(1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
@@ -299,13 +299,11 @@ public class TestHoaDon {
         kiem("Dự đoán mã đúng dạng", dao.duDoanMaHD().matches("HD\\d{6}"));
 
         HoaDon hd = dao.findById("HD000001");
-        kiem("Hóa đơn đọc có phiếu, xe, khách, nhân viên và thuế", hd.getPhieu() != null
+        kiem("Hóa đơn đọc có phiếu, xe, khách và thuế", hd.getPhieu() != null
                 && "PTNSC00001".equals(hd.getPhieu().getMaPhieuTNSC())
                 && hd.getPhieu().getXe() != null && "51H-123.45".equals(hd.getPhieu().getXe().getBienSo())
                 && hd.getPhieu().getXe().getKhachHang() != null
                 && "Phạm Minh Hoàng".equals(hd.getPhieu().getXe().getKhachHang().getHoTen())
-                && hd.getNhanVienLap() != null && "NV0002".equals(hd.getNhanVienLap().getMaNV())
-                && hd.getNhanVienLap().getHoTen() != null
                 && hd.getKhuyenMai() != null && "KM0001".equals(hd.getKhuyenMai().getMaKM())
                 && hd.getThue() != null && "VAT08".equals(hd.getThue().getMaThue()) && hd.getThue().getThueSuat() == 8);
         PhieuTiepNhanVaSuaChua phieuHd = dao.findThongTinPhieu(hd.getPhieu().getMaPhieuTNSC());

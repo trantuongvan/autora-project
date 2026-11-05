@@ -1,8 +1,6 @@
 package dao;
 
 import connection.ConnectDB;
-import entity.DoanhThuNgay;
-import entity.ThongKeChoThanhToan;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,6 +18,71 @@ import java.util.Map;
  * Mọi mốc thời gian đều truyền dưới dạng tham số (nửa khoảng [từ, đến)) để không bọc hàm lên cột ngayThanhToan.
  */
 public class TrangChuQuanLy_Dao {
+    /** Doanh thu đã thu trong một ngày, tổng hợp từ hóa đơn nên chỉ đọc. */
+    public static class DoanhThuNgay {
+        private final LocalDate ngay;
+        private final int soPhieu;
+        private final double tienCong;
+        private final double tienPhuTung;
+        private final double tienVAT;
+        private final double tongTien;
+
+        public DoanhThuNgay(LocalDate ngay, int soPhieu, double tienCong, double tienPhuTung, double tienVAT, double tongTien) {
+            this.ngay = ngay;
+            this.soPhieu = soPhieu;
+            this.tienCong = tienCong;
+            this.tienPhuTung = tienPhuTung;
+            this.tienVAT = tienVAT;
+            this.tongTien = tongTien;
+        }
+
+        public LocalDate getNgay() {
+            return ngay;
+        }
+
+        public int getSoPhieu() {
+            return soPhieu;
+        }
+
+        public double getTienCong() {
+            return tienCong;
+        }
+
+        public double getTienPhuTung() {
+            return tienPhuTung;
+        }
+
+        public double getTienVAT() {
+            return tienVAT;
+        }
+
+        public double getTongTien() {
+            return tongTien;
+        }
+    }
+
+    /**
+     * Số việc chờ thanh toán gồm hóa đơn công nợ và phiếu đã hoàn thành chưa lập hóa đơn.
+     * Tổng tiền chỉ tính công nợ vì phiếu chưa lập hóa đơn chưa có khuyến mãi và thuế nên chưa có số cuối cùng.
+     */
+    public static class ThongKeChoThanhToan {
+        private final int soLuong;
+        private final double tongTien;
+
+        public ThongKeChoThanhToan(int soLuong, double tongTien) {
+            this.soLuong = soLuong;
+            this.tongTien = tongTien;
+        }
+
+        public int getSoLuong() {
+            return soLuong;
+        }
+
+        public double getTongTien() {
+            return tongTien;
+        }
+    }
+
 
     private static final String DA_THANH_TOAN = "trangThaiThanhToan = N'Đã thanh toán' ";
     private static final String CONG_NO = "trangThaiThanhToan = N'Công nợ' ";

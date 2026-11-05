@@ -142,9 +142,7 @@ public class TestKho {
         p.setTongSoHangMuc(tong);
         p.setSoHangMucHoanThanh(xong);
         if (hoaDon != null) {
-            HoaDon hd = new HoaDon();
-            hd.setTrangThaiThanhToan(hoaDon);
-            p.setHoaDon(hd);
+            p.setHoaDon(new HoaDon(hoaDon, 0));
         }
         return p;
     }
