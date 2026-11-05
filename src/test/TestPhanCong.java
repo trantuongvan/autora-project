@@ -13,6 +13,7 @@ import entity.KhachHang;
 import entity.KyNang;
 import entity.MucUuTien;
 import entity.NhanVien;
+import entity.PhanCongTuDong;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import entity.VaiTro;
@@ -26,7 +27,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Kiểm thử tự động phân công kỹ thuật viên trên CSDL mẫu mới tạo.
@@ -47,6 +50,7 @@ public class TestPhanCong {
 
     public static void main(String[] args) throws Exception {
         kiemTraCongPhut();
+        kiemTraKhongCanCsdl();
         kiemTraEntity();
         kiemTraDuLieuMau();
         kiemTraChonKyNangVaCa();
@@ -65,7 +69,7 @@ public class TestPhanCong {
     // ---------- congPhut ----------
 
     private static void gio(String ten, LocalDateTime tu, int phut, LocalTime bd, LocalTime kt, LocalDateTime mong) {
-        LocalDateTime thuc = PhanCong_Dao.congPhut(tu, phut, bd, kt);
+        LocalDateTime thuc = new CaLamViec("CAX", "Ca", bd, kt).congPhut(tu, phut);
         dung(ten + " (được " + thuc + ")", mong.equals(thuc));
     }
 
@@ -81,12 +85,26 @@ public class TestPhanCong {
         gio("Không có ngày nghỉ", LocalDateTime.of(2025, 11, 7, 16, 30), 60, S8, S17, LocalDateTime.of(2025, 11, 8, 8, 30));
         gio("Không có việc thì giữ nguyên giờ", D9.withHour(6), 0, S8, S17, D9.withHour(6));
         gio("Giữ giây lẻ", D9.withSecond(30), 60, S8, S17, D9.withHour(10).withSecond(30));
-        try {
-            PhanCong_Dao.congPhut(D9, 10, S17, S8);
-            dung("Ca bắt đầu sau kết thúc phải báo lỗi", false);
-        } catch (IllegalArgumentException ex) {
-            dung("Ca bắt đầu sau kết thúc phải báo lỗi", true);
-        }
+        CaLamViec ca = new CaLamViec("CAX", "Ca", S8, S17);
+        dung("Trong ca tính cả giờ vào, không tính giờ tan", ca.dangTrongCa(S8) && !ca.dangTrongCa(S17));
+    }
+
+    /** Quyết định chọn ai không cần CSDL: dữ liệu đưa vào là đối tượng thường. */
+    private static void kiemTraKhongCanCsdl() {
+        CaLamViec ca = new CaLamViec("CAX", "Ca", S8, S17);
+        NhanVien ban = new NhanVien("NV9001");
+        ban.setCaLamViec(ca);
+        NhanVien ranh = new NhanVien("NV9002");
+        ranh.setCaLamViec(ca);
+        DichVu dv = new DichVu("DVP1");
+        Map<String, List<PhanCongTuDong.UngVien>> ungVien = new HashMap<>();
+        ungVien.put("DVP1", Arrays.asList(new PhanCongTuDong.UngVien(ban, 10), new PhanCongTuDong.UngVien(ranh, 600)));
+        Map<String, PhanCongTuDong.HangDoi> hangDoi = new HashMap<>();
+        hangDoi.put("NV9001", new PhanCongTuDong.HangDoi(5, 1));
+        PhanCongTuDong.KetQua kq = new PhanCongTuDong(ungVien, hangDoi).chon(D9, Arrays.asList(dv));
+        dung("Người rảnh được ưu tiên dù làm lâu hơn", kq.getPhanCong().get(dv) == ranh && kq.getPhuTrach() == ranh);
+        dung("Không ai làm được thì để trống", new PhanCongTuDong(new HashMap<>(), new HashMap<>())
+                .chon(D9, Arrays.asList(dv)).getPhanCong().get(dv) == null);
     }
 
     private static void kiemTraEntity() {
@@ -130,7 +148,7 @@ public class TestPhanCong {
 
     // ---------- chọn kỹ thuật viên ----------
 
-    private static PhanCong_Dao.KetQua chon(LocalDateTime gio, String... maDichVu) throws SQLException {
+    private static PhanCongTuDong.KetQua chon(LocalDateTime gio, String... maDichVu) throws SQLException {
         List<DichVu> ds = new ArrayList<>();
         for (String ma : maDichVu) {
             ds.add(new DichVu(ma));
@@ -138,12 +156,12 @@ public class TestPhanCong {
         return pc.chon(gio, ds);
     }
 
-    private static String tho(PhanCong_Dao.KetQua kq, String maDichVu) {
+    private static String tho(PhanCongTuDong.KetQua kq, String maDichVu) {
         NhanVien nv = kq.getPhanCong().get(new DichVu(maDichVu));
         return nv == null ? null : nv.getMaNV();
     }
 
-    private static String phuTrach(PhanCong_Dao.KetQua kq) {
+    private static String phuTrach(PhanCongTuDong.KetQua kq) {
         return kq.getPhuTrach() == null ? null : kq.getPhuTrach().getMaNV();
     }
 
@@ -154,7 +172,7 @@ public class TestPhanCong {
         dung("Chỉ người có kỹ năng: DV0006 là NV0006", "NV0006".equals(tho(chon(D9, "DV0006"), "DV0006")));
 
         // 09:00: NV0005 còn 60 phút việc cũ nên xong 12:00; NV0006 chỉ vào ca 13:00 nên xong 15:00.
-        PhanCong_Dao.KetQua kq = chon(D9, "DV0001");
+        PhanCongTuDong.KetQua kq = chon(D9, "DV0001");
         dung("Người trong ca thắng người ngoài ca", "NV0005".equals(tho(kq, "DV0001")));
         dung("Giờ dự kiến theo hàng đợi cộng thời lượng", D9.withHour(12).equals(kq.getDuKien()));
 
@@ -171,7 +189,7 @@ public class TestPhanCong {
         taoPhieu("Chờ kiểm tra", "DV0001", "NV0005", "Hoàn thành");
         taoPhieu("Đã hủy", "DV0002", "NV0005", "Chờ sửa");
         taoPhieu("Hoàn thành", "DV0005", "NV0005", "Đang sửa");
-        PhanCong_Dao.KetQua kq = chon(D9, "DV0001");
+        PhanCongTuDong.KetQua kq = chon(D9, "DV0001");
         dung("Việc xong, phiếu hủy, phiếu hoàn thành không tính", D9.withHour(12).equals(kq.getDuKien()));
 
         // Việc chưa xong trên phiếu còn mở thì tính, cả khi đang sửa dở.
@@ -193,7 +211,7 @@ public class TestPhanCong {
     private static void kiemTraNhieuDichVu() throws Exception {
         xoaDuLieuThu();
         // DV0001 -> NV0006 (xong 15:00). Việc đó vào hàng đợi nên DV0005 -> NV0005 (16:00, NV0006 sẽ 16:30).
-        PhanCong_Dao.KetQua kq = chon(D13, "DV0001", "DV0005");
+        PhanCongTuDong.KetQua kq = chon(D13, "DV0001", "DV0005");
         dung("Việc trong cùng phiếu dàn đều: DV0001 -> NV0006", "NV0006".equals(tho(kq, "DV0001")));
         dung("Việc trong cùng phiếu dàn đều: DV0005 -> NV0005", "NV0005".equals(tho(kq, "DV0005")));
         dung("Bằng số việc thì người xong sớm hơn phụ trách", "NV0006".equals(phuTrach(kq)));
@@ -207,7 +225,7 @@ public class TestPhanCong {
     private static void kiemTraKhongAiLamDuocVaBan() throws Exception {
         xoaDuLieuThu();
         thucThi("INSERT INTO DichVu (maDichVu, tenDichVu, tienCong, thoiGianChuan) VALUES ('DVT01', N'Dịch vụ thử', 0, 30)");
-        PhanCong_Dao.KetQua kq = chon(D9, "DVT01");
+        PhanCongTuDong.KetQua kq = chon(D9, "DVT01");
         dung("Không ai làm được: null kèm ghi chú", kq.getPhanCong().containsKey(new DichVu("DVT01"))
                 && tho(kq, "DVT01") == null && kq.getGhiChu().size() == 1);
         dung("Không giao được gì thì không có phụ trách và dự kiến", kq.getPhuTrach() == null && kq.getDuKien() == null);
@@ -249,7 +267,7 @@ public class TestPhanCong {
             taoPhieu("Đang sửa", "DVT01", "NV0005", "Chờ sửa");
             taoPhieu("Đang sửa", "DVT01", "NV0005", "Chờ sửa");
             taoPhieu("Đang sửa", "DV0004", "NV0006", "Chờ sửa");
-            PhanCong_Dao.KetQua kq = chon(D13, "DV0001");
+            PhanCongTuDong.KetQua kq = chon(D13, "DV0001");
             dung("Hòa giờ xong thì ít việc hơn thắng", "NV0006".equals(tho(kq, "DV0001"))
                     && D13.withHour(16).equals(kq.getDuKien()));
 
@@ -273,7 +291,7 @@ public class TestPhanCong {
         List<DichVu> dv = Arrays.asList(dichVu("DV0001", 250000), dichVu("DV0005", 350000));
 
         PhieuTiepNhanVaSuaChua p = phieuMau("59A-901.01", D13);
-        PhanCong_Dao.KetQua kq = dao.taoTiepNhan(khachMau("0911000101"), xeMau("59A-901.01"), p, dv);
+        PhanCongTuDong.KetQua kq = dao.taoTiepNhan(khachMau("0911000101"), xeMau("59A-901.01"), p, dv);
         PhieuTiepNhanVaSuaChua luu = dao.findById(p.getMaPhieuTNSC());
         dung("taoTiepNhan lưu người phụ trách", luu.getNhanVienPhuTrach() != null
                 && "NV0006".equals(luu.getNhanVienPhuTrach().getMaNV()));

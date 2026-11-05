@@ -1,5 +1,7 @@
 package entity;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -62,6 +64,38 @@ public class CaLamViec {
         }
         this.gioBatDau = gioBatDau;
         this.gioKetThuc = gioKetThuc;
+    }
+
+    public boolean dangTrongCa(LocalTime gio) {
+        return !gio.isBefore(gioBatDau) && gio.isBefore(gioKetThuc);
+    }
+
+    /**
+     * Giờ xong khi bắt đầu lúc {@code tu} và chỉ tính thời gian nằm trong ca.
+     * Trước giờ vào ca thì bắt đầu từ giờ vào ca; từ giờ tan ca trở đi thì bắt đầu ca ngày hôm sau.
+     */
+    public LocalDateTime congPhut(LocalDateTime tu, int phut) {
+        if (phut <= 0) {
+            return tu;
+        }
+        long can = phut * 60L;
+        LocalDateTime t = tu;
+        while (true) {
+            LocalDateTime vao = t.toLocalDate().atTime(gioBatDau);
+            LocalDateTime ra = t.toLocalDate().atTime(gioKetThuc);
+            if (t.isBefore(vao)) {
+                t = vao;
+            } else if (!t.isBefore(ra)) {
+                t = vao.plusDays(1);
+                continue;
+            }
+            long con = Duration.between(t, ra).getSeconds();
+            if (can <= con) {
+                return t.plusSeconds(can);
+            }
+            can -= con;
+            t = vao.plusDays(1);
+        }
     }
 
     @Override

@@ -9,6 +9,7 @@ import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
 import entity.NhanVien;
+import entity.PhanCongTuDong;
 import entity.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
@@ -187,7 +188,7 @@ public class ChiTietPhieuSuaChuaController {
             dichVu.add(danhSach.get(i).getDichVu());
         }
         try {
-            PhanCong_Dao.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
+            PhanCongTuDong.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
             for (int i : dong) {
                 NhanVien tho = ketQua.getPhanCong().get(danhSach.get(i).getDichVu());
                 if (tho != null) {

@@ -1,8 +1,6 @@
 package test;
 
-import controller.QLNhapKhoController;
 import controller.QLTaiKhoanController;
-import dao.HoaDon_Dao;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import dao.TaiKhoan_Dao;

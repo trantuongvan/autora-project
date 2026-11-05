@@ -5,6 +5,7 @@ import entity.DichVu;
 import entity.KhachHang;
 import entity.MucUuTien;
 import entity.NhanVien;
+import entity.PhanCongTuDong;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import entity.Xe;
@@ -130,7 +131,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
      * Kỹ thuật viên từng dòng, người phụ trách và giờ dự kiến (khi lễ tân không tự chọn) do PhanCong_Dao tính
      * tại thời điểm tiếp nhận; trả về kết quả đó để báo lại cho lễ tân.
      */
-    public PhanCong_Dao.KetQua taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
+    public PhanCongTuDong.KetQua taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
             List<DichVu> dichVu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
@@ -148,7 +149,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 }
                 LocalDateTime hienTai = phieu.getThoiGianTiepNhan() != null
                         ? phieu.getThoiGianTiepNhan() : LocalDateTime.now();
-                PhanCong_Dao.KetQua phanCong = new PhanCong_Dao().chon(connection, hienTai, dichVu);
+                PhanCongTuDong.KetQua phanCong = new PhanCong_Dao().chon(connection, hienTai, dichVu);
                 if (duKienGoc == null) {
                     phieu.setThoiGianDuKien(phanCong.getDuKien());
                 }
@@ -199,7 +200,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
     }
 
     private void insertDichVu(Connection connection, String maPhieu, List<DichVu> dichVu,
-            PhanCong_Dao.KetQua phanCong) throws SQLException {
+            PhanCongTuDong.KetQua phanCong) throws SQLException {
         String sql = "INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, maNV_KyThuat) VALUES (?, ?, ?, ?)";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             for (DichVu dv : dichVu) {
