@@ -358,11 +358,7 @@ public class ChiTietHoaDonController {
         try {
             String ma = dao.lapHoaDon(maPhieu, km == null ? null : km.getMaKM(), thue.getMaThue(), hinhThuc, dua,
                     PhienDangNhap.getHienTai().getMaNV());
-            String thongBao = "Đã lập hóa đơn " + ma + ".";
-            if (hinhThuc == HinhThucThanhToan.CHUYEN_KHOAN && !ma.equals(maQr)) {
-                thongBao += "\nNội dung trên mã QR ghi " + maQr + " vì máy khác vừa lập hóa đơn trước; hãy đối soát theo " + ma + ".";
-            }
-            JOptionPane.showMessageDialog(view, thongBao);
+            JOptionPane.showMessageDialog(view, "Đã lập hóa đơn " + ma + ".");
             dieuHuong.moChiTietHoaDon(ma);
         } catch (IllegalArgumentException | SQLException ex) {
             view.hienLoi(null);

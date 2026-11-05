@@ -171,7 +171,7 @@ public class KhachHang_Dao {
             statement.setString(2, maKH);
             return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            // Khách đã có phiếu sửa chữa, hoặc xe vừa được thêm ngay giữa lúc xóa.
+            // Khách đã có phiếu sửa chữa.
             if (ex.getErrorCode() == LOI_VI_PHAM_KHOA_NGOAI) {
                 return false;
             }
@@ -234,7 +234,7 @@ public class KhachHang_Dao {
     }
 
     private void chanTrungSoDienThoai(Connection connection, String soDienThoai, String maTru) throws SQLException {
-        String sql = "SELECT 1 FROM KhachHang WITH (UPDLOCK, HOLDLOCK) WHERE soDienThoai = ? AND maKH <> ?";
+        String sql = "SELECT 1 FROM KhachHang WHERE soDienThoai = ? AND maKH <> ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, soDienThoai);
             statement.setString(2, maTru);
@@ -248,7 +248,7 @@ public class KhachHang_Dao {
 
     private String nextId(Connection connection) throws SQLException {
         String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))), 0) + 1 "
-                + "FROM KhachHang WITH (UPDLOCK, HOLDLOCK)";
+                + "FROM KhachHang";
         try (PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             rs.next();

@@ -137,7 +137,7 @@ public class LichHen_Dao {
 
     private String nextId(Connection connection) throws SQLException {
         String sql = "SELECT 'LH' + RIGHT('00000' + CAST(COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maLichHen, 3, 18))), 0) + 1 "
-                + "AS VARCHAR(18)), 5) FROM LichHen WITH (UPDLOCK, HOLDLOCK)";
+                + "AS VARCHAR(18)), 5) FROM LichHen";
         try (PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             rs.next();

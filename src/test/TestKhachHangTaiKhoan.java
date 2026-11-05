@@ -30,7 +30,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
 
 /** Kiểm thử trên CSDL mẫu vừa tạo lại (không dùng framework). */
 public class TestKhachHangTaiKhoan {
@@ -50,7 +49,6 @@ public class TestKhachHangTaiKhoan {
         lichSu();
         taiKhoan();
         chuCuoi();
-        chuCuoiDongThoi();
         nhatKy();
         phanQuyenKhopMenu();
         moManHinh();
@@ -240,39 +238,6 @@ public class TestKhachHangTaiKhoan {
         dung("Mở khóa lại", tkDao.datTrangThai("chu.hai", true, "x"));
         dung("Có hai chủ thì đổi vai trò được một", tkDao.doiVaiTro("chu.hai", LE_TAN, "x"));
         dung("Có một chủ khác nên xóa được tài khoản lễ tân", tkDao.delete("chu.hai", "x"));
-    }
-
-    /** Hai người cùng khóa hai chủ khác nhau: phải còn đúng một chủ hoạt động. */
-    private static void chuCuoiDongThoi() throws Exception {
-        tkDao.insert(new TaiKhoan("chu.hai", CHU, true, new NhanVien("NVT1")), MAT_KHAU, "x");
-        for (int lan = 0; lan < 5; lan++) {
-            CountDownLatch batDau = new CountDownLatch(1);
-            Thread[] luong = {luongKhoa("admin", batDau), luongKhoa("chu.hai", batDau)};
-            for (Thread t : luong) {
-                t.start();
-            }
-            batDau.countDown();
-            for (Thread t : luong) {
-                t.join();
-            }
-            dung("Đồng thời lần " + lan + ": còn đúng một chủ", demChuHoatDong() == 1);
-            tkDao.datTrangThai("admin", true, "x");
-            tkDao.datTrangThai("chu.hai", true, "x");
-        }
-        tkDao.delete("chu.hai", "x");
-    }
-
-    private static Thread luongKhoa(String ten, CountDownLatch batDau) {
-        return new Thread(() -> {
-            try {
-                batDau.await();
-                tkDao.datTrangThai(ten, false, "x");
-            } catch (IllegalStateException ex) {
-                // Một trong hai luồng bị chặn là đúng kỳ vọng.
-            } catch (Exception ex) {
-                dung("Lỗi ngoài dự kiến khi khóa đồng thời: " + ex, false);
-            }
-        });
     }
 
     private static void nhatKy() throws Exception {

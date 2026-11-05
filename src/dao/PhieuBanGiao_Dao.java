@@ -139,7 +139,7 @@ public class PhieuBanGiao_Dao {
 
                 String idSql = "SELECT 'PBG' + RIGHT('00000' + CAST(COALESCE(MAX("
                         + "TRY_CONVERT(INT, SUBSTRING(maPhieuBG, 4, 18))), 0) + 1 AS VARCHAR(18)), 5) "
-                        + "FROM PhieuBanGiao WITH (UPDLOCK, HOLDLOCK)";
+                        + "FROM PhieuBanGiao";
                 String id;
                 try (PreparedStatement statement = connection.prepareStatement(idSql);
                      ResultSet result = statement.executeQuery()) {

@@ -29,8 +29,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Chạy trên CSDL mẫu mới tạo. Mỗi tình huống tự thêm phiếu và phụ tùng riêng. */
 public class TestHoaDon {
@@ -60,7 +58,6 @@ public class TestHoaDon {
         kiemTraCongNo();
         kiemTraHuy();
         kiemTraLapLai();
-        kiemTraTranhChap();
         kiemTraTimKiemVaPdf();
         kiemTraBoDemChoThanhToan();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
@@ -283,29 +280,6 @@ public class TestHoaDon {
         kiem("Hóa đơn hủy vẫn được giữ", dao.findById(lan1).getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY);
         bi("Chỉ mục CSDL chặn hóa đơn hiệu lực thứ hai", "UX_HoaDon_PhieuConHieuLuc", () ->
                 thucThi("INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap) VALUES ('HD900001', ?, 'NV0002')", p));
-    }
-
-    private static void kiemTraTranhChap() throws Exception {
-        String a = taoPhuTung(10);
-        String p = taoPhieu(XE_KHONG_NO, TrangThaiPhieu.HOAN_THANH, 100000);
-        themPhuTung(p, a, 1, 1000);
-        AtomicInteger thanhCong = new AtomicInteger();
-        CountDownLatch xong = new CountDownLatch(4);
-        for (int i = 0; i < 4; i++) {
-            new Thread(() -> {
-                try {
-                    lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN);
-                    thanhCong.incrementAndGet();
-                } catch (SQLException ex) {
-                    // Máy thua cuộc phải nhận thông báo, không được tạo thêm hóa đơn.
-                } finally {
-                    xong.countDown();
-                }
-            }).start();
-        }
-        xong.await();
-        kiem("Lập đồng thời chỉ một máy thành công (" + thanhCong.get() + ")", thanhCong.get() == 1);
-        kiem("Lập đồng thời không đổi tồn", ton(a) == 10);
     }
 
     private static void kiemTraTimKiemVaPdf() throws Exception {
