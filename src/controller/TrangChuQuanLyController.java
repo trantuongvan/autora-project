@@ -1,5 +1,6 @@
 package controller;
 
+import dao.PhuTung_Dao;
 import dao.TrangChuQuanLy_Dao;
 import entity.DoanhThuNgay;
 import entity.PhuTung;
@@ -130,7 +131,7 @@ public class TrangChuQuanLyController {
         s.tyTrong = dao.tyTrongThang(homNay.getYear(), homNay.getMonthValue());
         s.bayNgay = dao.doanhThuTheoNgay(homNay.minusDays(6), homNay);
         s.bang = dao.bangDoanhThu(tu, den);
-        s.tonKho = dao.canhBaoTonKho();
+        s.tonKho = new PhuTung_Dao().findDuoiNguongCanhBao("");
         return s;
     }
 

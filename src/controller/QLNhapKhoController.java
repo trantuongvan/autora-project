@@ -360,6 +360,13 @@ public class QLNhapKhoController {
             try {
                 gia = FormatUtil.parseCurrency(txtGia.getText());
                 if (gia <= 0) throw new NumberFormatException();
+                if (!ct.getPhuTung().giaNhapHopLe(gia)) {
+                    loiGia = true;
+                    if (thongBaoLoi == null) {
+                        thongBaoLoi = "Đơn giá nhập của mã " + ct.getPhuTung().getMaSKU()
+                                + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.";
+                    }
+                }
             } catch (NumberFormatException ex) {
                 loiGia = true;
                 if (thongBaoLoi == null) thongBaoLoi = "Đơn giá nhập phải lớn hơn 0";
@@ -570,6 +577,9 @@ public class QLNhapKhoController {
         }
         if (gia <= 0) {
             return "đơn giá \"" + donGia + "\" không hợp lệ.";
+        }
+        if (!pt.giaNhapHopLe(gia)) {
+            return "đơn giá \"" + donGia + "\" cao hơn giá bán lẻ của mã " + pt.getMaSKU() + ".";
         }
         maTrongFile.add(pt.getMaSKU());
         for (ChiTietNhapKho daCo : dsChiTietModal) {

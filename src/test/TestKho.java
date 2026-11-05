@@ -76,6 +76,7 @@ public class TestKho {
         kiemTraDoiChuXe();
         kiemTraHaiMayCungDoiTon();
         kiemTraDieuKienBanGiao();
+        kiemTraGiaNhapVuotGiaBan();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
         if (soLoi > 0) {
             System.exit(1);
@@ -109,6 +110,57 @@ public class TestKho {
             t.join();
         }
         return thanhCong.get();
+    }
+
+    private static PhieuNhapKho phieuNhap(String ma, double gia) {
+        return new PhieuNhapKho(ma, LocalDateTime.now(), gia, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
+    }
+
+    private static void kiemTraGiaNhapVuotGiaBan() throws Exception {
+        PhuTung_Dao dao = new PhuTung_Dao();
+        PhieuNhapKho_Dao nhapKho = new PhieuNhapKho_Dao();
+        String sku = "SKU_SPK01";
+        PhuTung goc = dao.findById(sku);
+        int tonGoc = ton(sku);
+
+        PhieuNhapKho cao = phieuNhap("PNG0001", goc.getGiaBanLe() + 1000);
+        try {
+            nhapKho.insertWithDetails(cao, Arrays.asList(new ChiTietNhapKho(cao, new PhuTung(sku), 1, goc.getGiaBanLe() + 1000)));
+            kiem("Nhập kho giá vượt giá bán phải bị từ chối", false);
+        } catch (IllegalArgumentException ex) {
+            kiem("Lý do từ chối nói về giá bán lẻ: " + ex.getMessage(), ex.getMessage().contains("giá bán lẻ"));
+        }
+        kiem("Bị từ chối thì tồn giữ nguyên", ton(sku) == tonGoc);
+        kiem("Bị từ chối thì giá nhập giữ nguyên", dao.findById(sku).getGiaNhap() == goc.getGiaNhap());
+        kiem("Bị từ chối thì không có phiếu nhập", so("SELECT COUNT(*) FROM PhieuNhapKho WHERE maPhieuNhap = 'PNG0001'") == 0);
+
+        PhieuNhapKho bangGia = phieuNhap("PNG0002", goc.getGiaBanLe());
+        nhapKho.insertWithDetails(bangGia, Arrays.asList(new ChiTietNhapKho(bangGia, new PhuTung(sku), 1, goc.getGiaBanLe())));
+        kiem("Giá nhập bằng giá bán vẫn nhập được", ton(sku) == tonGoc + 1);
+
+        // Dữ liệu đã lỡ lưu trước khi có quy tắc này.
+        thucThi("UPDATE PhuTung SET giaNhap = giaBanLe + 1000, soLuongTon = 1 WHERE maSKU = '" + sku + "'");
+        kiem("Giá cũ vượt giá bán: vẫn đọc được một phụ tùng", dao.findById(sku).getGiaNhap() == goc.getGiaBanLe() + 1000);
+        kiem("Giá cũ vượt giá bán: danh sách vẫn đọc được", dao.findAll().contains(dao.findById(sku)));
+        kiem("Giá cũ vượt giá bán: cảnh báo tồn vẫn đọc được", dao.findDuoiNguongCanhBao("").contains(dao.findById(sku)));
+        String p = taoPhieu("Đang sửa");
+        String m = taoYeuCau(p, sku, 1);
+        yc.duyetXuatKho(m, p, "NV0004", dong(m, sku, 1), NGUOI);
+        kiem("Giá cũ vượt giá bán: vẫn duyệt xuất được", ton(sku) == 0);
+        PhuTung sua = dao.findById(sku);
+        sua.setGiaBanLe(sua.getGiaNhap() + 5000);
+        kiem("Tăng giá bán để sửa dữ liệu", dao.update(sua));
+        PhieuNhapKho sauSua = phieuNhap("PNG0003", sua.getGiaNhap());
+        nhapKho.insertWithDetails(sauSua, Arrays.asList(new ChiTietNhapKho(sauSua, new PhuTung(sku), 1, sua.getGiaNhap())));
+        kiem("Sửa xong thì nhập kho lại được", ton(sku) == 1);
+        try {
+            new PhuTung(sku, "A", "", "", 2000, 1000, 1, 1);
+            kiem("Tạo phụ tùng giá bán thấp hơn giá nhập phải bị từ chối", false);
+        } catch (IllegalArgumentException ex) {
+            kiem("Tạo phụ tùng vẫn kiểm tra giá bán", true);
+        }
+        thucThi("UPDATE PhuTung SET giaNhap = " + goc.getGiaNhap() + ", giaBanLe = " + goc.getGiaBanLe()
+                + ", soLuongTon = " + tonGoc + " WHERE maSKU = '" + sku + "'");
     }
 
     private static PhieuTiepNhanVaSuaChua phieuBanGiao(int tong, int xong, TrangThaiHoaDon hoaDon, boolean duocGhiNo) {
@@ -180,6 +232,7 @@ public class TestKho {
         }
         PhuTung pt = new PhuTung(sku);
         pt.setSoLuongTon(2);
+        pt.setGiaBanLe(9000);
         kiem("Đủ tồn", pt.duTon(2) && !pt.duTon(3));
         pt.nhapKho(1, 5000);
         kiem("Nhập kho cộng tồn và đổi giá nhập", pt.getSoLuongTon() == 3 && pt.getGiaNhap() == 5000);

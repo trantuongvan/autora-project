@@ -119,10 +119,19 @@ public class PhuTung {
         soLuongTon -= soLuong;
     }
 
+    /** Giá bán lẻ không được thấp hơn giá nhập, kể cả khi giá nhập tăng lúc nhập kho. */
+    public boolean giaNhapHopLe(double giaNhapMoi) {
+        return giaNhapMoi <= giaBanLe;
+    }
+
     /** Cộng tồn khi nhập kho; giá nhập của phụ tùng lấy theo lần nhập này. */
     public void nhapKho(int soLuong, double giaNhapMoi) {
         if (soLuong <= 0) {
             throw new IllegalArgumentException("Số lượng nhập phải lớn hơn 0.");
+        }
+        if (!giaNhapHopLe(giaNhapMoi)) {
+            throw new IllegalArgumentException("Giá nhập của mã " + maSKU
+                    + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.");
         }
         setGiaNhap(giaNhapMoi);
         soLuongTon += soLuong;
