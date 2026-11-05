@@ -83,19 +83,19 @@ public class TestKho {
         void chay() throws Exception;
     }
 
-    /** Hai việc bắt đầu cùng lúc như hai máy; trả về số việc thành công. */
-    private static int chayCungLuc(Viec a, Viec b) throws Exception {
+    /** Các việc bắt đầu cùng lúc như nhiều máy; trả về số việc thành công. */
+    private static int chayCungLuc(List<Viec> dsViec) throws Exception {
         CountDownLatch batDau = new CountDownLatch(1);
         AtomicInteger thanhCong = new AtomicInteger();
         List<Thread> luong = new ArrayList<>();
-        for (Viec viec : Arrays.asList(a, b)) {
+        for (Viec viec : dsViec) {
             Thread t = new Thread(() -> {
                 try {
                     batDau.await();
                     viec.chay();
                     thanhCong.incrementAndGet();
                 } catch (Exception ex) {
-                    System.out.println("Một máy bị từ chối: " + ex.getMessage());
+                    // Máy bị từ chối là kết quả mong đợi; số việc thành công mới là điều được kiểm tra.
                 }
             });
             t.start();
@@ -111,28 +111,35 @@ public class TestKho {
     private static void kiemTraHaiMayCungDoiTon() throws Exception {
         PhieuNhapKho_Dao nhapKho = new PhieuNhapKho_Dao();
         String sku = "SKU_FLT01";
+        int soMay = 8;
         for (int lan = 1; lan <= 5; lan++) {
             thucThi("UPDATE PhuTung SET soLuongTon = 1 WHERE maSKU = '" + sku + "'");
-            String p1 = taoPhieu("Đang sửa");
-            String p2 = taoPhieu("Đang sửa");
-            String m1 = taoYeuCau(p1, sku, 1);
-            String m2 = taoYeuCau(p2, sku, 1);
-            int thanhCong = chayCungLuc(
-                    () -> yc.duyetXuatKho(m1, p1, "NV0004", dong(m1, sku, 1), NGUOI),
-                    () -> yc.duyetXuatKho(m2, p2, "NV0004", dong(m2, sku, 1), NGUOI));
-            kiem("Hai máy duyệt phụ tùng cuối: đúng một máy thành công, lần " + lan, thanhCong == 1);
-            kiem("Hai máy duyệt phụ tùng cuối: tồn về 0, lần " + lan, ton(sku) == 0);
-            kiem("Máy thua không làm đổi yêu cầu của mình, lần " + lan,
-                    "Đã xuất".equals(trangThaiYeuCau(m1)) != "Đã xuất".equals(trangThaiYeuCau(m2)));
+            List<Viec> duyet = new ArrayList<>();
+            List<String> dsYeuCau = new ArrayList<>();
+            for (int may = 0; may < soMay; may++) {
+                String p = taoPhieu("Đang sửa");
+                String m = taoYeuCau(p, sku, 1);
+                dsYeuCau.add(m);
+                duyet.add(() -> yc.duyetXuatKho(m, p, "NV0004", dong(m, sku, 1), NGUOI));
+            }
+            kiem("Nhiều máy duyệt phụ tùng cuối: đúng một máy thành công, lần " + lan, chayCungLuc(duyet) == 1);
+            kiem("Nhiều máy duyệt phụ tùng cuối: tồn về 0, lần " + lan, ton(sku) == 0);
+            int daXuat = 0;
+            for (String m : dsYeuCau) {
+                if ("Đã xuất".equals(trangThaiYeuCau(m))) {
+                    daXuat++;
+                }
+            }
+            kiem("Máy bị từ chối không đổi yêu cầu của mình, lần " + lan, daXuat == 1);
 
             thucThi("UPDATE PhuTung SET soLuongTon = 10 WHERE maSKU = '" + sku + "'");
-            PhieuNhapKho a = new PhieuNhapKho("PNH9" + lan + "01", LocalDateTime.now(), 3000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
-            PhieuNhapKho b = new PhieuNhapKho("PNH9" + lan + "02", LocalDateTime.now(), 4000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
-            thanhCong = chayCungLuc(
-                    () -> nhapKho.insertWithDetails(a, Arrays.asList(new ChiTietNhapKho(a, new PhuTung(sku), 3, 1000))),
-                    () -> nhapKho.insertWithDetails(b, Arrays.asList(new ChiTietNhapKho(b, new PhuTung(sku), 4, 1000))));
-            kiem("Hai máy cùng nhập kho đều thành công, lần " + lan, thanhCong == 2);
-            kiem("Hai máy cùng nhập kho: cộng đủ cả hai, lần " + lan, ton(sku) == 17);
+            List<Viec> nhap = new ArrayList<>();
+            for (int may = 0; may < soMay; may++) {
+                PhieuNhapKho phieu = new PhieuNhapKho("PNH9" + lan + may, LocalDateTime.now(), 1000, new NhaCungCap("NCC0001"), new NhanVien("NV0004"));
+                nhap.add(() -> nhapKho.insertWithDetails(phieu, Arrays.asList(new ChiTietNhapKho(phieu, new PhuTung(sku), 1, 1000))));
+            }
+            kiem("Nhiều máy cùng nhập kho đều thành công, lần " + lan, chayCungLuc(nhap) == soMay);
+            kiem("Nhiều máy cùng nhập kho: cộng đủ, lần " + lan, ton(sku) == 10 + soMay);
         }
         PhuTung pt = new PhuTung(sku);
         pt.setSoLuongTon(2);
