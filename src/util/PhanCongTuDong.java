@@ -100,8 +100,8 @@ public class PhanCongTuDong {
                 continue;
             }
             if (!ranhTot) {
-                ketQua.ghiChu.add("Không có kỹ thuật viên đủ kỹ năng đang rảnh cho \"" + ten(dv) + "\"; đã giao cho "
-                        + tot.nhanVien.getHoTen() + ", người xong sớm nhất.");
+                ketQua.ghiChu.add("Đã giao \"" + ten(dv) + "\" cho " + tot.nhanVien.getHoTen()
+                        + " (xong sớm nhất) vì chưa có kỹ thuật viên đủ kỹ năng đang rảnh.");
             }
             hangTot.phut += tot.phut;
             hangTot.soViec++;

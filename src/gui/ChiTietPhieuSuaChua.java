@@ -55,7 +55,7 @@ public class ChiTietPhieuSuaChua extends JPanel {
     private final JLabel lblTongTienCong = UIComponents.label("", UIConstants.FONT_SECTION_TITLE, UIConstants.TEXT_DARK);
 
     private final JLabel lblLoi = UIComponents.errorLabel();
-    private final JButton btnQuayVe = UIComponents.nutPhu("Quay về");
+    private final JButton btnQuayVe = UIComponents.nutPhu("Về danh sách phiếu");
     private final JButton btnHuyPhieu = UIComponents.nutPhu("Hủy phiếu");
     private final JButton btnInPhieu = UIComponents.nutPhu("In phiếu");
     private final JButton btnTuDongPhanCong = UIComponents.nutPhu("Tự động phân công");

@@ -19,6 +19,8 @@ import gui.ChiTietPhieuSuaChua;
 import util.PdfExporter;
 
 import javax.swing.*;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.Desktop;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +29,9 @@ import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /** Điều phối chi tiết phiếu: dòng dịch vụ, chỉ định thợ, KTV phụ trách, trạng thái, hủy và in phiếu. */
@@ -61,6 +65,14 @@ public class ChiTietPhieuSuaChuaController {
         view.getBtnHuyPhieu().addActionListener(e -> huyPhieu());
         view.getBtnInPhieu().addActionListener(e -> inPhieu());
         view.getBtnQuayVe().addActionListener(e -> dieuHuong.moDanhSach());
+        // Cảnh báo tự phân công cũ không còn đúng khi người dùng tự chọn thợ.
+        view.getTblChiTiet().getColumnModel().getColumn(ChiTietPhieuSuaChua.COT_THO).getCellEditor()
+                .addCellEditorListener(new CellEditorListener() {
+                    @Override
+                    public void editingStopped(ChangeEvent e) { view.hienLoi(null); }
+                    @Override
+                    public void editingCanceled(ChangeEvent e) { }
+                });
     }
 
     // Thao tác đơn lẻ trên một phiếu nên gọi DAO trực tiếp trên EDT.
@@ -156,7 +168,7 @@ public class ChiTietPhieuSuaChuaController {
         moi.setDichVu(dv);
         moi.setTrangThaiTienDo(TrangThaiTienDo.CHO_SUA);
         moi.setTienCongThucTe(dv.getTienCong());
-        ghi(() -> chiTietDao.insert(moi));
+        ghiGiuThayDoi(() -> chiTietDao.insert(moi));
         for (int i = 0; i < danhSach.size(); i++) {
             if (danhSach.get(i).getDichVu().equals(dv)) {
                 tuChonTho(Collections.singletonList(i), false);
@@ -216,7 +228,32 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi("Không thể xóa dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> chiTietDao.delete(maPhieu, dang.getDichVu().getMaDichVu()));
+        ghiGiuThayDoi(() -> chiTietDao.delete(maPhieu, dang.getDichVu().getMaDichVu()));
+    }
+
+    /** Thêm/xóa dòng tải lại bảng từ CSDL; giữ lại thợ, tiền công, KTV phụ trách và ghi chú chưa lưu của các dòng khác. */
+    private void ghiGiuThayDoi(ThaoTacGhi thaoTac) {
+        if (view.getTblChiTiet().isEditing()) {
+            view.getTblChiTiet().getCellEditor().stopCellEditing();
+        }
+        Map<DichVu, Object[]> dangSua = new HashMap<>();
+        for (int i = 0; i < danhSach.size(); i++) {
+            dangSua.put(danhSach.get(i).getDichVu(), new Object[] {
+                view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO),
+                view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_TIEN_CONG)});
+        }
+        Object ktv = view.getCboKtvPhuTrach().getSelectedItem();
+        String ghiChu = view.getTxtGhiChuKyThuat().getText();
+        ghi(thaoTac);
+        for (int i = 0; i < danhSach.size(); i++) {
+            Object[] cu = dangSua.get(danhSach.get(i).getDichVu());
+            if (cu != null) {
+                view.getTableModel().setValueAt(cu[0], i, ChiTietPhieuSuaChua.COT_THO);
+                view.getTableModel().setValueAt(cu[1], i, ChiTietPhieuSuaChua.COT_TIEN_CONG);
+            }
+        }
+        view.getCboKtvPhuTrach().setSelectedItem(ktv);
+        view.getTxtGhiChuKyThuat().setText(ghiChu);
     }
 
     private void luuPhanCong() {
