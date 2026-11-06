@@ -198,14 +198,9 @@ public class PhuTung_Dao {
         }
     }
 
-    /**
-     * Đọc tồn và giá nhập trong transaction của người gọi. Khóa dòng để hai máy đổi cùng phụ tùng phải chờ nhau,
-     * máy sau đọc được số tồn mới nên không ghi đè mất thay đổi của máy trước.
-     * Người gọi phải khóa phụ tùng trước khi ghi bảng khác, nếu không nhiều máy cùng lúc sẽ deadlock.
-     * CAST vì driver gửi chuỗi kiểu NVARCHAR; so sánh trực tiếp với cột VARCHAR cũng gây deadlock khi kiểm thử.
-     */
+    /** Đọc tồn và giá nhập trong transaction của người gọi. */
     static PhuTung docDeDoiTon(Connection c, String maSKU) throws SQLException {
-        String sql = "SELECT soLuongTon, giaNhap, giaBanLe FROM PhuTung WITH (UPDLOCK, ROWLOCK) WHERE maSKU = CAST(? AS VARCHAR(30))";
+        String sql = "SELECT soLuongTon, giaNhap, giaBanLe FROM PhuTung WHERE maSKU = ?";
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setString(1, maSKU);
             try (ResultSet r = p.executeQuery()) {
@@ -222,7 +217,7 @@ public class PhuTung_Dao {
     }
 
     static void luuTon(Connection c, PhuTung pt) throws SQLException {
-        String sql = "UPDATE PhuTung SET soLuongTon = ?, giaNhap = ? WHERE maSKU = CAST(? AS VARCHAR(30))";
+        String sql = "UPDATE PhuTung SET soLuongTon = ?, giaNhap = ? WHERE maSKU = ?";
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setInt(1, pt.getSoLuongTon());
             p.setDouble(2, pt.getGiaNhap());

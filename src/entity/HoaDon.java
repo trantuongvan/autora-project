@@ -17,7 +17,6 @@ public class HoaDon {
     private HinhThucThanhToan hinhThucThanhToan = HinhThucThanhToan.TIEN_MAT;
     private TrangThaiHoaDon trangThaiThanhToan = TrangThaiHoaDon.DA_THANH_TOAN;
     private String lyDoHuy;
-    private NhanVien nhanVienLap;
     private KhuyenMai khuyenMai;
     private Thue thue;
 
@@ -28,9 +27,28 @@ public class HoaDon {
         setMaHD(maHD);
     }
 
+    /** Hóa đơn đã lưu, đọc kèm phiếu bàn giao. */
+    public HoaDon(String maHD, TrangThaiHoaDon trangThaiThanhToan, double tongTienCong, double tongTienPhuTung,
+            double tongTienGiam, double tongTienVAT, double tongThanhToan, Thue thue) {
+        setMaHD(maHD);
+        setTrangThaiThanhToan(trangThaiThanhToan);
+        setTongTienCong(tongTienCong);
+        setTongTienPhuTung(tongTienPhuTung);
+        setTongTienGiam(tongTienGiam);
+        setTongTienVAT(tongTienVAT);
+        setTongThanhToan(tongThanhToan);
+        this.thue = thue;
+    }
+
+    /** Hóa đơn đã lưu, đọc kèm lịch sử sửa chữa: chỉ cần trạng thái và tổng tiền. */
+    public HoaDon(TrangThaiHoaDon trangThaiThanhToan, double tongThanhToan) {
+        setTrangThaiThanhToan(trangThaiThanhToan);
+        setTongThanhToan(tongThanhToan);
+    }
+
     public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
             double tongTienGiam, double tongTienVAT, double tongThanhToan, HinhThucThanhToan hinhThucThanhToan,
-            TrangThaiHoaDon trangThaiThanhToan, String lyDoHuy, NhanVien nhanVienLap, KhuyenMai khuyenMai, Thue thue) {
+            TrangThaiHoaDon trangThaiThanhToan, String lyDoHuy, KhuyenMai khuyenMai, Thue thue) {
         setMaHD(maHD);
         setPhieu(phieu);
         setNgayLap(ngayLap);
@@ -42,7 +60,6 @@ public class HoaDon {
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
-        this.nhanVienLap = nhanVienLap;
         this.khuyenMai = khuyenMai;
         this.thue = thue;
     }
@@ -51,7 +68,7 @@ public class HoaDon {
         return maHD;
     }
 
-    public void setMaHD(String maHD) {
+    private void setMaHD(String maHD) {
         if (maHD == null || !maHD.matches("^HD\\d{6}$")) {
             throw new IllegalArgumentException("Mã hóa đơn phải là HD và 6 chữ số.");
         }
@@ -62,7 +79,7 @@ public class HoaDon {
         return phieu;
     }
 
-    public void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
+    private void setPhieu(PhieuTiepNhanVaSuaChua phieu) {
         if (phieu == null) {
             throw new IllegalArgumentException("Phiếu sửa chữa không tồn tại hoặc chưa xong");
         }
@@ -74,7 +91,7 @@ public class HoaDon {
     }
 
     // Không chặn ngày tương lai: ngày do máy chủ CSDL sinh, đồng hồ máy trạm lệch không được làm hỏng việc đọc danh sách.
-    public void setNgayLap(LocalDateTime ngayLap) {
+    private void setNgayLap(LocalDateTime ngayLap) {
         this.ngayLap = ngayLap;
     }
 
@@ -82,7 +99,7 @@ public class HoaDon {
         return tongTienCong;
     }
 
-    public void setTongTienCong(double tongTienCong) {
+    private void setTongTienCong(double tongTienCong) {
         this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
     }
 
@@ -90,7 +107,7 @@ public class HoaDon {
         return tongTienPhuTung;
     }
 
-    public void setTongTienPhuTung(double tongTienPhuTung) {
+    private void setTongTienPhuTung(double tongTienPhuTung) {
         this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
     }
 
@@ -98,7 +115,7 @@ public class HoaDon {
         return tongTienGiam;
     }
 
-    public void setTongTienGiam(double tongTienGiam) {
+    private void setTongTienGiam(double tongTienGiam) {
         this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
     }
 
@@ -106,7 +123,7 @@ public class HoaDon {
         return tongTienVAT;
     }
 
-    public void setTongTienVAT(double tongTienVAT) {
+    private void setTongTienVAT(double tongTienVAT) {
         this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
     }
 
@@ -114,7 +131,7 @@ public class HoaDon {
         return tongThanhToan;
     }
 
-    public void setTongThanhToan(double tongThanhToan) {
+    private void setTongThanhToan(double tongThanhToan) {
         this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
     }
 
@@ -140,7 +157,7 @@ public class HoaDon {
         return trangThaiThanhToan;
     }
 
-    public void setTrangThaiThanhToan(TrangThaiHoaDon trangThaiThanhToan) {
+    private void setTrangThaiThanhToan(TrangThaiHoaDon trangThaiThanhToan) {
         if (trangThaiThanhToan == null) {
             throw new IllegalArgumentException("Trạng thái thanh toán không hợp lệ");
         }
@@ -151,19 +168,15 @@ public class HoaDon {
         return lyDoHuy;
     }
 
-    public void setLyDoHuy(String lyDoHuy) {
+    private void setLyDoHuy(String lyDoHuy) {
+        this.lyDoHuy = chuanHoaLyDoHuy(lyDoHuy);
+    }
+
+    public static String chuanHoaLyDoHuy(String lyDoHuy) {
         if (lyDoHuy != null && lyDoHuy.trim().length() > 255) {
             throw new IllegalArgumentException("Lý do hủy không được quá 255 ký tự.");
         }
-        this.lyDoHuy = lyDoHuy == null ? null : lyDoHuy.trim();
-    }
-
-    public NhanVien getNhanVienLap() {
-        return nhanVienLap;
-    }
-
-    public void setNhanVienLap(NhanVien nhanVienLap) {
-        this.nhanVienLap = nhanVienLap;
+        return lyDoHuy == null ? null : lyDoHuy.trim();
     }
 
     /** Null khi hóa đơn không áp dụng khuyến mãi. */

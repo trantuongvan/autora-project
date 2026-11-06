@@ -139,7 +139,7 @@ public class PhieuBanGiao_Dao {
 
                 String idSql = "SELECT 'PBG' + RIGHT('00000' + CAST(COALESCE(MAX("
                         + "TRY_CONVERT(INT, SUBSTRING(maPhieuBG, 4, 18))), 0) + 1 AS VARCHAR(18)), 5) "
-                        + "FROM PhieuBanGiao WITH (UPDLOCK, HOLDLOCK)";
+                        + "FROM PhieuBanGiao";
                 String id;
                 try (PreparedStatement statement = connection.prepareStatement(idSql);
                      ResultSet result = statement.executeQuery()) {
@@ -231,17 +231,11 @@ public class PhieuBanGiao_Dao {
         phieu.setSoHangMucHoanThanh(result.getInt("soHangMucXong"));
         String maHD = result.getString("maHD");
         if (!maHD.isEmpty()) {
-            HoaDon hoaDon = new HoaDon(maHD);
-            hoaDon.setTongTienCong(result.getDouble("tienCong"));
-            hoaDon.setTongTienPhuTung(result.getDouble("tienPhuTung"));
-            hoaDon.setTongTienGiam(result.getDouble("giam"));
-            hoaDon.setTongTienVAT(result.getDouble("vat"));
-            hoaDon.setTongThanhToan(result.getDouble("tong"));
-            hoaDon.setTrangThaiThanhToan(TrangThaiHoaDon.fromDb(result.getString("thanhToan")));
             Thue thue = new Thue();
             thue.setThueSuat(result.getDouble("thueSuat"));
-            hoaDon.setThue(thue);
-            phieu.setHoaDon(hoaDon);
+            phieu.setHoaDon(new HoaDon(maHD, TrangThaiHoaDon.fromDb(result.getString("thanhToan")),
+                    result.getDouble("tienCong"), result.getDouble("tienPhuTung"), result.getDouble("giam"),
+                    result.getDouble("vat"), result.getDouble("tong"), thue));
         }
         String maBanGiao = result.getString("maPhieuBG");
         if (!maBanGiao.isEmpty()) {
