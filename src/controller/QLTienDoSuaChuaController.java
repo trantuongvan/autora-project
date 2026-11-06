@@ -8,6 +8,7 @@ import entity.*;
 import gui.QLTienDoSuaChua;
 import gui.TrangChuKyThuatVien;
 import util.FormatUtil;
+import util.PhienDangNhap;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -322,7 +323,7 @@ public class QLTienDoSuaChuaController {
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(view, "Không cập nhật được phiếu " + ma
-                        + ": phiếu đã có hóa đơn, đã hủy hoặc vừa được người khác đổi trạng thái.",
+                        + ": phiếu đã có hóa đơn, đã hủy hoặc đã đổi trạng thái.",
                         "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             }
             taiLai(ma);

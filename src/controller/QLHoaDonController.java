@@ -3,7 +3,7 @@ package controller;
 import dao.HoaDon_Dao;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiHoaDon;
 import gui.QLHoaDon;
