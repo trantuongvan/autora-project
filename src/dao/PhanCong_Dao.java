@@ -3,7 +3,7 @@ package dao;
 import connection.ConnectDB;
 import entity.DichVu;
 import entity.NhanVien;
-import entity.PhanCongTuDong;
+import util.PhanCongTuDong;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

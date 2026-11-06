@@ -1,7 +1,7 @@
 package dao;
 
 import connection.ConnectDB;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.VaiTro;
 import util.MatKhauUtil;
 import java.sql.Connection;

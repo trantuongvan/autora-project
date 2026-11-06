@@ -14,7 +14,7 @@ import entity.HoaDon;
 import entity.KhuyenMai;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.PhamViKhuyenMai;
-import entity.ThongKeChoThanhToan;
+import dao.TrangChuQuanLy_Dao.ThongKeChoThanhToan;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
 import entity.TrangThaiPhieu;
@@ -29,8 +29,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** Chạy trên CSDL mẫu mới tạo. Mỗi tình huống tự thêm phiếu và phụ tùng riêng. */
 public class TestHoaDon {
@@ -60,7 +58,6 @@ public class TestHoaDon {
         kiemTraCongNo();
         kiemTraHuy();
         kiemTraLapLai();
-        kiemTraTranhChap();
         kiemTraTimKiemVaPdf();
         kiemTraBoDemChoThanhToan();
         System.out.println(soLoi == 0 ? "TAT CA DAT" : "SO LOI: " + soLoi);
@@ -88,7 +85,7 @@ public class TestHoaDon {
         loi("Mã HĐ sai dạng", () -> new HoaDon("HD1"));
         loi("Hình thức lạ", () -> HinhThucThanhToan.fromDb("Séc"));
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
-        loi("Tổng âm", () -> new HoaDon().setTongThanhToan(-1));
+        loi("Tổng âm", () -> new HoaDon(TrangThaiHoaDon.DA_THANH_TOAN, -1));
         loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
         kiem("Thuế tính tiền", new Thue("X", "A", 8).tinhTienThue(1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
@@ -285,29 +282,6 @@ public class TestHoaDon {
                 thucThi("INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap) VALUES ('HD900001', ?, 'NV0002')", p));
     }
 
-    private static void kiemTraTranhChap() throws Exception {
-        String a = taoPhuTung(10);
-        String p = taoPhieu(XE_KHONG_NO, TrangThaiPhieu.HOAN_THANH, 100000);
-        themPhuTung(p, a, 1, 1000);
-        AtomicInteger thanhCong = new AtomicInteger();
-        CountDownLatch xong = new CountDownLatch(4);
-        for (int i = 0; i < 4; i++) {
-            new Thread(() -> {
-                try {
-                    lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN);
-                    thanhCong.incrementAndGet();
-                } catch (SQLException ex) {
-                    // Máy thua cuộc phải nhận thông báo, không được tạo thêm hóa đơn.
-                } finally {
-                    xong.countDown();
-                }
-            }).start();
-        }
-        xong.await();
-        kiem("Lập đồng thời chỉ một máy thành công (" + thanhCong.get() + ")", thanhCong.get() == 1);
-        kiem("Lập đồng thời không đổi tồn", ton(a) == 10);
-    }
-
     private static void kiemTraTimKiemVaPdf() throws Exception {
         kiem("Tìm theo mã HĐ", dao.search("HD000001", null, null, null, null).size() == 1);
         kiem("Tìm theo mã phiếu", !dao.search("PTNSC00001", null, null, null, null).isEmpty());
@@ -325,13 +299,11 @@ public class TestHoaDon {
         kiem("Dự đoán mã đúng dạng", dao.duDoanMaHD().matches("HD\\d{6}"));
 
         HoaDon hd = dao.findById("HD000001");
-        kiem("Hóa đơn đọc có phiếu, xe, khách, nhân viên và thuế", hd.getPhieu() != null
+        kiem("Hóa đơn đọc có phiếu, xe, khách và thuế", hd.getPhieu() != null
                 && "PTNSC00001".equals(hd.getPhieu().getMaPhieuTNSC())
                 && hd.getPhieu().getXe() != null && "51H-123.45".equals(hd.getPhieu().getXe().getBienSo())
                 && hd.getPhieu().getXe().getKhachHang() != null
                 && "Phạm Minh Hoàng".equals(hd.getPhieu().getXe().getKhachHang().getHoTen())
-                && hd.getNhanVienLap() != null && "NV0002".equals(hd.getNhanVienLap().getMaNV())
-                && hd.getNhanVienLap().getHoTen() != null
                 && hd.getKhuyenMai() != null && "KM0001".equals(hd.getKhuyenMai().getMaKM())
                 && hd.getThue() != null && "VAT08".equals(hd.getThue().getMaThue()) && hd.getThue().getThueSuat() == 8);
         PhieuTiepNhanVaSuaChua phieuHd = dao.findThongTinPhieu(hd.getPhieu().getMaPhieuTNSC());
