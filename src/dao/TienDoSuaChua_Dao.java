@@ -17,7 +17,7 @@ import java.util.List;
 public class TienDoSuaChua_Dao {
 
     public NhanVien findDefaultKyThuatVien() throws SQLException {
-        entity.PhienDangNhap phien = entity.PhienDangNhap.getHienTai();
+        util.PhienDangNhap phien = util.PhienDangNhap.getHienTai();
         if (phien != null && phien.getMaNV() != null && !phien.getMaNV().trim().isEmpty()) {
             String sqlPhien = "SELECT maNV, hoTen, soDienThoai, diaChi, viTriLamViec FROM NhanVien WHERE maNV = ?";
             try (Connection c = ConnectDB.getConnection();

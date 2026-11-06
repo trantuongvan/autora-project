@@ -4,7 +4,7 @@ import dao.NhatKy_Dao;
 import dao.TaiKhoan_Dao;
 import entity.NhanVien;
 import entity.NhatKyHoatDong;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.TaiKhoan;
 import entity.VaiTro;
 import gui.QLTaiKhoan;

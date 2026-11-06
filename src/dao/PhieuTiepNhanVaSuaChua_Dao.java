@@ -5,7 +5,7 @@ import entity.DichVu;
 import entity.KhachHang;
 import entity.MucUuTien;
 import entity.NhanVien;
-import entity.PhanCongTuDong;
+import util.PhanCongTuDong;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
 import entity.Xe;
@@ -361,7 +361,7 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ, nên hai máy cùng sửa không vượt luồng được. */
+    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ. */
     public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi, String tenDangNhap) throws SQLException {
         if (!cu.coTheChuyenSang(moi)) {
             return false;

@@ -2,9 +2,9 @@ package controller;
 
 import dao.PhuTung_Dao;
 import dao.TrangChuQuanLy_Dao;
-import entity.DoanhThuNgay;
+import dao.TrangChuQuanLy_Dao.DoanhThuNgay;
 import entity.PhuTung;
-import entity.ThongKeChoThanhToan;
+import dao.TrangChuQuanLy_Dao.ThongKeChoThanhToan;
 import gui.TrangChuQuanLy;
 import util.XuatFile;
 

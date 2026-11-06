@@ -172,7 +172,7 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
    - Tiền bạc, số lượng, % nhiên liệu: không được âm.
 4. Ghi đè `equals()` và `hashCode()` theo Khóa chính.
 5. Ghi đè `toString()`.
-6. Phép tính và quy tắc không cần CSDL đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL; DAO chỉ giữ SQL, transaction và khóa dữ liệu.
+6. Phép tính và quy tắc không cần CSDL đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL; DAO chỉ giữ SQL và transaction.
 
 ```java
 // CODE MẪU CHUẨN ENTITY
@@ -450,7 +450,6 @@ AUTORA/
     ├── entity/
     │   ├── NhanVien.java
     │   ├── TaiKhoan.java
-    │   ├── PhienDangNhap.java                      # Lưu session người dùng đăng nhập
     │   ├── KhachHang.java
     │   ├── Xe.java
     │   ├── DichVu.java
@@ -540,6 +539,8 @@ AUTORA/
     │   └── QLThongKe.java                          # JPanel Thống kê đồ họa (JFreeChart)
     │
     ├── util/
+    │   ├── PhienDangNhap.java                      # Lưu session người dùng đăng nhập
+    │   ├── PhanCongTuDong.java                     # Tự chọn kỹ thuật viên cho dịch vụ
     │   ├── UIConstants.java                        # Hằng số màu sắc, font chữ hệ thống
     │   ├── FormatUtil.java                         # Format tiền tệ VNĐ, ngày tháng
     │   ├── VietQRUtil.java                         # Sinh link QR động chuyển khoản

@@ -223,9 +223,8 @@ public class TaiKhoan_Dao {
         }
     }
 
-    /** Luôn gọi đầu tiên trong transaction: khóa giữ tới commit nên hai thao tác đồng thời không cùng đếm được số cũ. */
     private int demChuDangHoatDong(Connection connection) throws SQLException {
-        String sql = "SELECT COUNT(*) FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE vaiTro = ? AND trangThai = 1";
+        String sql = "SELECT COUNT(*) FROM TaiKhoan WHERE vaiTro = ? AND trangThai = 1";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, VaiTro.CHU_CUA_HANG.getText());
             try (ResultSet rs = statement.executeQuery()) {
@@ -238,7 +237,7 @@ public class TaiKhoan_Dao {
     /** Gọi đầu transaction xóa nhân viên: tài khoản bị xóa theo (ON DELETE CASCADE) nên cũng phải giữ Chủ cửa hàng cuối. */
     void chanChuCuoiCuaNhanVien(Connection connection, String maNV) throws SQLException {
         int soChu = demChuDangHoatDong(connection);
-        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WHERE maNV = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maNV);
             try (ResultSet rs = statement.executeQuery()) {
@@ -260,7 +259,7 @@ public class TaiKhoan_Dao {
     }
 
     private TaiKhoan docTaiKhoan(Connection connection, String tenDangNhap) throws SQLException {
-        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE tenDangNhap = ?";
+        String sql = "SELECT vaiTro, trangThai FROM TaiKhoan WHERE tenDangNhap = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, tenDangNhap);
             try (ResultSet rs = statement.executeQuery()) {
@@ -277,7 +276,7 @@ public class TaiKhoan_Dao {
 
     /** cot chỉ nhận tên cột cố định trong lớp này, không nhận dữ liệu người dùng. */
     private boolean tonTai(Connection connection, String cot, String giaTri) throws SQLException {
-        String sql = "SELECT 1 FROM TaiKhoan WITH (UPDLOCK, HOLDLOCK) WHERE " + cot + " = ?";
+        String sql = "SELECT 1 FROM TaiKhoan WHERE " + cot + " = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, giaTri);
             try (ResultSet rs = statement.executeQuery()) {

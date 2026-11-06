@@ -6,6 +6,7 @@ import entity.KhachHang;
 import entity.LichHen;
 import entity.LoaiKhachHang;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiHoaDon;
 import entity.Xe;
 
 import java.sql.Connection;
@@ -171,7 +172,7 @@ public class KhachHang_Dao {
             statement.setString(2, maKH);
             return statement.executeUpdate() == 1;
         } catch (SQLException ex) {
-            // Khách đã có phiếu sửa chữa, hoặc xe vừa được thêm ngay giữa lúc xóa.
+            // Khách đã có phiếu sửa chữa.
             if (ex.getErrorCode() == LOI_VI_PHAM_KHOA_NGOAI) {
                 return false;
             }
@@ -206,7 +207,7 @@ public class KhachHang_Dao {
                 + "STUFF((SELECT N', ' + d.tenDichVu FROM ChiTietSuaChua_DichVu ct "
                 + "JOIN DichVu d ON d.maDichVu = ct.maDichVu WHERE ct.maPhieuTNSC = p.maPhieuTNSC "
                 + "ORDER BY d.tenDichVu FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS hangMuc, "
-                + "hd.tongThanhToan "
+                + "hd.tongThanhToan, hd.trangThaiThanhToan "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "LEFT JOIN HoaDon hd ON hd.maPhieuTNSC = p.maPhieuTNSC AND hd.trangThaiThanhToan <> N'Đã hủy' "
                 + "WHERE p.maKH = ? ORDER BY p.thoiGianTiepNhan DESC, p.maPhieuTNSC DESC";
@@ -220,11 +221,9 @@ public class KhachHang_Dao {
                     Timestamp tiepNhan = rs.getTimestamp(2);
                     phieu.setThoiGianTiepNhan(tiepNhan == null ? null : tiepNhan.toLocalDateTime());
                     phieu.setTomTatHangMuc(rs.getString(3));
-                    double tong = rs.getDouble(4);
-                    if (!rs.wasNull()) {
-                        HoaDon hoaDon = new HoaDon();
-                        hoaDon.setTongThanhToan(tong);
-                        phieu.setHoaDon(hoaDon);
+                    String trangThaiHoaDon = rs.getString(5);
+                    if (trangThaiHoaDon != null) {
+                        phieu.setHoaDon(new HoaDon(TrangThaiHoaDon.fromDb(trangThaiHoaDon), rs.getDouble(4)));
                     }
                     ketQua.add(phieu);
                 }
@@ -234,7 +233,7 @@ public class KhachHang_Dao {
     }
 
     private void chanTrungSoDienThoai(Connection connection, String soDienThoai, String maTru) throws SQLException {
-        String sql = "SELECT 1 FROM KhachHang WITH (UPDLOCK, HOLDLOCK) WHERE soDienThoai = ? AND maKH <> ?";
+        String sql = "SELECT 1 FROM KhachHang WHERE soDienThoai = ? AND maKH <> ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, soDienThoai);
             statement.setString(2, maTru);
@@ -248,7 +247,7 @@ public class KhachHang_Dao {
 
     private String nextId(Connection connection) throws SQLException {
         String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, SUBSTRING(maKH, 3, 18))), 0) + 1 "
-                + "FROM KhachHang WITH (UPDLOCK, HOLDLOCK)";
+                + "FROM KhachHang";
         try (PreparedStatement statement = connection.prepareStatement(sql);
                 ResultSet rs = statement.executeQuery()) {
             rs.next();

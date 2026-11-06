@@ -3,7 +3,7 @@ package controller;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.ChiTietYeuCauXuatKho;
 import entity.NhanVien;
 import entity.PhieuYeuCauXuatKho;

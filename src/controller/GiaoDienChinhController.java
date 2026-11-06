@@ -1,6 +1,6 @@
 package controller;
 
-import entity.PhienDangNhap;
+import util.PhienDangNhap;
 import entity.VaiTro;
 import gui.ChiTietHoaDon;
 import gui.ChiTietPhieuSuaChua;

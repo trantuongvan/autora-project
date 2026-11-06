@@ -269,21 +269,15 @@ public class PhieuYeuCauXuatKho_Dao {
                  PreparedStatement psYC = c.prepareStatement(sqlUpdateYC);
                  PreparedStatement psPTNSC = c.prepareStatement(TRA_PHIEU_VE_DANG_SUA)) {
 
-                List<PhuTung> dsPhuTung = new ArrayList<>();
-                for (ChiTietYeuCauXuatKho ct : chiTietList) {
-                    dsPhuTung.add(PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU()));
-                }
-
-                // Đổi trạng thái trước: hai máy cùng duyệt thì máy sau dừng ở đây, không trừ kho lần nữa.
+                // Đổi trạng thái trước: yêu cầu đã xử lý dừng ở đây, không trừ kho lần nữa.
                 psYC.setString(1, maNVThuKho);
                 psYC.setString(2, maPhieuYC);
                 if (psYC.executeUpdate() != 1) {
                     throw new SQLException("Yêu cầu " + maPhieuYC + " không còn chờ xuất. Bấm Tải dữ liệu để xem lại.");
                 }
 
-                for (int i = 0; i < chiTietList.size(); i++) {
-                    ChiTietYeuCauXuatKho ct = chiTietList.get(i);
-                    PhuTung phuTung = dsPhuTung.get(i);
+                for (ChiTietYeuCauXuatKho ct : chiTietList) {
+                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
                     if (!phuTung.duTon(ct.getSoLuong())) {
                         throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
                     }
@@ -318,7 +312,7 @@ public class PhieuYeuCauXuatKho_Dao {
         }
     }
 
-    /** Trả về false khi yêu cầu không còn chờ xuất, ví dụ máy khác đã duyệt hoặc từ chối trước. */
+    /** Trả về false khi yêu cầu không còn chờ xuất. */
     public boolean tuChoiYeuCau(String maPhieuYC, String maNVThuKho, String tenDangNhap) throws SQLException {
         String sql = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Từ chối', maNV_ThuKho = ? "
                 + "WHERE maPhieuYC = ? AND trangThai = N'Chờ xuất'";

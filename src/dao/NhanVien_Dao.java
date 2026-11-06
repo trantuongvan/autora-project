@@ -176,7 +176,7 @@ public class NhanVien_Dao {
 
     public boolean update(NhanVien employee, String tenDangNhap) throws SQLException {
         String sqlCu = "SELECT hoTen, soDienThoai, diaChi, viTriLamViec "
-                + "FROM NhanVien WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+                + "FROM NhanVien WHERE maNV = ?";
         String sql = "UPDATE NhanVien SET hoTen = ?, soDienThoai = ?, diaChi = ?, "
                 + "viTriLamViec = ?, maCa = ? WHERE maNV = ?";
         try (Connection connection = ConnectDB.getConnection()) {
@@ -254,7 +254,7 @@ public class NhanVien_Dao {
     /** Tài khoản của nhân viên bị xóa theo; ném IllegalStateException nếu đó là Chủ cửa hàng đang hoạt động cuối cùng. */
     public boolean delete(String id, String tenDangNhap) throws SQLException {
         String sqlCu = "SELECT hoTen, soDienThoai, diaChi, viTriLamViec "
-                + "FROM NhanVien WITH (UPDLOCK, HOLDLOCK) WHERE maNV = ?";
+                + "FROM NhanVien WHERE maNV = ?";
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
