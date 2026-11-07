@@ -104,74 +104,60 @@ public class QLBanGiaoXeController {
     private static List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
         List<Object[]> rows = new ArrayList<>();
         for (PhieuTiepNhanVaSuaChua p : dsPhieu) {
-            int phanTramHoanTat = tinhPhanTramHoanTat(p);
-            boolean duDieuKien = duDieuKienBanGiao(p);
             rows.add(new Object[]{
                     p.getMaPhieuTNSC(),
                     p.getXe().getBienSo(),
                     p.getXe().getKhachHang().getHoTen(),
                     p.getTenXe(),
-                    phanTramHoanTat + "%",
-                    getNhanHoaDonBanGiao(p),
+                    tinhPhanTramHoanTat(p) + "%",
+                    getTrangThaiHoaDonHienThi(p),
                     money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan()),
-                    duDieuKien ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
+                    duDieuKienBanGiao(p) ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
             });
         }
         return rows;
     }
 
+    // --- Helper methods replacing PhieuTiepNhanVaSuaChua business logic ---
+
     private static int tinhPhanTramHoanTat(PhieuTiepNhanVaSuaChua p) {
-        return p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
-    }
-
-    private static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        if (tinhPhanTramHoanTat(p) != 100) {
-            return false;
+        int tong = p.getChiTietSuaChua() == null ? 0 : p.getChiTietSuaChua().size();
+        int hoanTat = 0;
+        if (tong > 0) {
+            for (ChiTietSuaChua ct : p.getChiTietSuaChua()) {
+                if (ct.getTrangThai() == TrangThaiChiTietSuaChua.HOAN_TAT) {
+                    hoanTat++;
+                }
+            }
         }
-        if (p.getHoaDon() == null) {
-            return false;
-        }
-        HoaDon hd = p.getHoaDon();
-        if (hd.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO) {
-            return hd.laCongNoHopLe(p.getXe().getKhachHang());
-        }
-        return hd.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN;
-    }
-
-    private static String getNhanHoaDonBanGiao(PhieuTiepNhanVaSuaChua p) {
-        HoaDon hd = p.getHoaDon();
-        if (hd == null) {
-            return "Chưa lập hóa đơn";
-        }
-        if (hd.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && hd.laCongNoHopLe(p.getXe().getKhachHang())) {
-            return "Công nợ hợp lệ";
-        }
-        return hd.getTrangThaiThanhToan().getText();
-    }
-
-    private static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        if (tinhPhanTramHoanTat(p) != 100) {
-            return "Chưa hoàn tất các hạng mục (" + tinhPhanTramHoanTat(p) + "%)";
-        }
-        if (p.getHoaDon() == null) {
-            return "Chưa lập hóa đơn";
-        }
-        HoaDon hd = p.getHoaDon();
-        if (hd.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO) {
-            return "Công nợ không hợp lệ";
-        }
-        return "Chưa thanh toán";
+        return tong == 0 ? 100 : (int) Math.round((double) hoanTat / tong * 100);
     }
 
     private static String getTrangThaiHoaDonHienThi(PhieuTiepNhanVaSuaChua p) {
-        HoaDon hd = p.getHoaDon();
-        if (hd == null) {
-            return "Chưa lập hóa đơn";
-        }
-        if (hd.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO) {
-            return hd.laCongNoHopLe(p.getXe().getKhachHang()) ? "Công nợ hợp lệ" : "Công nợ không hợp lệ";
-        }
-        return hd.getTrangThaiThanhToan().getText();
+        HoaDon hoaDon = p.getHoaDon();
+        if (hoaDon == null) return "Chưa lập hóa đơn";
+        if (hoaDon.getTrangThai() == TrangThaiHoaDon.DA_LAP) return "Đã lập";
+        if (hoaDon.getTrangThai() == TrangThaiHoaDon.DA_HUY) return "Đã hủy";
+        return "Chưa rõ";
+    }
+
+    private static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
+        if (p.getBanGiao() != null) return false;
+        if (p.getHoaDon() == null || p.getHoaDon().getTrangThai() != TrangThaiHoaDon.DA_LAP) return false;
+        if (phanTramTienDo(p) < 100) return false;
+        return true;
+    }
+
+    private static int phanTramTienDo(PhieuTiepNhanVaSuaChua p) {
+        return tinhPhanTramHoanTat(p);
+    }
+
+    private static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
+        if (p.getBanGiao() != null) return "Phiếu đã được bàn giao.";
+        if (p.getHoaDon() == null) return "Chưa lập hóa đơn.";
+        if (p.getHoaDon().getTrangThai() != TrangThaiHoaDon.DA_LAP) return "Hóa đơn chưa hợp lệ.";
+        if (phanTramTienDo(p) < 100) return "Chưa hoàn tất dịch vụ.";
+        return "Không xác định.";
     }
 
     private void detail(String id) {
@@ -182,11 +168,12 @@ public class QLBanGiaoXeController {
             }
             HoaDon hoaDon = p.getHoaDon() == null ? new HoaDon() : p.getHoaDon();
             double taxRate = hoaDon.getThue() == null ? 0 : hoaDon.getThue().getThueSuat();
+            int tienDo = phanTramTienDo(p);
             QLBanGiaoXe.ChiTietBanGiao detail = new QLBanGiaoXe.ChiTietBanGiao();
             detail.xe = p.getXe().getBienSo() + " • " + p.getTenXe();
             detail.chuXeVaPhieu = p.getXe().getKhachHang().getHoTen() + " • " + id;
-            detail.nhanTienDo = "Hoàn tất " + tinhPhanTramHoanTat(p) + "%";
-            detail.hoanTat100 = tinhPhanTramHoanTat(p) == 100;
+            detail.nhanTienDo = "Hoàn tất " + tienDo + "%";
+            detail.hoanTat100 = tienDo == 100;
             detail.tienCong = money(hoaDon.getTongTienCong());
             detail.phuTung = money(hoaDon.getTongTienPhuTung());
             detail.giamGia = "− " + money(hoaDon.getTongTienGiam());

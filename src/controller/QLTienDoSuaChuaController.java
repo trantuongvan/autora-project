@@ -262,7 +262,8 @@ public class QLTienDoSuaChuaController {
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
         String tt = p.getTrangThaiHienThiKTV();
-        int pct = p.phanTramTienDo();
+        // Tính phần trăm từ entity (đã được set bởi TienDoSuaChua_Dao)
+        int pct = p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
