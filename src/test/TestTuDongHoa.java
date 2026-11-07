@@ -1,6 +1,7 @@
 package test;
 
 import controller.ChiTietHoaDonController;
+import controller.QLNhapKhoController;
 import controller.QLTaiKhoanController;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
@@ -72,7 +73,7 @@ public class TestTuDongHoa {
         PhuTung pt = new PhuTung("SKU_X");
         pt.setNguongCanhBao(nguong);
         pt.setSoLuongTon(ton);
-        return pt.soLuongNhapDeXuat();
+        return QLNhapKhoController.soLuongNhapDeXuat(pt);
     }
 
     private static void kiemTraSoLuongNhap() {

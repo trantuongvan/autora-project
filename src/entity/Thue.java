@@ -1,5 +1,7 @@
 package entity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 public class Thue {
@@ -55,7 +57,13 @@ public class Thue {
 
     /** Tiền thuế trên số tiền cơ sở theo thuế suất của loại thuế. */
     public double tinhTienThue(double tongTienCoSo) {
-        return HoaDon.phanTram(tongTienCoSo, thueSuat);
+        return phanTram(tongTienCoSo, thueSuat);
+    }
+
+    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
+    static double phanTram(double coSo, double tyLe) {
+        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
+                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     @Override

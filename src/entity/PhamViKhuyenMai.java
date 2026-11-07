@@ -4,19 +4,19 @@ package entity;
 public enum PhamViKhuyenMai {
     TONG_HOA_DON("Tổng hóa đơn") {
         @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
+        public double coSoGiam(double tienCong, double tienPhuTung) {
             return tienCong + tienPhuTung;
         }
     },
     NHOM_DICH_VU("Nhóm dịch vụ") {
         @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
+        public double coSoGiam(double tienCong, double tienPhuTung) {
             return tienCong;
         }
     },
     PHU_TUNG("Phụ tùng") {
         @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
+        public double coSoGiam(double tienCong, double tienPhuTung) {
             return tienPhuTung;
         }
     };
@@ -32,7 +32,7 @@ public enum PhamViKhuyenMai {
     }
 
     /** Phần tiền của hóa đơn mà khuyến mãi được áp dụng. */
-    abstract double coSoGiam(double tienCong, double tienPhuTung);
+    public abstract double coSoGiam(double tienCong, double tienPhuTung);
 
     public static PhamViKhuyenMai fromDb(String text) {
         for (PhamViKhuyenMai giaTri : values()) {
