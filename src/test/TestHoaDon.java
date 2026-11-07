@@ -482,7 +482,7 @@ public class TestHoaDon {
             hd.setKhuyenMai(km);
         }
         hd.setThue(new Thue("X", "A", thueSuat));
-        hd.tinhTongThanhToan(cong, phuTung);
+        HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(cong, phuTung, hd.getKhuyenMai(), hd.getThue());
         return hd;
     }
 
