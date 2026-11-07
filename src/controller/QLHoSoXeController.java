@@ -146,7 +146,7 @@ public class QLHoSoXeController {
                         p.getMaPhieuTNSC(),
                         p.getThoiGianTiepNhan() == null ? "" : p.getThoiGianTiepNhan().format(NGAY),
                         p.getYeuCauBanDau(),
-                        daTra ? "Hoàn tất " + p.phanTramHoanTat() + "% • Đã thanh toán" : p.getTrangThai().getText(),
+                        daTra ? "Hoàn tất " + QLBanGiaoXeController.tinhPhanTramHoanTat(p) + "% • Đã thanh toán" : p.getTrangThai().getText(),
                         String.format(java.util.Locale.forLanguageTag("vi-VN"), "%,.0f đ",
                                 p.getHoaDon() == null ? 0d : p.getHoaDon().getTongThanhToan()).replace(',', '.')
                 });
