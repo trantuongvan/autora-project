@@ -1,9 +1,11 @@
 package controller;
 
 import dao.TienDoSuaChua_Dao;
+import entity.ChiTietSuaChua_DichVu;
 import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiPhieu;
+import entity.TrangThaiTienDo;
 import gui.QLTienDoSuaChua;
 import gui.TrangChuKyThuatVien;
 
@@ -169,10 +171,10 @@ public class TrangChuKyThuatVienController {
         danhSachHienThi = new ArrayList<>(danhSachTimDuoc.subList(0, gioiHan));
 
         for (PhieuTiepNhanVaSuaChua p : danhSachHienThi) {
-            String tt = p.getTrangThaiHienThiKTV();
+            String tt = getTrangThaiHienThiKTV(p);
             String nhanTrangThai = tt;
             if (p.getTrangThai() == TrangThaiPhieu.DANG_SUA) {
-                nhanTrangThai = "Đang sửa • " + p.phanTramTienDo() + "%";
+                nhanTrangThai = "Đang sửa • " + tinhPhanTramTienDo(p) + "%";
             }
 
             String thaoTac;
@@ -198,6 +200,44 @@ public class TrangChuKyThuatVienController {
         } else {
             view.getLblThongKeBang().setText(danhSachHienThi.size() + " phiếu gần nhất • Ngày " + LocalDate.now().format(DATE_FMT));
         }
+    }
+
+    /** Hiển thị nhãn trạng thái đồng nhất cho riêng phân hệ Kỹ thuật viên */
+    public static String getTrangThaiHienThiKTV(PhieuTiepNhanVaSuaChua p) {
+        TrangThaiPhieu trangThai = p.getTrangThai();
+        return trangThai == null || trangThai == TrangThaiPhieu.CHO_KIEM_TRA ? "Chờ sửa" : trangThai.getText();
+    }
+
+    /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong. */
+    public static int tinhPhanTramTienDo(PhieuTiepNhanVaSuaChua p) {
+        TrangThaiPhieu trangThai = p.getTrangThai();
+        int tongSoHangMuc = p.getTongSoHangMuc();
+        int soHangMucHoanThanh = p.getSoHangMucHoanThanh();
+        if (trangThai == TrangThaiPhieu.HOAN_THANH) {
+            return 100;
+        }
+        if (trangThai == TrangThaiPhieu.CHO_KIEM_TRA) {
+            return tongSoHangMuc > 0 && soHangMucHoanThanh > 0 ? Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc) : 0;
+        }
+        if (tongSoHangMuc > 0) {
+            int phanTram = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            return trangThai == TrangThaiPhieu.DANG_SUA && phanTram == 0 ? 50 : phanTram;
+        }
+        return trangThai == TrangThaiPhieu.DANG_SUA ? 50 : 0;
+    }
+
+    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
+    public static boolean coTheHoanThanh(PhieuTiepNhanVaSuaChua p) {
+        List<ChiTietSuaChua_DichVu> danhSachDichVu = p.getDanhSachDichVu();
+        if (danhSachDichVu.isEmpty()) {
+            return false;
+        }
+        for (ChiTietSuaChua_DichVu d : danhSachDichVu) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void dieuHuongSangTienDo(String maPhieuTNSC, boolean moManHinhYeuCauPT) {

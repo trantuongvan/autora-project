@@ -1,7 +1,5 @@
 package entity;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -32,18 +30,20 @@ public class HoaDon {
             double tongTienGiam, double tongTienVAT, double tongThanhToan, Thue thue) {
         setMaHD(maHD);
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng các giá trị đã tính, không qua setter
+        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
+        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
+        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
+        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
         this.thue = thue;
     }
 
     /** Hóa đơn đã lưu, đọc kèm lịch sử sửa chữa: chỉ cần trạng thái và tổng tiền. */
     public HoaDon(TrangThaiHoaDon trangThaiThanhToan, double tongThanhToan) {
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng không qua setter
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
     }
 
     public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
@@ -52,11 +52,12 @@ public class HoaDon {
         setMaHD(maHD);
         setPhieu(phieu);
         setNgayLap(ngayLap);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng các giá trị đã tính, không qua setter
+        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
+        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
+        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
+        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
@@ -90,7 +91,6 @@ public class HoaDon {
         return ngayLap;
     }
 
-    // Không chặn ngày tương lai: ngày do máy chủ CSDL sinh, đồng hồ máy trạm lệch không được làm hỏng việc đọc danh sách.
     private void setNgayLap(LocalDateTime ngayLap) {
         this.ngayLap = ngayLap;
     }
@@ -99,40 +99,20 @@ public class HoaDon {
         return tongTienCong;
     }
 
-    private void setTongTienCong(double tongTienCong) {
-        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
-    }
-
     public double getTongTienPhuTung() {
         return tongTienPhuTung;
-    }
-
-    private void setTongTienPhuTung(double tongTienPhuTung) {
-        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
     }
 
     public double getTongTienGiam() {
         return tongTienGiam;
     }
 
-    private void setTongTienGiam(double tongTienGiam) {
-        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
-    }
-
     public double getTongTienVAT() {
         return tongTienVAT;
     }
 
-    private void setTongTienVAT(double tongTienVAT) {
-        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
-    }
-
     public double getTongThanhToan() {
         return tongThanhToan;
-    }
-
-    private void setTongThanhToan(double tongThanhToan) {
-        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
     }
 
     private static double khongAm(double giaTri, String loi) {
@@ -179,7 +159,6 @@ public class HoaDon {
         return lyDoHuy == null ? null : lyDoHuy.trim();
     }
 
-    /** Null khi hóa đơn không áp dụng khuyến mãi. */
     public KhuyenMai getKhuyenMai() {
         return khuyenMai;
     }
@@ -188,7 +167,6 @@ public class HoaDon {
         this.khuyenMai = khuyenMai;
     }
 
-    /** Null khi hóa đơn không có loại thuế. */
     public Thue getThue() {
         return thue;
     }
@@ -197,43 +175,8 @@ public class HoaDon {
         this.thue = thue;
     }
 
-    /**
-     * Tính lại mọi khoản từ tiền công, tiền phụ tùng, khuyến mãi và thuế của hóa đơn, làm tròn tới đồng.
-     * Chưa có khuyến mãi hoặc thuế thì khoản đó bằng 0. Màn hình xem trước và lúc lưu dùng cùng công thức này.
-     */
-    public void tinhTongThanhToan(double tienCong, double tienPhuTung) {
-        if (tienCong < 0 || tienPhuTung < 0) {
-            throw new IllegalArgumentException("Số tiền không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
-        double sauGiam = cong + phuTung - giam;
-        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
-        setTongTienCong(cong);
-        setTongTienPhuTung(phuTung);
-        setTongTienGiam(giam);
-        setTongTienVAT(vat);
-        setTongThanhToan(sauGiam + vat);
-    }
-
     public boolean daThanhToan() {
         return trangThaiThanhToan == TrangThaiHoaDon.DA_THANH_TOAN;
-    }
-
-    /** Đã trả đủ, hoặc còn nợ nhưng khách được phép ghi nợ. */
-    public boolean daThanhToanHopLe(KhachHang khachHang) {
-        return daThanhToan() || laCongNoHopLe(khachHang);
-    }
-
-    public boolean laCongNoHopLe(KhachHang khachHang) {
-        return trangThaiThanhToan == TrangThaiHoaDon.CONG_NO && khachHang.duocThanhToanBang(HinhThucThanhToan.CONG_NO);
-    }
-
-    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
-    static double phanTram(double coSo, double tyLe) {
-        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     @Override
