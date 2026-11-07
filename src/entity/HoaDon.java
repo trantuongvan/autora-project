@@ -91,7 +91,6 @@ public class HoaDon {
         return ngayLap;
     }
 
-    // Không chặn ngày tương lai: ngày do máy chủ CSDL sinh, đồng hồ máy trạm lệch không được làm hỏng việc đọc danh sách.
     private void setNgayLap(LocalDateTime ngayLap) {
         this.ngayLap = ngayLap;
     }
@@ -160,7 +159,6 @@ public class HoaDon {
         return lyDoHuy == null ? null : lyDoHuy.trim();
     }
 
-    /** Null khi hóa đơn không áp dụng khuyến mãi. */
     public KhuyenMai getKhuyenMai() {
         return khuyenMai;
     }
@@ -169,7 +167,6 @@ public class HoaDon {
         this.khuyenMai = khuyenMai;
     }
 
-    /** Null khi hóa đơn không có loại thuế. */
     public Thue getThue() {
         return thue;
     }
