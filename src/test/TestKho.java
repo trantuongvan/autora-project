@@ -1,5 +1,6 @@
 package test;
 
+import controller.QLBanGiaoXeController;
 import connection.ConnectDB;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DangNhap_Dao;
@@ -148,20 +149,20 @@ public class TestKho {
     }
 
     private static void kiemTraDieuKienBanGiao() {
-        kiem("Xong hết và đã trả thì được bàn giao", phieuBanGiao(2, 2, TrangThaiHoaDon.DA_THANH_TOAN, false).duDieuKienBanGiao());
-        kiem("Khách được nợ thì được bàn giao", phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true).duDieuKienBanGiao());
-        kiem("Khách không được nợ thì không bàn giao", !phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).duDieuKienBanGiao());
-        kiem("Chưa có hóa đơn thì không bàn giao", !phieuBanGiao(2, 2, null, true).duDieuKienBanGiao());
-        kiem("Còn hạng mục thì không bàn giao", !phieuBanGiao(3, 2, TrangThaiHoaDon.DA_THANH_TOAN, true).duDieuKienBanGiao());
-        kiem("Không có hạng mục thì không bàn giao", !phieuBanGiao(0, 0, TrangThaiHoaDon.DA_THANH_TOAN, true).duDieuKienBanGiao());
-        kiem("Tiến độ làm tròn xuống", phieuBanGiao(3, 2, null, true).phanTramHoanTat() == 66);
-        kiem("Nhãn công nợ hợp lệ", "Công nợ hợp lệ".equals(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true).getNhanHoaDonBanGiao()));
-        kiem("Nhãn công nợ không hợp lệ", "Công nợ".equals(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).getNhanHoaDonBanGiao()));
-        kiem("Nhãn chưa có hóa đơn", "Chưa lập hóa đơn".equals(phieuBanGiao(2, 2, null, true).getNhanHoaDonBanGiao()));
-        kiem("Lý do còn hạng mục", phieuBanGiao(4, 3, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Còn 25%"));
-        kiem("Lý do chưa có hạng mục xong", phieuBanGiao(4, 0, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Chưa có hạng mục"));
-        kiem("Lý do chưa có hóa đơn", phieuBanGiao(2, 2, null, true).lyDoChuaDuDieuKienBanGiao().startsWith("Phiếu chưa có"));
-        kiem("Lý do không được nợ", phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false).lyDoChuaDuDieuKienBanGiao().startsWith("Khách hàng không"));
+        kiem("Xong hết và đã trả thì được bàn giao", QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.DA_THANH_TOAN, false)));
+        kiem("Khách được nợ thì được bàn giao", QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true)));
+        kiem("Khách không được nợ thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)));
+        kiem("Chưa có hóa đơn thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, null, true)));
+        kiem("Còn hạng mục thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(3, 2, TrangThaiHoaDon.DA_THANH_TOAN, true)));
+        kiem("Không có hạng mục thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(0, 0, TrangThaiHoaDon.DA_THANH_TOAN, true)));
+        kiem("Tiến độ làm tròn xuống", QLBanGiaoXeController.tinhPhanTramHoanTat(phieuBanGiao(3, 2, null, true)) == 66);
+        kiem("Nhãn công nợ hợp lệ", "Công nợ hợp lệ".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true))));
+        kiem("Nhãn công nợ không hợp lệ", "Công nợ".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false))));
+        kiem("Nhãn chưa có hóa đơn", "Chưa lập hóa đơn".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, null, true))));
+        kiem("Lý do còn hạng mục", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 3, null, true)).startsWith("Còn 25%"));
+        kiem("Lý do chưa có hạng mục xong", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 0, null, true)).startsWith("Chưa có hạng mục"));
+        kiem("Lý do chưa có hóa đơn", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, null, true)).startsWith("Phiếu chưa có"));
+        kiem("Lý do không được nợ", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)).startsWith("Khách hàng không"));
     }
 
     private static void kiemTraDoiTon() {
