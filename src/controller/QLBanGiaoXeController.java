@@ -2,7 +2,9 @@ package controller;
 
 import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
+import entity.HinhThucThanhToan;
 import entity.HoaDon;
+import entity.KhachHang;
 import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.TrangThaiHoaDon;
@@ -124,10 +126,20 @@ public class QLBanGiaoXeController {
         return p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
     }
 
+    /** Đã trả đủ, hoặc còn nợ nhưng khách được phép ghi nợ. */
+    public static boolean daThanhToanHopLe(HoaDon hoaDon, KhachHang khachHang) {
+        return hoaDon.daThanhToan() || laCongNoHopLe(hoaDon, khachHang);
+    }
+
+    public static boolean laCongNoHopLe(HoaDon hoaDon, KhachHang khachHang) {
+        return hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO
+                && khachHang.duocThanhToanBang(HinhThucThanhToan.CONG_NO);
+    }
+
     /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
     public static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
         HoaDon hoaDon = p.getHoaDon();
-        return tinhPhanTramHoanTat(p) == 100 && hoaDon != null && hoaDon.daThanhToanHopLe(p.getXe().getKhachHang());
+        return tinhPhanTramHoanTat(p) == 100 && hoaDon != null && daThanhToanHopLe(hoaDon, p.getXe().getKhachHang());
     }
 
     public static String getTrangThaiHoaDonHienThi(PhieuTiepNhanVaSuaChua p) {
@@ -137,7 +149,7 @@ public class QLBanGiaoXeController {
 
     public static String getNhanHoaDonBanGiao(PhieuTiepNhanVaSuaChua p) {
         HoaDon hoaDon = p.getHoaDon();
-        return hoaDon != null && hoaDon.laCongNoHopLe(p.getXe().getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi(p);
+        return hoaDon != null && laCongNoHopLe(hoaDon, p.getXe().getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi(p);
     }
 
     public static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
@@ -154,7 +166,7 @@ public class QLBanGiaoXeController {
         if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY) {
             return "Hóa đơn đã bị hủy.";
         }
-        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !hoaDon.laCongNoHopLe(p.getXe().getKhachHang())) {
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !laCongNoHopLe(hoaDon, p.getXe().getKhachHang())) {
             return "Khách hàng không được phép ghi nợ.";
         }
         return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";

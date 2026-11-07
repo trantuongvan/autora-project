@@ -481,7 +481,7 @@ public class TestHoaDon {
             km.setPhamViApDung(phamVi);
         }
         Thue thue = new Thue("X", "A", thueSuat);
-        HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(cong, phuTung, km, thue);
+        ChiTietHoaDonController.KetQuaTinhToan ketQua = ChiTietHoaDonController.tinhToan(cong, phuTung, km, thue);
         return new HoaDon("HD000001", TrangThaiHoaDon.DA_THANH_TOAN, ketQua.tongTienCong, ketQua.tongTienPhuTung,
                 ketQua.tongTienGiam, ketQua.tongTienVAT, ketQua.tongThanhToan, thue);
     }

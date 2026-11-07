@@ -230,7 +230,7 @@ public class QLNhapKhoController {
             if (maSKUMacDinh != null && !maSKUMacDinh.isEmpty()) {
                 PhuTung pt = phuTungDao.findById(maSKUMacDinh);
                 if (pt != null) {
-                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, pt.soLuongNhapDeXuat(), pt.getGiaNhap()));
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapDeXuat(pt), pt.getGiaNhap()));
                 }
             } else {
                 List<PhuTung> dsCanNhap = phuTungDao.findDuoiNguongCanhBao("");
@@ -238,7 +238,7 @@ public class QLNhapKhoController {
                 int count = 0;
                 for (PhuTung pt : dsCanNhap) {
                     if (count >= 2) break;
-                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, pt.soLuongNhapDeXuat(), pt.getGiaNhap()));
+                    dsChiTietModal.add(new ChiTietNhapKho(new PhieuNhapKho(maPhieu), pt, soLuongNhapDeXuat(pt), pt.getGiaNhap()));
                     count++;
                 }
             }
@@ -486,7 +486,7 @@ public class QLNhapKhoController {
                 dsChiTietModal.add(new ChiTietNhapKho(
                         new PhieuNhapKho(view.getLblMaPhieuNhapModal().getText()),
                         ptChon,
-                        ptChon.soLuongNhapDeXuat(),
+                        soLuongNhapDeXuat(ptChon),
                         ptChon.getGiaNhap()
                 ));
                 veBangChiTietModal();
@@ -498,6 +498,11 @@ public class QLNhapKhoController {
             JOptionPane.showMessageDialog(view, "Lỗi truy vấn phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /** Đưa tồn kho lên gấp đôi ngưỡng cảnh báo, tối thiểu bằng ngưỡng và không dưới 1. */
+    public static int soLuongNhapDeXuat(PhuTung pt) {
+        return Math.max(1, Math.max(pt.getNguongCanhBao() * 2 - pt.getSoLuongTon(), pt.getNguongCanhBao()));
     }
 
     /** Đưa các dòng hợp lệ lên bảng để thủ kho xem lại trước khi lưu; dòng sai được liệt kê và không thêm vào. */

@@ -260,7 +260,7 @@ public class ChiTietHoaDonController {
     private void tinhLaiXemTruoc() {
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
         KhuyenMai khuyenMai = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
-        HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(tongTienCong, tongTienPhuTung, khuyenMai, thue);
+        KetQuaTinhToan ketQua = tinhToan(tongTienCong, tongTienPhuTung, khuyenMai, thue);
         tongHienTai = ketQua.tongThanhToan;
         hienTongHop(ketQua.tongTienCong, ketQua.tongTienPhuTung, ketQua.tongTienGiam,
                 thue == null ? 0 : thue.getThueSuat(), ketQua.tongTienVAT, tongHienTai);
@@ -427,17 +427,54 @@ public class ChiTietHoaDonController {
         }
     }
 
+    /** Số tiền được giảm của khuyến mãi, không vượt quá phần tiền mà khuyến mãi áp dụng. */
+    public static double tinhTienGiam(KhuyenMai km, double tienCong, double tienPhuTung) {
+        double coSo = km.getPhamViApDung().coSoGiam(Math.round(tienCong), Math.round(tienPhuTung));
+        return Math.min(coSo, km.getHinhThuc().tinhTienGiam(coSo, km.getGiaTri()));
+    }
+
     /** Khuyến mãi giảm nhiều tiền nhất; hòa thì giữ cái đứng trước; không cái nào giảm > 0 thì null. */
     public static KhuyenMai totNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
         KhuyenMai tot = null;
         double giamMax = 0;
         for (KhuyenMai km : hopLe) {
-            double giam = km.tinhTienGiam(tienCong, tienPhuTung);
+            double giam = tinhTienGiam(km, tienCong, tienPhuTung);
             if (giam > giamMax) {
                 giamMax = giam;
                 tot = km;
             }
         }
         return tot;
+    }
+
+    /** Kết quả tính toán hóa đơn từ tiền công, phụ tùng, khuyến mãi và thuế. */
+    public static class KetQuaTinhToan {
+        public final double tongTienCong;
+        public final double tongTienPhuTung;
+        public final double tongTienGiam;
+        public final double tongTienVAT;
+        public final double tongThanhToan;
+
+        public KetQuaTinhToan(double tongTienCong, double tongTienPhuTung, double tongTienGiam,
+                              double tongTienVAT, double tongThanhToan) {
+            this.tongTienCong = tongTienCong;
+            this.tongTienPhuTung = tongTienPhuTung;
+            this.tongTienGiam = tongTienGiam;
+            this.tongTienVAT = tongTienVAT;
+            this.tongThanhToan = tongThanhToan;
+        }
+    }
+
+    /** Tính toán tất cả các khoản tiền của hóa đơn từ tiền công, tiền phụ tùng, khuyến mãi và thuế. */
+    public static KetQuaTinhToan tinhToan(double tienCong, double tienPhuTung, KhuyenMai khuyenMai, Thue thue) {
+        if (tienCong < 0 || tienPhuTung < 0) {
+            throw new IllegalArgumentException("Số tiền không được âm.");
+        }
+        double cong = Math.round(tienCong);
+        double phuTung = Math.round(tienPhuTung);
+        double giam = khuyenMai == null ? 0 : tinhTienGiam(khuyenMai, cong, phuTung);
+        double sauGiam = cong + phuTung - giam;
+        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
+        return new KetQuaTinhToan(cong, phuTung, giam, vat, sauGiam + vat);
     }
 }

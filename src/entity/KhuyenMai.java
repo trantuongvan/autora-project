@@ -1,7 +1,6 @@
 package entity;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Objects;
 
 public class KhuyenMai {
@@ -167,12 +166,6 @@ public class KhuyenMai {
         if (thoiGianKetThuc.isBefore(thoiGianBatDau)) {
             throw new IllegalArgumentException("Ngày kết thúc không được trước ngày bắt đầu.");
         }
-    }
-
-    /** Số tiền được giảm, không vượt quá phần tiền mà khuyến mãi áp dụng. */
-    public double tinhTienGiam(double tienCong, double tienPhuTung) {
-        double coSo = phamViApDung.coSoGiam(Math.round(tienCong), Math.round(tienPhuTung));
-        return Math.min(coSo, hinhThuc.tinhTienGiam(coSo, giaTri));
     }
 
     @Override

@@ -1,6 +1,7 @@
 package dao;
 
 import connection.ConnectDB;
+import controller.ChiTietHoaDonController;
 import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietSuaChua_PhuTung;
 import entity.HinhThucKhuyenMai;
@@ -215,8 +216,8 @@ public class HoaDon_Dao {
                 for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu)) {
                     tienPhuTung += d.thanhTien();
                 }
-                HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(docTienCong(connection, maPhieu), tienPhuTung,
-                        hoaDon.getKhuyenMai(), hoaDon.getThue());
+                ChiTietHoaDonController.KetQuaTinhToan ketQua = ChiTietHoaDonController.tinhToan(
+                        docTienCong(connection, maPhieu), tienPhuTung, hoaDon.getKhuyenMai(), hoaDon.getThue());
                 kiemTraTienMat(hinhThuc, tienKhachDua, ketQua.tongThanhToan);
 
                 String maHD = sinhMaHD(connection);
@@ -344,7 +345,7 @@ public class HoaDon_Dao {
     }
 
     private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, HoaDon hoaDon,
-            HoaDon.KetQuaTinhToan ketQua) throws SQLException {
+            ChiTietHoaDonController.KetQuaTinhToan ketQua) throws SQLException {
         HinhThucThanhToan hinhThuc = hoaDon.getHinhThucThanhToan();
         // Hóa đơn công nợ chưa thu tiền nên chưa có ngày thanh toán và chưa tính vào doanh thu.
         String sql = "INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, "
