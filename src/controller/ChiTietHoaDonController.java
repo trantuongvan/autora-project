@@ -427,16 +427,15 @@ public class ChiTietHoaDonController {
         }
     }
 
-    /** Chọn khuyến mãi tốt nhất từ danh sách. */
-    private static KhuyenMai totNhat(List<KhuyenMai> ds, double tienCong, double tienPhuTung) {
-        if (ds == null || ds.isEmpty()) return null;
-        KhuyenMai tot = ds.get(0);
-        double giaTriTot = tot.tinhTienGiam(tienCong, tienPhuTung);
-        for (int i = 1; i < ds.size(); i++) {
-            double giaTri = ds.get(i).tinhTienGiam(tienCong, tienPhuTung);
-            if (giaTri > giaTriTot) {
-                giaTriTot = giaTri;
-                tot = ds.get(i);
+    /** Khuyến mãi giảm nhiều tiền nhất; hòa thì giữ cái đứng trước; không cái nào giảm > 0 thì null. */
+    public static KhuyenMai totNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
+        KhuyenMai tot = null;
+        double giamMax = 0;
+        for (KhuyenMai km : hopLe) {
+            double giam = km.tinhTienGiam(tienCong, tienPhuTung);
+            if (giam > giamMax) {
+                giamMax = giam;
+                tot = km;
             }
         }
         return tot;

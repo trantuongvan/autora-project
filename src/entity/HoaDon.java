@@ -33,11 +33,11 @@ public class HoaDon {
         setMaHD(maHD);
         setTrangThaiThanhToan(trangThaiThanhToan);
         // Gán thẳng các giá trị đã tính, không qua setter
-        this.tongTienCong = tongTienCong;
-        this.tongTienPhuTung = tongTienPhuTung;
-        this.tongTienGiam = tongTienGiam;
-        this.tongTienVAT = tongTienVAT;
-        this.tongThanhToan = tongThanhToan;
+        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
+        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
+        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
+        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
         this.thue = thue;
     }
 
@@ -45,7 +45,7 @@ public class HoaDon {
     public HoaDon(TrangThaiHoaDon trangThaiThanhToan, double tongThanhToan) {
         setTrangThaiThanhToan(trangThaiThanhToan);
         // Gán thẳng không qua setter
-        this.tongThanhToan = tongThanhToan;
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
     }
 
     public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
@@ -55,11 +55,11 @@ public class HoaDon {
         setPhieu(phieu);
         setNgayLap(ngayLap);
         // Gán thẳng các giá trị đã tính, không qua setter
-        this.tongTienCong = tongTienCong;
-        this.tongTienPhuTung = tongTienPhuTung;
-        this.tongTienGiam = tongTienGiam;
-        this.tongTienVAT = tongTienVAT;
-        this.tongThanhToan = tongThanhToan;
+        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
+        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
+        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
+        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
@@ -116,6 +116,13 @@ public class HoaDon {
 
     public double getTongThanhToan() {
         return tongThanhToan;
+    }
+
+    private static double khongAm(double giaTri, String loi) {
+        if (giaTri < 0) {
+            throw new IllegalArgumentException(loi);
+        }
+        return giaTri;
     }
 
     public HinhThucThanhToan getHinhThucThanhToan() {
