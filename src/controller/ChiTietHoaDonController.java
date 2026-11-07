@@ -259,13 +259,11 @@ public class ChiTietHoaDonController {
     /** Chỉ để xem trước; số tiền thật được tính lại khi lưu. */
     private void tinhLaiXemTruoc() {
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
-        HoaDon xemTruoc = new HoaDon();
-        xemTruoc.setKhuyenMai((KhuyenMai) view.getCboKhuyenMai().getSelectedItem());
-        xemTruoc.setThue(thue);
-        xemTruoc.tinhTongThanhToan(tongTienCong, tongTienPhuTung);
-        tongHienTai = xemTruoc.getTongThanhToan();
-        hienTongHop(xemTruoc.getTongTienCong(), xemTruoc.getTongTienPhuTung(), xemTruoc.getTongTienGiam(),
-                thue == null ? 0 : thue.getThueSuat(), xemTruoc.getTongTienVAT(), tongHienTai);
+        KhuyenMai khuyenMai = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
+        HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(tongTienCong, tongTienPhuTung, khuyenMai, thue);
+        tongHienTai = ketQua.tongThanhToan;
+        hienTongHop(ketQua.tongTienCong, ketQua.tongTienPhuTung, ketQua.tongTienGiam,
+                thue == null ? 0 : thue.getThueSuat(), ketQua.tongTienVAT, tongHienTai);
         capNhatTheoHinhThuc();
     }
 

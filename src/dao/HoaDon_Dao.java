@@ -215,11 +215,12 @@ public class HoaDon_Dao {
                 for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu)) {
                     tienPhuTung += d.thanhTien();
                 }
-                hoaDon.tinhTongThanhToan(docTienCong(connection, maPhieu), tienPhuTung);
-                kiemTraTienMat(hinhThuc, tienKhachDua, hoaDon.getTongThanhToan());
+                HoaDon.KetQuaTinhToan ketQua = HoaDon.tinhToan(docTienCong(connection, maPhieu), tienPhuTung,
+                        hoaDon.getKhuyenMai(), hoaDon.getThue());
+                kiemTraTienMat(hinhThuc, tienKhachDua, ketQua.tongThanhToan);
 
                 String maHD = sinhMaHD(connection);
-                themHoaDon(connection, maHD, maPhieu, maNV, hoaDon);
+                themHoaDon(connection, maHD, maPhieu, maNV, hoaDon, ketQua);
                 connection.commit();
                 return maHD;
             } catch (SQLException | RuntimeException ex) {
@@ -342,8 +343,8 @@ public class HoaDon_Dao {
         }
     }
 
-    private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, HoaDon hoaDon)
-            throws SQLException {
+    private static void themHoaDon(Connection connection, String maHD, String maPhieu, String maNV, HoaDon hoaDon,
+            HoaDon.KetQuaTinhToan ketQua) throws SQLException {
         HinhThucThanhToan hinhThuc = hoaDon.getHinhThucThanhToan();
         // Hóa đơn công nợ chưa thu tiền nên chưa có ngày thanh toán và chưa tính vào doanh thu.
         String sql = "INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, "
@@ -360,11 +361,11 @@ public class HoaDon_Dao {
                 statement.setString(4, hoaDon.getKhuyenMai().getMaKM());
             }
             statement.setString(5, hoaDon.getThue().getMaThue());
-            statement.setDouble(6, hoaDon.getTongTienCong());
-            statement.setDouble(7, hoaDon.getTongTienPhuTung());
-            statement.setDouble(8, hoaDon.getTongTienGiam());
-            statement.setDouble(9, hoaDon.getTongTienVAT());
-            statement.setDouble(10, hoaDon.getTongThanhToan());
+            statement.setDouble(6, ketQua.tongTienCong);
+            statement.setDouble(7, ketQua.tongTienPhuTung);
+            statement.setDouble(8, ketQua.tongTienGiam);
+            statement.setDouble(9, ketQua.tongTienVAT);
+            statement.setDouble(10, ketQua.tongThanhToan);
             statement.setString(11, hinhThuc.getText());
             statement.setString(12, (hinhThuc == HinhThucThanhToan.CONG_NO ? TrangThaiHoaDon.CONG_NO : TrangThaiHoaDon.DA_THANH_TOAN).getText());
             statement.executeUpdate();

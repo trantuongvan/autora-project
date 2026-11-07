@@ -32,18 +32,20 @@ public class HoaDon {
             double tongTienGiam, double tongTienVAT, double tongThanhToan, Thue thue) {
         setMaHD(maHD);
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng các giá trị đã tính, không qua setter
+        this.tongTienCong = tongTienCong;
+        this.tongTienPhuTung = tongTienPhuTung;
+        this.tongTienGiam = tongTienGiam;
+        this.tongTienVAT = tongTienVAT;
+        this.tongThanhToan = tongThanhToan;
         this.thue = thue;
     }
 
     /** Hóa đơn đã lưu, đọc kèm lịch sử sửa chữa: chỉ cần trạng thái và tổng tiền. */
     public HoaDon(TrangThaiHoaDon trangThaiThanhToan, double tongThanhToan) {
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng không qua setter
+        this.tongThanhToan = tongThanhToan;
     }
 
     public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
@@ -52,11 +54,12 @@ public class HoaDon {
         setMaHD(maHD);
         setPhieu(phieu);
         setNgayLap(ngayLap);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        // Gán thẳng các giá trị đã tính, không qua setter
+        this.tongTienCong = tongTienCong;
+        this.tongTienPhuTung = tongTienPhuTung;
+        this.tongTienGiam = tongTienGiam;
+        this.tongTienVAT = tongTienVAT;
+        this.tongThanhToan = tongThanhToan;
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
@@ -99,47 +102,20 @@ public class HoaDon {
         return tongTienCong;
     }
 
-    private void setTongTienCong(double tongTienCong) {
-        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
-    }
-
     public double getTongTienPhuTung() {
         return tongTienPhuTung;
-    }
-
-    private void setTongTienPhuTung(double tongTienPhuTung) {
-        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
     }
 
     public double getTongTienGiam() {
         return tongTienGiam;
     }
 
-    private void setTongTienGiam(double tongTienGiam) {
-        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
-    }
-
     public double getTongTienVAT() {
         return tongTienVAT;
     }
 
-    private void setTongTienVAT(double tongTienVAT) {
-        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
-    }
-
     public double getTongThanhToan() {
         return tongThanhToan;
-    }
-
-    private void setTongThanhToan(double tongThanhToan) {
-        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
-    }
-
-    private static double khongAm(double giaTri, String loi) {
-        if (giaTri < 0) {
-            throw new IllegalArgumentException(loi);
-        }
-        return giaTri;
     }
 
     public HinhThucThanhToan getHinhThucThanhToan() {
@@ -197,26 +173,6 @@ public class HoaDon {
         this.thue = thue;
     }
 
-    /**
-     * Tính lại mọi khoản từ tiền công, tiền phụ tùng, khuyến mãi và thuế của hóa đơn, làm tròn tới đồng.
-     * Chưa có khuyến mãi hoặc thuế thì khoản đó bằng 0. Màn hình xem trước và lúc lưu dùng cùng công thức này.
-     */
-    public void tinhTongThanhToan(double tienCong, double tienPhuTung) {
-        if (tienCong < 0 || tienPhuTung < 0) {
-            throw new IllegalArgumentException("Số tiền không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
-        double sauGiam = cong + phuTung - giam;
-        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
-        setTongTienCong(cong);
-        setTongTienPhuTung(phuTung);
-        setTongTienGiam(giam);
-        setTongTienVAT(vat);
-        setTongThanhToan(sauGiam + vat);
-    }
-
     public boolean daThanhToan() {
         return trangThaiThanhToan == TrangThaiHoaDon.DA_THANH_TOAN;
     }
@@ -250,5 +206,48 @@ public class HoaDon {
     public String toString() {
         return "HoaDon{" + maHD + ", phieu=" + (phieu == null ? null : phieu.getMaPhieuTNSC()) + ", tong=" + tongThanhToan
                 + ", " + hinhThucThanhToan + ", " + trangThaiThanhToan + "}";
+    }
+
+    /**
+     * Kết quả tính toán hóa đơn từ tiền công, phụ tùng, khuyến mãi và thuế.
+     * Dùng để tính trước khi lưu hoặc xem trước.
+     */
+    public static class KetQuaTinhToan {
+        public final double tongTienCong;
+        public final double tongTienPhuTung;
+        public final double tongTienGiam;
+        public final double tongTienVAT;
+        public final double tongThanhToan;
+
+        public KetQuaTinhToan(double tongTienCong, double tongTienPhuTung, double tongTienGiam,
+                              double tongTienVAT, double tongThanhToan) {
+            this.tongTienCong = tongTienCong;
+            this.tongTienPhuTung = tongTienPhuTung;
+            this.tongTienGiam = tongTienGiam;
+            this.tongTienVAT = tongTienVAT;
+            this.tongThanhToan = tongThanhToan;
+        }
+    }
+
+    /**
+     * Tính toán tất cả các khoản tiền của hóa đơn từ tiền công, tiền phụ tùng, khuyến mãi và thuế.
+     * Làm tròn tới đồng. Khuyến mãi hoặc thuế null thì khoản đó bằng 0.
+     *
+     * @param tienCong Tổng tiền công (trước làm tròn)
+     * @param tienPhuTung Tổng tiền phụ tùng (trước làm tròn)
+     * @param khuyenMai Khuyến mãi áp dụng (null nếu không có)
+     * @param thue Loại thuế áp dụng (null nếu không có)
+     * @return Kết quả tính toán đầy đủ
+     */
+    public static KetQuaTinhToan tinhToan(double tienCong, double tienPhuTung, KhuyenMai khuyenMai, Thue thue) {
+        if (tienCong < 0 || tienPhuTung < 0) {
+            throw new IllegalArgumentException("Số tiền không được âm.");
+        }
+        double cong = Math.round(tienCong);
+        double phuTung = Math.round(tienPhuTung);
+        double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
+        double sauGiam = cong + phuTung - giam;
+        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
+        return new KetQuaTinhToan(cong, phuTung, giam, vat, sauGiam + vat);
     }
 }
