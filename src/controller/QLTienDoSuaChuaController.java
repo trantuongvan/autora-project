@@ -261,9 +261,8 @@ public class QLTienDoSuaChuaController {
 
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
-        String tt = p.getTrangThaiHienThiKTV();
-        // Tính phần trăm từ entity (đã được set bởi TienDoSuaChua_Dao)
-        int pct = p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
+        String tt = TrangChuKyThuatVienController.getTrangThaiHienThiKTV(p);
+        int pct = TrangChuKyThuatVienController.tinhPhanTramTienDo(p);
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
@@ -309,11 +308,11 @@ public class QLTienDoSuaChuaController {
         if (moi == cu) return;
 
         if (!cu.coTheChuyenSang(moi)) {
-            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
+            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + TrangChuKyThuatVienController.getTrangThaiHienThiKTV(phieuDangChon)
                     + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-        if (moi == TrangThaiPhieu.HOAN_THANH && !phieuDangChon.coTheHoanThanh()) {
+        if (moi == TrangThaiPhieu.HOAN_THANH && !TrangChuKyThuatVienController.coTheHoanThanh(phieuDangChon)) {
             hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
             return;
         }

@@ -5,6 +5,7 @@ import dao.PhieuBanGiao_Dao;
 import entity.HoaDon;
 import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
+import entity.TrangThaiHoaDon;
 import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
@@ -110,7 +111,7 @@ public class QLBanGiaoXeController {
                     p.getXe().getKhachHang().getHoTen(),
                     p.getTenXe(),
                     tinhPhanTramHoanTat(p) + "%",
-                    getTrangThaiHoaDonHienThi(p),
+                    getNhanHoaDonBanGiao(p),
                     money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan()),
                     duDieuKienBanGiao(p) ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
             });
@@ -118,46 +119,45 @@ public class QLBanGiaoXeController {
         return rows;
     }
 
-    // --- Helper methods replacing PhieuTiepNhanVaSuaChua business logic ---
-
-    private static int tinhPhanTramHoanTat(PhieuTiepNhanVaSuaChua p) {
-        int tong = p.getChiTietSuaChua() == null ? 0 : p.getChiTietSuaChua().size();
-        int hoanTat = 0;
-        if (tong > 0) {
-            for (ChiTietSuaChua ct : p.getChiTietSuaChua()) {
-                if (ct.getTrangThai() == TrangThaiChiTietSuaChua.HOAN_TAT) {
-                    hoanTat++;
-                }
-            }
-        }
-        return tong == 0 ? 100 : (int) Math.round((double) hoanTat / tong * 100);
+    /** Làm tròn xuống: còn hạng mục chưa xong thì chưa đủ 100. */
+    public static int tinhPhanTramHoanTat(PhieuTiepNhanVaSuaChua p) {
+        return p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
     }
 
-    private static String getTrangThaiHoaDonHienThi(PhieuTiepNhanVaSuaChua p) {
+    /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
+    public static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
         HoaDon hoaDon = p.getHoaDon();
-        if (hoaDon == null) return "Chưa lập hóa đơn";
-        if (hoaDon.getTrangThai() == TrangThaiHoaDon.DA_LAP) return "Đã lập";
-        if (hoaDon.getTrangThai() == TrangThaiHoaDon.DA_HUY) return "Đã hủy";
-        return "Chưa rõ";
+        return tinhPhanTramHoanTat(p) == 100 && hoaDon != null && hoaDon.daThanhToanHopLe(p.getXe().getKhachHang());
     }
 
-    private static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        if (p.getBanGiao() != null) return false;
-        if (p.getHoaDon() == null || p.getHoaDon().getTrangThai() != TrangThaiHoaDon.DA_LAP) return false;
-        if (phanTramTienDo(p) < 100) return false;
-        return true;
+    public static String getTrangThaiHoaDonHienThi(PhieuTiepNhanVaSuaChua p) {
+        HoaDon hoaDon = p.getHoaDon();
+        return hoaDon == null ? "Chưa lập hóa đơn" : hoaDon.getTrangThaiThanhToan().getText();
     }
 
-    private static int phanTramTienDo(PhieuTiepNhanVaSuaChua p) {
-        return tinhPhanTramHoanTat(p);
+    public static String getNhanHoaDonBanGiao(PhieuTiepNhanVaSuaChua p) {
+        HoaDon hoaDon = p.getHoaDon();
+        return hoaDon != null && hoaDon.laCongNoHopLe(p.getXe().getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi(p);
     }
 
-    private static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        if (p.getBanGiao() != null) return "Phiếu đã được bàn giao.";
-        if (p.getHoaDon() == null) return "Chưa lập hóa đơn.";
-        if (p.getHoaDon().getTrangThai() != TrangThaiHoaDon.DA_LAP) return "Hóa đơn chưa hợp lệ.";
-        if (phanTramTienDo(p) < 100) return "Chưa hoàn tất dịch vụ.";
-        return "Không xác định.";
+    public static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
+        int tienDo = tinhPhanTramHoanTat(p);
+        if (tienDo < 100) {
+            return tienDo == 0
+                    ? "Chưa có hạng mục sửa chữa hoàn tất."
+                    : "Còn " + (100 - tienDo) + "% hạng mục sửa chữa chưa hoàn tất.";
+        }
+        HoaDon hoaDon = p.getHoaDon();
+        if (hoaDon == null) {
+            return "Phiếu chưa có hóa đơn.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY) {
+            return "Hóa đơn đã bị hủy.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !hoaDon.laCongNoHopLe(p.getXe().getKhachHang())) {
+            return "Khách hàng không được phép ghi nợ.";
+        }
+        return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
     }
 
     private void detail(String id) {
@@ -168,7 +168,7 @@ public class QLBanGiaoXeController {
             }
             HoaDon hoaDon = p.getHoaDon() == null ? new HoaDon() : p.getHoaDon();
             double taxRate = hoaDon.getThue() == null ? 0 : hoaDon.getThue().getThueSuat();
-            int tienDo = phanTramTienDo(p);
+            int tienDo = tinhPhanTramHoanTat(p);
             QLBanGiaoXe.ChiTietBanGiao detail = new QLBanGiaoXe.ChiTietBanGiao();
             detail.xe = p.getXe().getBienSo() + " • " + p.getTenXe();
             detail.chuXeVaPhieu = p.getXe().getKhachHang().getHoTen() + " • " + id;

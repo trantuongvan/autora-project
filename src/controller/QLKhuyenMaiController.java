@@ -159,18 +159,22 @@ public class QLKhuyenMaiController {
     /**
      * Tính trạng thái khuyến mãi tại một ngày cụ thể.
      * @param km Khuyến mãi
-     * @param ngay Ngày cần kiểm tra
-     * @return "Đang áp dụng", "Chưa áp dụng", hoặc "Đã kết thúc"
+     * @param homNay Ngày cần kiểm tra
+     * @return "Đang áp dụng", "Sắp diễn ra", "Hết hạn", hoặc "Ngừng áp dụng"
      */
-    public static String tinhTrangKhuyenMai(KhuyenMai km, LocalDate ngay) {
+    public static String tinhTrangKhuyenMai(KhuyenMai km, LocalDate homNay) {
         if (!km.isTrangThai()) {
-            return "Tạm ngưng";
+            return "Ngừng áp dụng";
         }
-        if (ngay.isBefore(km.getThoiGianBatDau())) {
-            return "Chưa áp dụng";
+        if (homNay == null) {
+            throw new IllegalArgumentException("Ngày xét tình trạng không được để trống.");
         }
-        if (ngay.isAfter(km.getThoiGianKetThuc())) {
-            return "Đã kết thúc";
+        km.kiemTraHopLe();
+        if (homNay.isBefore(km.getThoiGianBatDau())) {
+            return "Sắp diễn ra";
+        }
+        if (homNay.isAfter(km.getThoiGianKetThuc())) {
+            return "Hết hạn";
         }
         return "Đang áp dụng";
     }

@@ -2,7 +2,6 @@ package entity;
 
 /** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum TrangThaiHoaDon {
-    DA_LAP("Đã lập"),
     DA_THANH_TOAN("Đã thanh toán"),
     CONG_NO("Công nợ"),
     DA_HUY("Đã hủy");
