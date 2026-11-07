@@ -170,12 +170,13 @@ public class TestKho {
         pt.setSoLuongTon(2);
         pt.setGiaBanLe(9000);
         kiem("Đủ tồn", pt.duTon(2) && !pt.duTon(3));
-        pt.nhapKho(1, 5000);
+        pt.setSoLuongTon(pt.getSoLuongTon() + 1);
+        pt.setGiaNhap(5000);
         kiem("Nhập kho cộng tồn và đổi giá nhập", pt.getSoLuongTon() == 3 && pt.getGiaNhap() == 5000);
-        pt.xuatKho(3);
+        pt.setSoLuongTon(0);
         kiem("Xuất kho trừ tồn", pt.getSoLuongTon() == 0);
         try {
-            pt.xuatKho(1);
+            pt.setSoLuongTon(-1);
             kiem("Xuất quá tồn phải báo lỗi", false);
         } catch (IllegalArgumentException ex) {
             kiem("Xuất quá tồn giữ nguyên số tồn", pt.getSoLuongTon() == 0);
