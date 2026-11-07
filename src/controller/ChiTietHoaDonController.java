@@ -7,8 +7,8 @@ import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietSuaChua_PhuTung;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
-import entity.KhachHang;
 import entity.KhuyenMai;
+import entity.KhachHang;
 import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.Thue;
@@ -208,7 +208,7 @@ public class ChiTietHoaDonController {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         // Mặc định chọn khuyến mãi giảm nhiều nhất; nhân viên vẫn đổi hoặc bỏ chọn được.
-        view.getCboKhuyenMai().setSelectedItem(KhuyenMai.totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
+        view.getCboKhuyenMai().setSelectedItem(totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
         view.getCboThue().addActionListener(e -> tinhLaiXemTruoc());
         ganSuKienThanhToan();
@@ -425,5 +425,20 @@ public class ChiTietHoaDonController {
             JOptionPane.showMessageDialog(cha, "Không thể xuất hóa đơn.\n" + ex.getMessage(), "Lỗi xuất PDF",
                     JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /** Chọn khuyến mãi tốt nhất từ danh sách. */
+    private static KhuyenMai totNhat(List<KhuyenMai> ds, double tienCong, double tienPhuTung) {
+        if (ds == null || ds.isEmpty()) return null;
+        KhuyenMai tot = ds.get(0);
+        double giaTriTot = tot.tinhTienGiam(tienCong, tienPhuTung);
+        for (int i = 1; i < ds.size(); i++) {
+            double giaTri = ds.get(i).tinhTienGiam(tienCong, tienPhuTung);
+            if (giaTri > giaTriTot) {
+                giaTriTot = giaTri;
+                tot = ds.get(i);
+            }
+        }
+        return tot;
     }
 }
