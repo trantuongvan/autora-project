@@ -26,6 +26,8 @@ public class PhieuTiepNhanVaSuaChua {
 
     // Thuộc tính bổ sung cho phân hệ Kỹ thuật viên & Thủ kho
     private String tomTatHangMuc;
+
+    // Transient: chỉ dùng để cache từ DB, không lưu vào database
     private int tongSoHangMuc;
     private int soHangMucHoanThanh;
 
@@ -233,6 +235,9 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setTongSoHangMuc(int tongSoHangMuc) {
+        if (tongSoHangMuc < 0) {
+            throw new IllegalArgumentException("Tổng số hạng mục không được âm.");
+        }
         this.tongSoHangMuc = tongSoHangMuc;
     }
 
@@ -241,6 +246,9 @@ public class PhieuTiepNhanVaSuaChua {
     }
 
     public void setSoHangMucHoanThanh(int soHangMucHoanThanh) {
+        if (soHangMucHoanThanh < 0) {
+            throw new IllegalArgumentException("Số hạng mục hoàn thành không được âm.");
+        }
         this.soHangMucHoanThanh = soHangMucHoanThanh;
     }
 
