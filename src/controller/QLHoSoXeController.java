@@ -27,8 +27,9 @@ public class QLHoSoXeController {
     public QLHoSoXeController(QLHoSoXe view) {
         this.view = view;
         initController();
-        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
         loadChuSoHuu();
+        util.UIComponents.tuTaiLai(this::load, view.getTxtTimKiem(), view.getCboLocHang());
+        load();
     }
 
     private void initController() {

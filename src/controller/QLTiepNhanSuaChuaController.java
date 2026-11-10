@@ -1,6 +1,7 @@
 package controller;
 
 import dao.DichVu_Dao;
+import dao.KhachHang_Dao;
 import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.DichVu;
@@ -167,7 +168,10 @@ public class QLTiepNhanSuaChuaController {
         try {
             view.hienLoi(null);
             boolean laSdt = nhap.matches("0[0-9]{9}");
-            String bienSo = laSdt ? dao.timBienSoTheoSdt(nhap) : nhap;
+            String bienSo = laSdt ? chonXeTheoSdt(nhap) : nhap;
+            if (HUY_CHON_XE.equals(bienSo)) {
+                return;
+            }
             Xe xe = bienSo == null ? null : dao.findXeDayDu(bienSo);
             KhachHang khach = xe != null ? xe.getKhachHang() : laSdt ? dao.findKhachTheoSdt(nhap) : null;
             if (xe == null && khach == null) {
@@ -195,6 +199,37 @@ public class QLTiepNhanSuaChuaController {
         }
     }
 
+    private static final String HUY_CHON_XE = "";
+
+    /**
+     * Biển số xe khách mang đến khi tra theo SĐT. Khách nhiều xe thì lễ tân chọn xe;
+     * trả về null khi khách chưa có xe hoặc chọn nhập xe mới, HUY_CHON_XE khi bấm Hủy.
+     */
+    private String chonXeTheoSdt(String sdt) throws SQLException {
+        KhachHang khach = dao.findKhachTheoSdt(sdt);
+        if (khach == null) {
+            return null;
+        }
+        List<Xe> dsXe = new KhachHang_Dao().xeLienKet(khach.getMaKH());
+        if (dsXe.size() <= 1) {
+            return dsXe.isEmpty() ? null : dsXe.get(0).getBienSo();
+        }
+        String[] luaChon = new String[dsXe.size() + 1];
+        for (int i = 0; i < dsXe.size(); i++) {
+            Xe x = dsXe.get(i);
+            luaChon[i] = x.getBienSo() + " • " + x.getHangXe() + " " + x.getDongXe();
+        }
+        luaChon[dsXe.size()] = "Xe khác (nhập mới)";
+        Object chon = JOptionPane.showInputDialog(view,
+                "Khách " + khach.getHoTen() + " có " + dsXe.size() + " xe. Chọn xe khách mang đến:",
+                "Chọn xe", JOptionPane.QUESTION_MESSAGE, null, luaChon, luaChon[0]);
+        if (chon == null) {
+            return HUY_CHON_XE;
+        }
+        int i = java.util.Arrays.asList(luaChon).indexOf(chon);
+        return i < dsXe.size() ? dsXe.get(i).getBienSo() : null;
+    }
+
     private void dienKhach(KhachHang khach) {
         maKhachDaCo = khach == null ? null : khach.getMaKH();
         if (khach != null) {
@@ -210,13 +245,12 @@ public class QLTiepNhanSuaChuaController {
 
     private void dienXe(Xe xe) {
         xeDaCo = xe != null;
-        if (xe != null) {
-            view.getTxtBienSo().setText(xe.getBienSo());
-            view.getTxtSoKhung().setText(xe.getSoVIN());
-            view.setHangDongXe(xe.getHangXe(), xe.getDongXe());
-            view.getTxtDoiXe().setText(xe.getDoiXe() == null ? "" : xe.getDoiXe().toString());
-            view.getTxtMauSon().setText(xe.getMauSon());
-        }
+        // Khách cũ nhưng xe mới: xóa xe của lần tra cứu trước để lễ tân nhập xe mới.
+        view.getTxtBienSo().setText(xe == null ? "" : xe.getBienSo());
+        view.getTxtSoKhung().setText(xe == null ? "" : xe.getSoVIN());
+        view.setHangDongXe(xe == null ? null : xe.getHangXe(), xe == null ? null : xe.getDongXe());
+        view.getTxtDoiXe().setText(xe == null || xe.getDoiXe() == null ? "" : xe.getDoiXe().toString());
+        view.getTxtMauSon().setText(xe == null ? "" : xe.getMauSon());
         view.setChoSuaXe(xe == null);
     }
 

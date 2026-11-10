@@ -40,7 +40,8 @@ public class QLKhuyenMaiController {
     public QLKhuyenMaiController(QLKhuyenMai view) {
         this.view = view;
         initController();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getCboLocTinhTrang(), view.getCboLocHinhThuc());
+        taiDuLieu();
     }
 
     private void initController() {

@@ -36,7 +36,10 @@ public class QLPhieuSuaChuaController {
         this.view = view;
         this.dieuHuong = dieuHuong;
         initController();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.tuTaiLai(this::taiDanhSach, view.getTxtTimKiem(), view.getCboLocTrangThai(), view.getTxtTuNgay(),
+                view.getTxtDenNgay());
+        taiDanhSach();
     }
 
     private void initController() {

@@ -40,7 +40,10 @@ public class QLHoaDonController {
         this.view = view;
         this.dieuHuong = dieuHuong;
         initController();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getCboTrangThai(), view.getCboHinhThuc(),
+                view.getTxtTuNgay(), view.getTxtDenNgay());
+        taiDuLieu();
     }
 
     private void initController() {

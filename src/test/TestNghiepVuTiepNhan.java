@@ -376,7 +376,6 @@ public class TestNghiepVuTiepNhan {
 
         dung("Tra xe theo biển số", dao.findXeVaChuXe("60A-456.78") != null);
         dung("Xe không tồn tại", dao.findXeVaChuXe("99Z-000.00") == null);
-        dung("Tra biển số theo SĐT", "60A-456.78".equals(dao.timBienSoTheoSdt("0966333444")));
         dung("Xe đang có phiếu mở", dao.coPhieuDangMo("50E-999.12"));
         dung("Xe không có phiếu mở", !dao.coPhieuDangMo("60A-456.78"));
         dung("Tìm theo khách có dấu", !dao.search("Phạm Minh", null, null, null).isEmpty());

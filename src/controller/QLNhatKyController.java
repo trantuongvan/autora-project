@@ -26,7 +26,9 @@ public class QLNhatKyController {
     public QLNhatKyController(QLNhatKy view) {
         this.view = view;
         initController();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getTxtTuNgay(), view.getTxtDenNgay());
+        taiDuLieu();
     }
 
     private void initController() {

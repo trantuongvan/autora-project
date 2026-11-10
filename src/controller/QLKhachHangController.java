@@ -54,7 +54,9 @@ public class QLKhachHangController {
         this.view = view;
         initController();
         moFormThem();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        UIComponents.tuTaiLai(this::taiDanhSach, view.getTxtTimKiem(), view.getCboLocLoai(), view.getCboLocGhiNo(),
+                view.getCboLocLichHen());
+        taiDanhSach();
     }
 
     private void initController() {
