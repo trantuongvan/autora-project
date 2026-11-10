@@ -281,7 +281,7 @@ public class PhieuYeuCauXuatKho_Dao {
                     if (!phuTung.duTon(ct.getSoLuong())) {
                         throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
                     }
-                    phuTung.setSoLuongTon(phuTung.getSoLuongTon() - ct.getSoLuong());
+                    phuTung.xuatKho(ct.getSoLuong());
                     PhuTung_Dao.luuTon(c, phuTung);
 
                     psCTPT.setString(1, maPhieuTNSC);

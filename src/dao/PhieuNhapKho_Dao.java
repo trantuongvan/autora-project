@@ -192,16 +192,8 @@ public class PhieuNhapKho_Dao {
                  PreparedStatement psCT = c.prepareStatement(sqlCT)) {
 
                 for (ChiTietNhapKho ct : chiTietList) {
-                    if (ct.getSoLuongNhap() <= 0) {
-                        throw new IllegalArgumentException("Số lượng nhập phải lớn hơn 0.");
-                    }
                     PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    if (ct.getGiaNhapThucTe() > phuTung.getGiaBanLe()) {
-                        throw new IllegalArgumentException("Giá nhập của mã " + phuTung.getMaSKU()
-                                + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.");
-                    }
-                    phuTung.setGiaNhap(ct.getGiaNhapThucTe());
-                    phuTung.setSoLuongTon(phuTung.getSoLuongTon() + ct.getSoLuongNhap());
+                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
                     PhuTung_Dao.luuTon(c, phuTung);
                 }
 

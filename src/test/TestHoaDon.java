@@ -473,17 +473,17 @@ public class TestHoaDon {
     /** hinhThuc null là hóa đơn không có khuyến mãi. */
     private static HoaDon tinh(double cong, double phuTung, HinhThucKhuyenMai hinhThuc, double giaTri,
             PhamViKhuyenMai phamVi, double thueSuat) {
-        KhuyenMai km = null;
+        HoaDon hd = new HoaDon();
         if (hinhThuc != null) {
-            km = new KhuyenMai("KMX");
+            KhuyenMai km = new KhuyenMai("KMX");
             km.setHinhThuc(hinhThuc);
             km.setGiaTri(giaTri);
             km.setPhamViApDung(phamVi);
+            hd.setKhuyenMai(km);
         }
-        Thue thue = new Thue("X", "A", thueSuat);
-        ChiTietHoaDonController.KetQuaTinhToan ketQua = ChiTietHoaDonController.tinhToan(cong, phuTung, km, thue);
-        return new HoaDon("HD000001", TrangThaiHoaDon.DA_THANH_TOAN, ketQua.tongTienCong, ketQua.tongTienPhuTung,
-                ketQua.tongTienGiam, ketQua.tongTienVAT, ketQua.tongThanhToan, thue);
+        hd.setThue(new Thue("X", "A", thueSuat));
+        hd.tinhTongThanhToan(cong, phuTung);
+        return hd;
     }
 
     private static void tien(String ten, HoaDon t, double giam, double vat, double tong) {

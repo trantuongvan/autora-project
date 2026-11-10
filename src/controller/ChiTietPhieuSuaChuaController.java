@@ -287,7 +287,7 @@ public class ChiTietPhieuSuaChuaController {
             return;
         }
         phieu.setDanhSachDichVu(danhSach);
-        if (trangThai == TrangThaiPhieu.HOAN_THANH && !TrangChuKyThuatVienController.coTheHoanThanh(phieu)) {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !phieu.coTheHoanThanh()) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }

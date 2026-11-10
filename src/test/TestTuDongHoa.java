@@ -1,7 +1,5 @@
 package test;
 
-import controller.ChiTietHoaDonController;
-import controller.QLNhapKhoController;
 import controller.QLTaiKhoanController;
 import dao.PhieuNhapKho_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
@@ -56,24 +54,24 @@ public class TestTuDongHoa {
         KhuyenMai chiPhuTung = km("KM05", HinhThucKhuyenMai.PHAN_TRAM, 50, PhamViKhuyenMai.PHU_TUNG);
         KhuyenMai chiCong = km("KM06", HinhThucKhuyenMai.PHAN_TRAM, 5, PhamViKhuyenMai.NHOM_DICH_VU);
 
-        dung("Giảm nhiều nhất thắng", ChiTietHoaDonController.totNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
+        dung("Giảm nhiều nhất thắng", KhuyenMai.totNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
         dung("Phần trăm và tiền mặt so theo số tiền thật",
-                ChiTietHoaDonController.totNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
-                && ChiTietHoaDonController.totNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
-        dung("Hòa thì lấy cái đứng trước", ChiTietHoaDonController.totNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
-                && ChiTietHoaDonController.totNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
-        dung("Danh sách rỗng cho null", ChiTietHoaDonController.totNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
-        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", ChiTietHoaDonController.totNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
-        dung("Phạm vi công khi không có công cho null", ChiTietHoaDonController.totNhat(Arrays.asList(chiCong), 0, 500000) == null);
+                KhuyenMai.totNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
+                && KhuyenMai.totNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
+        dung("Hòa thì lấy cái đứng trước", KhuyenMai.totNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
+                && KhuyenMai.totNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
+        dung("Danh sách rỗng cho null", KhuyenMai.totNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
+        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", KhuyenMai.totNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
+        dung("Phạm vi công khi không có công cho null", KhuyenMai.totNhat(Arrays.asList(chiCong), 0, 500000) == null);
         dung("Bỏ qua khuyến mãi không giảm, chọn cái có giảm",
-                ChiTietHoaDonController.totNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
+                KhuyenMai.totNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
     }
 
     private static int deXuat(int nguong, int ton) {
         PhuTung pt = new PhuTung("SKU_X");
         pt.setNguongCanhBao(nguong);
         pt.setSoLuongTon(ton);
-        return QLNhapKhoController.soLuongNhapDeXuat(pt);
+        return pt.soLuongNhapDeXuat();
     }
 
     private static void kiemTraSoLuongNhap() {
