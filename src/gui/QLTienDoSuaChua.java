@@ -662,7 +662,7 @@ public class QLTienDoSuaChua extends JPanel {
         left.add(lblMa);
         left.add(lblXe);
 
-        String tt = controller.TrangChuKyThuatVienController.getTrangThaiHienThiKTV(phieu);
+        String tt = phieu.getTrangThaiHienThiKTV();
         UIComponents.Badge badge = new UIComponents.Badge(tt, mauTrangThai(tt));
         JPanel right = UIComponents.trong(new GridBagLayout());
         right.add(badge);

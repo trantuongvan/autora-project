@@ -28,10 +28,7 @@ public class PhieuNhapKho {
     public PhieuNhapKho(String maPhieuNhap, LocalDateTime ngayNhap, double tongTienNhap, NhaCungCap nhaCungCap, NhanVien thuKho) {
         setMaPhieuNhap(maPhieuNhap);
         setNgayNhap(ngayNhap);
-        if (tongTienNhap < 0) {
-            throw new IllegalArgumentException("Tổng tiền nhập không được là số âm.");
-        }
-        this.tongTienNhap = tongTienNhap;
+        setTongTienNhap(tongTienNhap);
         setNhaCungCap(nhaCungCap);
         setThuKho(thuKho);
     }
@@ -58,6 +55,12 @@ public class PhieuNhapKho {
 
     public double getTongTienNhap() {
         return tongTienNhap;
+    }
+    public void setTongTienNhap(double tongTienNhap) {
+        if (tongTienNhap < 0) {
+            throw new IllegalArgumentException("Tổng tiền nhập không được là số âm.");
+        }
+        this.tongTienNhap = tongTienNhap;
     }
 
     public NhaCungCap getNhaCungCap() {

@@ -3,7 +3,6 @@ package test;
 import controller.DangNhapController;
 import controller.QLKhuyenMaiController;
 import controller.QLTiepNhanSuaChuaController;
-import controller.TrangChuKyThuatVienController;
 import controller.TrangChuQuanLyController;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DangNhap_Dao;
@@ -84,7 +83,7 @@ public class TestNghiepVuTiepNhan {
         vongDoiEnum("TrangThaiYeuCauXuat", TrangThaiYeuCauXuat.class, TrangThaiYeuCauXuat::fromDb);
         dung("Chờ sửa không phải trạng thái phiếu", !Arrays.asList(TrangThaiPhieu.values()).toString().contains("Chờ sửa"));
         dung("Phiếu Chờ kiểm tra hiện là Chờ sửa cho kỹ thuật viên",
-                "Chờ sửa".equals(TrangChuKyThuatVienController.getTrangThaiHienThiKTV(new PhieuTiepNhanVaSuaChua())));
+                "Chờ sửa".equals(new PhieuTiepNhanVaSuaChua().getTrangThaiHienThiKTV()));
     }
 
     private static void kiemTraKhuyenMai() {
@@ -98,12 +97,12 @@ public class TestNghiepVuTiepNhan {
         loi("KM thiếu tên", () -> new KhuyenMai("KM1", " ", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true));
 
         KhuyenMai km = new KhuyenMai("KM1", "A", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true);
-        dung("Sắp diễn ra", "Sắp diễn ra".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1.minusDays(1))));
-        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1)));
-        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d2)));
-        dung("Hết hạn", "Hết hạn".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d2.plusDays(1))));
+        dung("Sắp diễn ra", "Sắp diễn ra".equals(km.getTinhTrang(d1.minusDays(1))));
+        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(km.getTinhTrang(d1)));
+        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(km.getTinhTrang(d2)));
+        dung("Hết hạn", "Hết hạn".equals(km.getTinhTrang(d2.plusDays(1))));
         km.setTrangThai(false);
-        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1)));
+        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(km.getTinhTrang(d1)));
     }
 
     private static void kiemTraPhieu() {
@@ -123,7 +122,7 @@ public class TestNghiepVuTiepNhan {
     private static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
         PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
         p.setDanhSachDichVu(dong);
-        return TrangChuKyThuatVienController.coTheHoanThanh(p);
+        return p.coTheHoanThanh();
     }
 
     private static int tienDo(TrangThaiPhieu trangThai, int tong, int xong) {
@@ -131,7 +130,7 @@ public class TestNghiepVuTiepNhan {
         p.setTrangThai(trangThai);
         p.setTongSoHangMuc(tong);
         p.setSoHangMucHoanThanh(xong);
-        return TrangChuKyThuatVienController.tinhPhanTramTienDo(p);
+        return p.phanTramTienDo();
     }
 
     private static void kiemTraDieuKienHoanThanh() {

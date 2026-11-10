@@ -1,6 +1,7 @@
 package entity;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Objects;
 
 public class KhuyenMai {
@@ -166,6 +167,43 @@ public class KhuyenMai {
         if (thoiGianKetThuc.isBefore(thoiGianBatDau)) {
             throw new IllegalArgumentException("Ngày kết thúc không được trước ngày bắt đầu.");
         }
+    }
+
+    /** Số tiền được giảm, không vượt quá phần tiền mà khuyến mãi áp dụng. */
+    public double tinhTienGiam(double tienCong, double tienPhuTung) {
+        double coSo = phamViApDung.coSoGiam(Math.round(tienCong), Math.round(tienPhuTung));
+        return Math.min(coSo, hinhThuc.tinhTienGiam(coSo, giaTri));
+    }
+
+    /** Khuyến mãi giảm nhiều tiền nhất; hòa thì giữ cái đứng trước; không cái nào giảm > 0 thì null. */
+    public static KhuyenMai totNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
+        KhuyenMai tot = null;
+        double giamMax = 0;
+        for (KhuyenMai km : hopLe) {
+            double giam = km.tinhTienGiam(tienCong, tienPhuTung);
+            if (giam > giamMax) {
+                giamMax = giam;
+                tot = km;
+            }
+        }
+        return tot;
+    }
+
+    public String getTinhTrang(LocalDate homNay) {
+        if (!trangThai) {
+            return "Ngừng áp dụng";
+        }
+        if (homNay == null) {
+            throw new IllegalArgumentException("Ngày xét tình trạng không được để trống.");
+        }
+        kiemTraHopLe();
+        if (homNay.isBefore(thoiGianBatDau)) {
+            return "Sắp diễn ra";
+        }
+        if (homNay.isAfter(thoiGianKetThuc)) {
+            return "Hết hạn";
+        }
+        return "Đang áp dụng";
     }
 
     @Override

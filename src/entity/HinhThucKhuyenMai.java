@@ -4,13 +4,13 @@ package entity;
 public enum HinhThucKhuyenMai {
     PHAN_TRAM("Giảm %") {
         @Override
-        public double tinhTienGiam(double coSo, double giaTri) {
-            return Thue.phanTram(coSo, giaTri);
+        double tinhTienGiam(double coSo, double giaTri) {
+            return HoaDon.phanTram(coSo, giaTri);
         }
     },
     TIEN_MAT("Giảm tiền mặt") {
         @Override
-        public double tinhTienGiam(double coSo, double giaTri) {
+        double tinhTienGiam(double coSo, double giaTri) {
             return Math.round(giaTri);
         }
     };
@@ -26,7 +26,7 @@ public enum HinhThucKhuyenMai {
     }
 
     /** Số tiền giảm trên số tiền cơ sở, chưa chặn theo cơ sở. */
-    public abstract double tinhTienGiam(double coSo, double giaTri);
+    abstract double tinhTienGiam(double coSo, double giaTri);
 
     public static HinhThucKhuyenMai fromDb(String text) {
         for (HinhThucKhuyenMai giaTri : values()) {
