@@ -58,7 +58,9 @@ public class QLTienDoSuaChuaController {
 
         initKyThuatVien();
         initController();
-        hienChuaTai();
+        UIComponents.tuTaiLai(() -> loadDanhSachPhieu(null), view.getTxtTimPhieu());
+        UIComponents.tuTaiLai(() -> loadDanhSachPhieu(null), view.getBtnLocTrangThai());
+        loadDanhSachPhieu(null);
     }
 
     private void initKyThuatVien() {
@@ -90,7 +92,7 @@ public class QLTienDoSuaChuaController {
             }
         });
 
-        // 1. Tìm kiếm phiếu sửa chữa: chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter
+        // 1. Tìm kiếm phiếu sửa chữa
         view.getBtnTaiDuLieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
         view.getTxtTimPhieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
 
@@ -163,16 +165,6 @@ public class QLTienDoSuaChuaController {
         }
     }
 
-    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
-    private void hienChuaTai() {
-        JPanel container = view.getPnlDanhSachPhieu();
-        container.removeAll();
-        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
-        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
-        container.add(lblGoiY);
-        phieuDangChon = null;
-        hienThiChiTietPhieu(null);
-    }
 
     /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
     private void taiLai(String maPhieuCanChon) {

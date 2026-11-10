@@ -43,7 +43,9 @@ public class QLPhuTungController {
 
         initHeaderAndFilters();
         initController();
-        UIComponents.goiYChuaTai(view.getTblPhuTung(), true);
+        UIComponents.tuTaiLai(this::loadData, view.getTxtTimKiem(), view.getCboHangSanXuat(), view.getCboKhoangGia(),
+                view.getCboTinhTrangTon());
+        loadData();
     }
 
     private void initHeaderAndFilters() {
@@ -87,7 +89,6 @@ public class QLPhuTungController {
             }
         });
 
-        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
         view.getBtnTaiDuLieu().addActionListener(e -> loadData());
         view.getTxtTimKiem().addActionListener(e -> loadData());
 

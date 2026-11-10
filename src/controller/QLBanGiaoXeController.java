@@ -32,7 +32,8 @@ public class QLBanGiaoXeController {
     public QLBanGiaoXeController(QLBanGiaoXe view) {
         this.view = view;
         initController();
-        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        util.UIComponents.tuTaiLai(this::load, view.getTxtTimKiem(), view.getCboLoc());
+        load();
     }
 
     private void initController() {

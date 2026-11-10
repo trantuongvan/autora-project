@@ -48,8 +48,8 @@ public class QLTaiKhoanController {
         this.view = view;
         initController();
         moFormTao();
-        UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
-        UIComponents.goiYChuaTai(view.getTblNhatKy(), true);
+        UIComponents.tuTaiLai(this::taiTatCa, view.getTxtTimKiem(), view.getCboLocVaiTro(), view.getCboLocTrangThai());
+        taiTatCa();
     }
 
     private void initController() {
@@ -105,7 +105,6 @@ public class QLTaiKhoanController {
     // Tải dữ liệu
     // ==========================================================
 
-    /** Nút Tải dữ liệu: danh sách tài khoản và nhật ký là danh sách nên chỉ tải khi bấm. */
     private void taiTatCa() {
         daTai = true;
         UIComponents.goiYChuaTai(view.getTblDanhSach(), false);

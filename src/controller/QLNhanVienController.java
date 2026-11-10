@@ -41,7 +41,8 @@ public class QLNhanVienController {
                 ? "system" : tenDangNhap.trim();
         taiDanhMuc();
         initController();
-        util.UIComponents.goiYChuaTai(view.getTblDanhSach(), true);
+        util.UIComponents.tuTaiLai(this::load, view.getTxtTimKiem(), view.getCboLocViTri());
+        load();
     }
 
     private void taiDanhMuc() {

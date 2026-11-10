@@ -314,7 +314,7 @@ public final class UIComponents {
 
     /** Nút "Tải dữ liệu" dùng chung cho mọi màn hình danh sách. */
     public static JButton nutTaiDuLieu() {
-        JButton b = nutChinh("Tải dữ liệu", UIConstants.PRIMARY);
+        JButton b = nutChinh("Làm mới", UIConstants.PRIMARY);
         b.setIcon(new LineIcon(Loai.REFRESH, Color.WHITE, 16));
         return b;
     }
@@ -475,12 +475,37 @@ public final class UIComponents {
         return sp;
     }
 
-    public static final String GOI_Y_TAI = "Bấm Tải dữ liệu để xem danh sách.";
+    public static final String GOI_Y_TAI = "Đang tải danh sách...";
 
     /** Bảng đang rỗng vì chưa bấm Tải dữ liệu: hiện gợi ý ở vùng trống. */
     public static void goiYChuaTai(JTable t, boolean chuaTai) {
         t.putClientProperty("chuaTai", chuaTai);
         t.repaint();
+    }
+
+    /** Tự tải lại khi ngừng gõ ở ô tìm kiếm hoặc ô ngày, hay đổi bộ lọc; nhiều thay đổi liền nhau chỉ tải một lần. */
+    public static void tuTaiLai(Runnable tai, JComponent... nguon) {
+        Timer cho = new Timer(350, e -> tai.run());
+        cho.setRepeats(false);
+        javax.swing.event.DocumentListener khiGo = new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) { cho.restart(); }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { cho.restart(); }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { cho.restart(); }
+        };
+        for (JComponent c : nguon) {
+            if (c instanceof javax.swing.text.JTextComponent) {
+                ((javax.swing.text.JTextComponent) c).getDocument().addDocumentListener(khiGo);
+            } else if (c instanceof JComboBox) {
+                ((JComboBox<?>) c).addActionListener(e -> cho.restart());
+            } else if (c instanceof AbstractButton) {
+                ((AbstractButton) c).addActionListener(e -> cho.restart());
+            }
+        }
+    }
+
+    /** Ô "Từ ngày" mặc định 30 ngày trước, để danh sách tăng hằng ngày chỉ tải phần gần đây. */
+    public static void tuNgayGanDay(javax.swing.text.JTextComponent o) {
+        o.setText(java.time.LocalDate.now().minusDays(30).format(ChonNgay.NGAY));
     }
 
     public static void datDoRong(JTable t, int... w) {

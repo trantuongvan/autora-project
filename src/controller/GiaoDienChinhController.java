@@ -219,7 +219,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         }
     }
 
-    /** Chỉ các trang chủ tự làm mới khi quay lại; màn hình danh sách chỉ tải khi bấm Tải dữ liệu. */
+    /** Trang chủ tự làm mới khi quay lại; màn hình danh sách tự tải khi mở và khi đổi bộ lọc. */
     private void lamMoiManHinh(String card) {
         switch (card) {
             case "TRANG_CHU_QL":

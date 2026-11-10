@@ -90,7 +90,10 @@ public class QLNhapKhoController {
 
         initHeaderAndNCC();
         initController();
-        UIComponents.goiYChuaTai(view.getTblPhieuNhap(), true);
+        UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.tuTaiLai(this::loadData, view.getTxtTimPhieu(), view.getCboLocNCC(), view.getTxtTuNgay(),
+                view.getTxtDenNgay());
+        loadData();
     }
 
     private void initHeaderAndNCC() {
@@ -138,7 +141,6 @@ public class QLNhapKhoController {
             }
         });
 
-        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
         view.getTxtTimPhieu().addActionListener(e -> loadData());
         view.getBtnTaiDuLieu().addActionListener(e -> loadData());
 

@@ -52,7 +52,9 @@ public class QLDuyetXuatKhoController {
 
         initThuKhoInfo();
         initController();
-        hienChuaTai();
+        UIComponents.tuTaiLai(() -> loadDanhSach(null), view.getTxtTimKiem());
+        UIComponents.tuTaiLai(() -> loadDanhSach(null), view.getBtnTabs());
+        loadDanhSach(null);
     }
 
     private void initThuKhoInfo() {
@@ -181,16 +183,6 @@ public class QLDuyetXuatKhoController {
         loadDanhSach(maPhieuYC);
     }
 
-    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
-    private void hienChuaTai() {
-        JPanel container = view.getPnlDanhSachYeuCau();
-        container.removeAll();
-        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
-        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
-        container.add(lblGoiY);
-        yeuCauDangChon = null;
-        loadChiTiet();
-    }
 
     /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
     private void taiLai() {
