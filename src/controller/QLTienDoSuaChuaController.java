@@ -72,7 +72,7 @@ public class QLTienDoSuaChuaController {
                 view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -177,7 +177,7 @@ public class QLTienDoSuaChuaController {
         daTai = true;
         try {
             String kw = view.getTxtTimPhieu().getText();
-            danhSachPhieu = tienDoDao.searchPhieuĐượcGiao("", kw, tabTrangThaiDangChon);
+            danhSachPhieu = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, tabTrangThaiDangChon);
 
             PhieuTiepNhanVaSuaChua chon = null;
             if (maPhieuCanChon != null) {
@@ -195,7 +195,6 @@ public class QLTienDoSuaChuaController {
             veDanhSachThePhieu();
             hienThiChiTietPhieu(phieuDangChon);
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi tải danh sách phiếu sửa chữa: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -282,7 +281,7 @@ public class QLTienDoSuaChuaController {
         try {
             daThanhToan = tienDoDao.isPhieuDaThanhToan(p.getMaPhieuTNSC());
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
         view.getBtnCapNhatTrangThai().setEnabled(!daThanhToan);
         view.getBtnMoYeuCauPhuTung().setEnabled(!daThanhToan && p.getTrangThai() != TrangThaiPhieu.HOAN_THANH);
@@ -320,7 +319,6 @@ public class QLTienDoSuaChuaController {
             }
             taiLai(ma);
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi cập nhật trạng thái: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -364,7 +362,7 @@ public class QLTienDoSuaChuaController {
                 taiLai(ct.getPhieu().getMaPhieuTNSC());
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -401,7 +399,7 @@ public class QLTienDoSuaChuaController {
         view.getTxtPhieuSuaChuaYC().setText(phieuDangChon.getMaPhieuTNSC());
         view.getTxtXeYC().setText(phieuDangChon.getThongTinXeDayDu());
 
-        String tenKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getHoTen() : "Lê Văn Thợ Máy";
+        String tenKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getHoTen() : util.PhienDangNhap.getHienTai().getHoTen();
         if (!phieuDangChon.getDanhSachDichVu().isEmpty()
                 && phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien() != null) {
             tenKTV = phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien().getHoTen();
@@ -618,7 +616,6 @@ public class QLTienDoSuaChuaController {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi truy vấn danh mục phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -656,7 +653,7 @@ public class QLTienDoSuaChuaController {
             String maPYC = yeuCauDao.nextId();
             view.getTxtMaYeuCau().setText(maPYC);
 
-            String maKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getMaNV() : "NV0005";
+            String maKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getMaNV() : util.PhienDangNhap.getHienTai().getMaNV();
             PhieuYeuCauXuatKho phieu = new PhieuYeuCauXuatKho(
                     maPYC,
                     LocalDateTime.now(),
@@ -675,7 +672,6 @@ public class QLTienDoSuaChuaController {
             view.hienThiManHinh(QLTienDoSuaChua.CARD_TIEN_DO);
             taiLai(phieuDangChon.getMaPhieuTNSC());
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu yêu cầu phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }

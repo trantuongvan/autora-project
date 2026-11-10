@@ -173,20 +173,40 @@ public class PhuTung_Dao {
     }
 
     /** Không ghi tồn kho: tồn chỉ đổi qua nhập kho và duyệt xuất kho, màn hình cũ không được ghi đè số mới. */
-    public boolean update(PhuTung pt) throws SQLException {
+    /** Sửa thông tin phụ tùng; đổi giá nhập hoặc giá bán lẻ thì ghi nhật ký giá cũ và giá mới. */
+    public boolean update(PhuTung pt, String tenDangNhap) throws SQLException {
         String sql = "UPDATE PhuTung SET tenPhuTung = ?, hangSanXuat = ?, viTriLuuKho = ?, giaNhap = ?, "
                 + "giaBanLe = ?, nguongCanhBao = ? WHERE maSKU = ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement p = c.prepareStatement(sql)) {
-            p.setString(1, pt.getTenPhuTung());
-            p.setString(2, pt.getHangSanXuat());
-            p.setString(3, pt.getViTriLuuKho());
-            p.setDouble(4, pt.getGiaNhap());
-            p.setDouble(5, pt.getGiaBanLe());
-            p.setInt(6, pt.getNguongCanhBao());
-            p.setString(7, pt.getMaSKU());
-            return p.executeUpdate() == 1;
+        try (Connection c = ConnectDB.getConnection()) {
+            c.setAutoCommit(false);
+            try (PreparedStatement p = c.prepareStatement(sql)) {
+                PhuTung cu = docDeDoiTon(c, pt.getMaSKU());
+                p.setString(1, pt.getTenPhuTung());
+                p.setString(2, pt.getHangSanXuat());
+                p.setString(3, pt.getViTriLuuKho());
+                p.setDouble(4, pt.getGiaNhap());
+                p.setDouble(5, pt.getGiaBanLe());
+                p.setInt(6, pt.getNguongCanhBao());
+                p.setString(7, pt.getMaSKU());
+                if (p.executeUpdate() != 1) {
+                    c.rollback();
+                    return false;
+                }
+                if (cu.getGiaNhap() != pt.getGiaNhap() || cu.getGiaBanLe() != pt.getGiaBanLe()) {
+                    new NhatKy_Dao().ghi(c, tenDangNhap, "Sửa giá phụ tùng", pt.getMaSKU(),
+                            moTaGia(cu), moTaGia(pt));
+                }
+                c.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                c.rollback();
+                throw ex;
+            }
         }
+    }
+
+    private static String moTaGia(PhuTung pt) {
+        return "Nhập " + util.FormatUtil.formatCurrency(pt.getGiaNhap()) + " / Bán " + util.FormatUtil.formatCurrency(pt.getGiaBanLe());
     }
 
     public boolean delete(String maSKU) throws SQLException {

@@ -91,19 +91,9 @@ public class QLKhachHangController {
                 xuLyClickBang(e);
             }
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDanhSach);
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDanhSach);
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
                 () -> view.getTxtTimKiem().requestFocusInWindow());
-    }
-
-    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
-        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
-        view.getActionMap().put(ten, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viec.run();
-            }
-        });
     }
 
     private void xuLyClickBang(MouseEvent e) {
@@ -478,7 +468,7 @@ public class QLKhachHangController {
             return;
         }
         try {
-            if (!dao.delete(ma)) {
+            if (!dao.delete(ma, util.PhienDangNhap.getHienTai().getTenDangNhap())) {
                 JOptionPane.showMessageDialog(view,
                         "Không thể xóa khách hàng đang có xe liên kết hoặc đã có phiếu sửa chữa. Với xe liên kết, hãy chuyển hoặc xóa xe tại màn hình Hồ sơ xe trước.",
                         "Không thể xóa", JOptionPane.WARNING_MESSAGE);

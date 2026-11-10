@@ -102,10 +102,11 @@ public class TestTuDongHoa {
 
     private static void kiemTraTenDangNhap() throws Exception {
         dung("Nguyễn Tuấn Vũ", "vunt".equals(QLTaiKhoanController.taoTenDangNhap("Nguyễn Tuấn Vũ")));
+        dung("Tên một chữ ngắn vẫn đủ 3 ký tự", "an01".equals(QLTaiKhoanController.taoTenDangNhap("An")));
         dung("Trần Thị Tường Vân", "vanttt".equals(QLTaiKhoanController.taoTenDangNhap("Trần Thị Tường Vân")));
         dung("Chữ đ và Đ", "dungdd".equals(QLTaiKhoanController.taoTenDangNhap("Đỗ Đức Dũng"))
                 && "dinhd".equals(QLTaiKhoanController.taoTenDangNhap("đặng Đình")));
-        dung("Một từ", "vy".equals(QLTaiKhoanController.taoTenDangNhap("Vy")) && "thuy".equals(QLTaiKhoanController.taoTenDangNhap("  Thủy ")));
+        dung("Một từ", "vy01".equals(QLTaiKhoanController.taoTenDangNhap("Vy")) && "thuy".equals(QLTaiKhoanController.taoTenDangNhap("  Thủy ")));
         dung("Khoảng trắng thừa", "anhnxv".equals(QLTaiKhoanController.taoTenDangNhap(" Nguyễn  Xuân Việt  Anh ")));
         dung("Rỗng", "".equals(QLTaiKhoanController.taoTenDangNhap("  ")) && "".equals(QLTaiKhoanController.taoTenDangNhap(null)));
 

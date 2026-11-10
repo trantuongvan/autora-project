@@ -32,6 +32,17 @@ public enum TrangThaiPhieu {
         }
     }
 
+    /**
+     * Trạng thái phiếu sau khi cập nhật hạng mục: xong hết thì Hoàn thành; còn việc và còn yêu cầu
+     * phụ tùng chờ xuất thì vẫn Chờ phụ tùng; còn lại là Đang sửa.
+     */
+    public static TrangThaiPhieu theoTienDo(int soHangMucChuaXong, boolean conChoPhuTung) {
+        if (soHangMucChuaXong == 0) {
+            return HOAN_THANH;
+        }
+        return conChoPhuTung ? CHO_PHU_TUNG : DANG_SUA;
+    }
+
     /** Nhãn "Chờ sửa" chỉ để hiển thị; trong CSDL phiếu đó là "Chờ kiểm tra". */
     public static TrangThaiPhieu tuNhan(String nhan) {
         if (nhan == null) {

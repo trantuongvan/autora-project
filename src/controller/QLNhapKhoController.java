@@ -77,7 +77,7 @@ public class QLNhapKhoController {
                 dangTuChonNcc = false;
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -117,7 +117,7 @@ public class QLNhapKhoController {
                 view.getCboModalNCC().addItem(ncc);
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -201,7 +201,7 @@ public class QLNhapKhoController {
             view.getLblFooterSoPhieu().setText("Hiển thị " + danhSachPhieuNhap.size() + " / " + all.size() + " phiếu");
             view.getLblCapNhatLuc().setText("Cập nhật lúc " + LocalTime.now().format(TIME_FMT));
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -245,7 +245,7 @@ public class QLNhapKhoController {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
 
         veBangChiTietModal();
@@ -496,7 +496,6 @@ public class QLNhapKhoController {
                 view.getTxtTimPhuTungModal().setText("");
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi truy vấn phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -612,7 +611,7 @@ public class QLNhapKhoController {
 
         try {
             String maPN = nhapKhoDao.nextId();
-            NhanVien thuKho = thuKhoHienTai != null ? thuKhoHienTai : new NhanVien("NV0004");
+            NhanVien thuKho = thuKhoHienTai != null ? thuKhoHienTai : new NhanVien(util.PhienDangNhap.getHienTai().getMaNV());
             PhieuNhapKho phieu = new PhieuNhapKho(maPN, LocalDateTime.now(), tongTien, ncc, thuKho);
 
             nhapKhoDao.insertWithDetails(phieu, dsChiTietModal);
@@ -623,7 +622,6 @@ public class QLNhapKhoController {
             view.hienThiModalLapPhieu(false);
             taiLai();
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu nhập kho: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -660,7 +658,7 @@ public class QLNhapKhoController {
 
             JOptionPane.showMessageDialog(view, pnl, "Chi tiết phiếu nhập kho " + pn.getMaPhieuNhap(), JOptionPane.PLAIN_MESSAGE);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 }

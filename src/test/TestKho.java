@@ -58,6 +58,11 @@ public class TestKho {
     private static int stt;
 
     public static void main(String[] args) throws Exception {
+        kiemTraThongKeKtvTheoKy();
+        kiemTraThongKeDoanhThu();
+        kiemTraThongKeTuTinh();
+        kiemTraDanhMuc();
+        kiemTraSaoLuu();
         kiemTraDuyetMotLan();
         kiemTraTuChoi();
         kiemTraNhatKy();
@@ -118,7 +123,7 @@ public class TestKho {
         kiem("Giá cũ vượt giá bán: vẫn duyệt xuất được", ton(sku) == 0);
         PhuTung sua = dao.findById(sku);
         sua.setGiaBanLe(sua.getGiaNhap() + 5000);
-        kiem("Tăng giá bán để sửa dữ liệu", dao.update(sua));
+        kiem("Tăng giá bán để sửa dữ liệu", dao.update(sua, NGUOI));
         PhieuNhapKho sauSua = phieuNhap("PNG0003", sua.getGiaNhap());
         nhapKho.insertWithDetails(sauSua, Arrays.asList(new ChiTietNhapKho(sauSua, new PhuTung(sku), 1, sua.getGiaNhap())));
         kiem("Sửa xong thì nhập kho lại được", ton(sku) == 1);
@@ -369,6 +374,10 @@ public class TestKho {
         kiem("Chưa có hóa đơn thì không bàn giao", biChan);
         lap(p);
         kiem("Có hóa đơn thì bàn giao được", dao.xacNhan(p, "NV0002", ""));
+        PhieuTiepNhanVaSuaChua phieuIn = dao.findChiTiet(p);
+        kiem("Phiếu xuất xưởng có người bàn giao, ngày và hóa đơn", phieuIn.getBanGiao() != null
+                && "NV0002".equals(phieuIn.getBanGiao().getNhanVienBanGiao().getMaNV())
+                && phieuIn.getBanGiao().getNgayBanGiao() != null && phieuIn.getHoaDon() != null);
         kiem("Bàn giao xong chuyển sang danh sách đã bàn giao", coPhieu(dao.findDanhSach("", "Đã bàn giao"), p) && !coPhieu(dao.findDanhSach("", "Chờ bàn giao"), p));
         biChan = false;
         try {
@@ -419,7 +428,8 @@ public class TestKho {
         thucThi("UPDATE PhuTung SET soLuongTon = soLuongTon - 3 WHERE maSKU = 'SKU_BRK01'");
         double giaMoi = cu.getGiaBanLe() + 1000;
         cu.setGiaBanLe(giaMoi);
-        kiem("Sửa phụ tùng thành công", dao.update(cu));
+        kiem("Sửa phụ tùng thành công", dao.update(cu, NGUOI));
+        kiem("Sửa giá phụ tùng được ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE hanhDong = N'Sửa giá phụ tùng' AND doiTuong = 'SKU_BRK01'") == 1);
         kiem("Màn hình cũ không ghi đè tồn kho", ton("SKU_BRK01") == ton - 3);
         kiem("Sửa phụ tùng vẫn lưu giá mới", dao.findById("SKU_BRK01").getGiaBanLe() == giaMoi);
     }
@@ -491,7 +501,7 @@ public class TestKho {
 
         KhachHang_Dao khDao = new KhachHang_Dao();
         kiem("Lịch sử cũ thuộc chủ cũ", khDao.lichSuSuaChua("KHK1").size() == 1 && khDao.lichSuSuaChua("KHK2").isEmpty());
-        kiem("Chủ cũ đã có phiếu thì không xóa được", !khDao.delete("KHK1"));
+        kiem("Chủ cũ đã có phiếu thì không xóa được", !khDao.delete("KHK1", "admin"));
 
         PhieuTiepNhanVaSuaChua moi = phieuXe("77K-100.01");
         dao.taoTiepNhan(null, null, moi, dichVu);
@@ -586,6 +596,102 @@ public class TestKho {
 
     private static int so(String sql) throws Exception {
         return Integer.parseInt(q(sql));
+    }
+
+    /** Dữ liệu mẫu: NV0005 xong 2 hạng mục trên phiếu ngày 20/10, phiếu ngày 23/10 chưa xong hạng mục nào. */
+    private static void kiemTraThongKeKtvTheoKy() throws Exception {
+        dao.ThongKe_Dao thongKe = new dao.ThongKe_Dao();
+        kiem("Thống kê KTV: ngày 20/10 có 2 hạng mục xong", hangMucXong(thongKe, java.time.LocalDate.of(2026, 10, 20)) == 2);
+        kiem("Thống kê KTV: ngày 23/10 không cộng hạng mục của ngày khác", hangMucXong(thongKe, java.time.LocalDate.of(2026, 10, 23)) == 0);
+    }
+
+    /** Doanh thu theo ngày thu tiền như trang chủ: hóa đơn trả sau được tính vào ngày trả. */
+    private static void kiemTraThongKeDoanhThu() throws Exception {
+        dao.ThongKe_Dao thongKe = new dao.ThongKe_Dao();
+        java.time.LocalDate lap = java.time.LocalDate.of(2026, 10, 20);
+        java.time.LocalDate tra = java.time.LocalDate.of(2026, 11, 2);
+        kiem("Thống kê: doanh thu ngày lập = ngày trả", thongKe.taiDuLieuThongKe(lap, lap).getTongDoanhThu() == 1506600);
+        thucThi("UPDATE HoaDon SET ngayThanhToan = '2026-11-02 09:00' WHERE maHD = 'HD000001'");
+        try {
+            kiem("Thống kê: trả ngày khác thì không tính vào ngày lập", thongKe.taiDuLieuThongKe(lap, lap).getTongDoanhThu() == 0);
+            kiem("Thống kê: tính vào ngày thu tiền", thongKe.taiDuLieuThongKe(tra, tra).getTongDoanhThu() == 1506600);
+        } finally {
+            thucThi("UPDATE HoaDon SET ngayThanhToan = '2026-10-20 16:45' WHERE maHD = 'HD000001'");
+        }
+    }
+
+    /** Các số báo cáo tự tính, không có setter. */
+    private static void kiemTraThongKeTuTinh() {
+        entity.DuLieuThongKe d = new entity.DuLieuThongKe();
+        d.setTongTienCong(100);
+        d.setTongTienPhuTung(300);
+        d.setTongGiaVonPhuTung(500);
+        kiem("Thống kê: lỗ hiện số âm, không bị chặn về 0", d.getTongLoiNhuan() == -100);
+        kiem("Thống kê: tỷ trọng tiền công", d.getTyTrongTienCong() == 25.0 && d.getTyTrongPhuTung() == 75.0);
+        entity.NhanVien ktv = new entity.NhanVien("NV0005", "KTV", "0900000005", "Q1", entity.VaiTro.KY_THUAT_VIEN);
+        kiem("Thống kê: tỷ lệ hoàn thành của KTV", new entity.NangSuatKTV(ktv, 1, 1, 3, 0).getTyLeHoanThanh() == 25.0);
+        entity.PhuTung pt = new entity.PhuTung("SKU_TK01");
+        pt.setGiaBanLe(2000);
+        pt.setGiaNhap(1000);
+        pt.setSoLuongTon(4);
+        pt.setNguongCanhBao(5);
+        entity.ThongKePhuTung tk = new entity.ThongKePhuTung(pt, 0, 0);
+        kiem("Thống kê: giá trị tồn và cảnh báo lấy từ phụ tùng", tk.getGiaTriTon() == 4000 && tk.isDuoiNguongCanhBao());
+    }
+
+    /** Dịch vụ và nhà cung cấp: thêm sinh mã mới, sửa, xóa có ghi nhật ký, chặn xóa khi đã dùng. */
+    private static void kiemTraDanhMuc() throws Exception {
+        dao.DichVu_Dao dvDao = new dao.DichVu_Dao();
+        entity.DichVu dv = new entity.DichVu();
+        dv.setTenDichVu("Rửa xe kiểm tra");
+        dv.setTienCong(80000);
+        dv.setThoiGianChuan(30);
+        String ma = dvDao.luu(dv, NGUOI);
+        kiem("Dịch vụ mới có mã DV kế tiếp", ma.startsWith("DV") && dvDao.search(ma).size() == 1);
+        dv.setMaDichVu(ma);
+        dv.setTienCong(90000);
+        dvDao.luu(dv, NGUOI);
+        kiem("Sửa tiền công dịch vụ", dvDao.search(ma).get(0).getTienCong() == 90000);
+        kiem("Dịch vụ đã dùng trên phiếu không xóa được", !dvDao.xoa("DV0001", NGUOI));
+        kiem("Dịch vụ chưa dùng xóa được", dvDao.xoa(ma, NGUOI) && dvDao.search(ma).isEmpty());
+        kiem("Thêm, sửa, xóa dịch vụ đều ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE doiTuong = '" + ma + "'") == 3);
+
+        dao.NhaCungCap_Dao nccDao = new dao.NhaCungCap_Dao();
+        entity.NhaCungCap ncc = new entity.NhaCungCap();
+        ncc.setTenNCC("NCC kiểm tra");
+        ncc.setSoDienThoai("0901234567");
+        ncc.setDiaChi("Q1");
+        String maNcc = nccDao.luu(ncc, NGUOI);
+        kiem("Nhà cung cấp mới có mã NCC kế tiếp", maNcc.startsWith("NCC") && nccDao.search(maNcc).size() == 1);
+        kiem("Nhà cung cấp chưa có phiếu nhập xóa được", nccDao.xoa(maNcc, NGUOI) && nccDao.search(maNcc).isEmpty());
+        kiem("Số phút không phải số báo lỗi rõ ràng", baoLoi(() -> controller.QLDanhMucController.docSoPhut("abc")));
+    }
+
+    /** Sao lưu bằng tài khoản ứng dụng (db_backupoperator); tệp nằm trên máy chạy SQL Server, ở đây là cùng máy. */
+    private static void kiemTraSaoLuu() throws Exception {
+        String tep = new dao.SaoLuu_Dao().saoLuu(NGUOI);
+        java.io.File f = new java.io.File(tep);
+        kiem("Sao lưu tạo tệp .bak", tep.endsWith(".bak") && f.isFile() && f.length() > 0);
+        kiem("Sao lưu được ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE hanhDong = N'Sao lưu dữ liệu'") == 1);
+        f.delete();
+    }
+
+    private static boolean baoLoi(Runnable viec) {
+        try {
+            viec.run();
+            return false;
+        } catch (IllegalArgumentException ex) {
+            return true;
+        }
+    }
+
+    private static int hangMucXong(dao.ThongKe_Dao thongKe, java.time.LocalDate ngay) throws Exception {
+        for (entity.NangSuatKTV n : thongKe.taiDuLieuThongKe(ngay, ngay).getDanhSachNangSuatKTV()) {
+            if ("NV0005".equals(n.getKyThuatVien().getMaNV())) {
+                return n.getHangMucHoanThanh();
+            }
+        }
+        return -1;
     }
 
     private static void kiem(String ten, boolean dat) {

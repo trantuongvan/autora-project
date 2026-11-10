@@ -262,7 +262,7 @@ public class TestLichHen {
         lichSql("KHL40", HOM_NAY.plusDays(1), null, "Đang hẹn");
         lichSql("KHL40", HOM_NAY.plusDays(2), null, "Đã hủy");
         dung("Trước khi xóa khách có 2 lịch", dem("SELECT COUNT(*) FROM LichHen WHERE maKH = 'KHL40'") == 2);
-        dung("Xóa khách", khDao.delete("KHL40"));
+        dung("Xóa khách", khDao.delete("KHL40", "admin"));
         dung("Xóa khách xóa luôn lịch hẹn", dem("SELECT COUNT(*) FROM LichHen WHERE maKH = 'KHL40'") == 0);
 
         khach("KHL41", "0970000041");

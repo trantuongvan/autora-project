@@ -58,8 +58,8 @@ public class QLPhieuSuaChuaController {
                 xuLyClickBang(e);
             }
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDanhSach);
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDanhSach);
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
                 () -> view.getTxtTimKiem().requestFocusInWindow());
         view.getTblDanhSach().getInputMap(JComponent.WHEN_FOCUSED)
                 .put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "xoa");
@@ -69,11 +69,6 @@ public class QLPhieuSuaChuaController {
                 huyPhieu(maTaiDong(dong));
             }
         }));
-    }
-
-    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
-        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
-        view.getActionMap().put(ten, hanhDong(viec));
     }
 
     private static Action hanhDong(Runnable viec) {

@@ -447,18 +447,4 @@ public class QLNhapKho extends JPanel {
     public JButton getBtnHuyModal() { return btnHuyModal; }
     public JButton getBtnLuuPhieuNhap() { return btnLuuPhieuNhap; }
 
-//    public static void main(String[] args) {
-//        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//        } catch (Exception ignored) {}
-//
-//        SwingUtilities.invokeLater(() -> {
-//            JFrame frame = new JFrame("AUTORA GARAGE - Quản Lý Nhập Kho");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.setContentPane(QLNhapKho.createPanel());
-//            frame.setSize(1366, 840);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-//    }
 }

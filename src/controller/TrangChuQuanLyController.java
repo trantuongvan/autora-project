@@ -119,18 +119,17 @@ public class TrangChuQuanLyController {
     }
 
     private SoLieu docSoLieu(LocalDate tu, LocalDate den) throws SQLException {
-        LocalDate homNay = LocalDate.now();
-        LocalDate thangTruoc = homNay.minusMonths(1);
+        TrangChuQuanLy_Dao.TongQuan t = dao.docTongQuan(LocalDate.now(), tu, den);
         SoLieu s = new SoLieu();
-        s.homNay = dao.doanhThuNgay(homNay);
-        s.homQua = dao.doanhThuNgay(homNay.minusDays(1));
-        s.thangNay = dao.doanhThuThang(homNay.getYear(), homNay.getMonthValue());
-        s.thangTruoc = dao.doanhThuThang(thangTruoc.getYear(), thangTruoc.getMonthValue());
-        s.luotXe = dao.luotXeHomNay();
-        s.hoaDonCho = dao.hoaDonChoThanhToan();
-        s.tyTrong = dao.tyTrongThang(homNay.getYear(), homNay.getMonthValue());
-        s.bayNgay = dao.doanhThuTheoNgay(homNay.minusDays(6), homNay);
-        s.bang = dao.bangDoanhThu(tu, den);
+        s.homNay = t.homNay;
+        s.homQua = t.homQua;
+        s.thangNay = t.thangNay;
+        s.thangTruoc = t.thangTruoc;
+        s.luotXe = t.luotXe;
+        s.hoaDonCho = t.hoaDonCho;
+        s.tyTrong = t.tyTrong;
+        s.bayNgay = t.bayNgay;
+        s.bang = t.bang;
         s.tonKho = new PhuTung_Dao().findDuoiNguongCanhBao("");
         return s;
     }

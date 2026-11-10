@@ -18,7 +18,8 @@ import java.util.List;
 
 /**
  * DAO xử lý toàn bộ truy vấn và tính toán số liệu cho UC014 - Xem báo cáo thống kê.
- * Mọi phép tính tổng, lợi nhuận, tỷ trọng %, giá trị tồn đều thực hiện ở đây.
+ * DAO chỉ gộp số liệu bằng SQL; lợi nhuận, tỷ lệ và giá trị tồn do DuLieuThongKe tự tính.
+ * Doanh thu tính theo ngày thu tiền (ngayThanhToan), giống trang chủ quản lý.
  */
 public class ThongKe_Dao {
 
@@ -36,7 +37,7 @@ public class ThongKe_Dao {
         Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
         Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
-        String sqlNgay = "SELECT CAST(h.ngayLap AS DATE) AS ngay, "
+        String sqlNgay = "SELECT CAST(h.ngayThanhToan AS DATE) AS ngay, "
                 + "COUNT(h.maHD) AS soHD, "
                 + "COALESCE(SUM(h.tongTienCong), 0) AS tienCong, "
                 + "COALESCE(SUM(h.tongTienPhuTung), 0) AS tienPhuTung, "
@@ -44,8 +45,8 @@ public class ThongKe_Dao {
                 + "COALESCE(SUM(h.tongTienVAT), 0) AS vat, "
                 + "COALESCE(SUM(h.tongThanhToan), 0) AS tongThanhToan "
                 + "FROM HoaDon h "
-                + "WHERE h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayLap >= ? AND h.ngayLap < ? "
-                + "GROUP BY CAST(h.ngayLap AS DATE) "
+                + "WHERE h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayThanhToan >= ? AND h.ngayThanhToan < ? "
+                + "GROUP BY CAST(h.ngayThanhToan AS DATE) "
                 + "ORDER BY ngay DESC";
 
         List<DoanhThuNgay> dsNgay = new ArrayList<>();
@@ -81,7 +82,7 @@ public class ThongKe_Dao {
                 + "FROM HoaDon h "
                 + "JOIN ChiTietSuaChua_PhuTung ct ON ct.maPhieuTNSC = h.maPhieuTNSC "
                 + "JOIN PhuTung pt ON pt.maSKU = ct.maSKU "
-                + "WHERE h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayLap >= ? AND h.ngayLap < ?";
+                + "WHERE h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayThanhToan >= ? AND h.ngayThanhToan < ?";
         double tongGiaVonPhuTung = 0;
         try (PreparedStatement ps = c.prepareStatement(sqlGiaVon)) {
             ps.setTimestamp(1, tsTu);
@@ -93,22 +94,13 @@ public class ThongKe_Dao {
             }
         }
 
-        double loiNhuan = (tongCong + tongPT - tongGiam) - tongGiaVonPhuTung;
-        if (loiNhuan < 0) loiNhuan = 0;
-
-        double tongTruocThue = tongCong + tongPT;
-        double tyTrongCong = tongTruocThue > 0 ? Math.round((tongCong * 1000.0) / tongTruocThue) / 10.0 : 0;
-        double tyTrongPT = tongTruocThue > 0 ? Math.round((100.0 - tyTrongCong) * 10.0) / 10.0 : 0;
-
         kq.setTongSoHoaDon(tongHD);
         kq.setTongTienCong(tongCong);
         kq.setTongTienPhuTung(tongPT);
         kq.setTongGiamGia(tongGiam);
         kq.setTongVAT(tongVAT);
         kq.setTongDoanhThu(tongDT);
-        kq.setTongLoiNhuan(loiNhuan);
-        kq.setTyTrongTienCong(tyTrongCong);
-        kq.setTyTrongPhuTung(tyTrongPT);
+        kq.setTongGiaVonPhuTung(tongGiaVonPhuTung);
         kq.setDanhSachDoanhThuNgay(dsNgay);
     }
 
@@ -118,7 +110,6 @@ public class ThongKe_Dao {
 
         String sqlPT = "SELECT pt.maSKU, pt.tenPhuTung, pt.hangSanXuat, pt.viTriLuuKho, "
                 + "pt.giaNhap, pt.giaBanLe, pt.soLuongTon, pt.nguongCanhBao, "
-                + "(pt.soLuongTon * pt.giaNhap) AS giaTriTon, "
                 + "COALESCE(nhap.slNhap, 0) AS slNhap, COALESCE(nhap.gtNhap, 0) AS gtNhap, "
                 + "COALESCE(xuat.slXuat, 0) AS slXuat, COALESCE(xuat.gtXuat, 0) AS gtXuat "
                 + "FROM PhuTung pt "
@@ -135,7 +126,7 @@ public class ThongKe_Dao {
                 + "ORDER BY COALESCE(xuat.slXuat, 0) DESC, pt.maSKU ASC";
 
         List<ThongKePhuTung> dsPT = new ArrayList<>();
-        double tongGiaTriTon = 0, tongGTNhap = 0, tongGTXuat = 0;
+        double tongGTNhap = 0, tongGTXuat = 0;
         int soMatHang = 0, tongSLNhap = 0, tongSLXuat = 0;
 
         try (PreparedStatement ps = c.prepareStatement(sqlPT)) {
@@ -151,20 +142,14 @@ public class ThongKe_Dao {
                     pt.setViTriLuuKho(rs.getString("viTriLuuKho"));
                     pt.setGiaBanLe(rs.getDouble("giaBanLe"));
                     pt.setGiaNhap(rs.getDouble("giaNhap"));
-                    int ton = rs.getInt("soLuongTon");
-                    int nguong = rs.getInt("nguongCanhBao");
-                    pt.setSoLuongTon(ton);
-                    pt.setNguongCanhBao(nguong);
+                    pt.setSoLuongTon(rs.getInt("soLuongTon"));
+                    pt.setNguongCanhBao(rs.getInt("nguongCanhBao"));
 
                     int slNhap = rs.getInt("slNhap");
                     int slXuat = rs.getInt("slXuat");
-                    double gtTon = rs.getDouble("giaTriTon");
-                    boolean canhBao = ton <= nguong;
-
-                    dsPT.add(new ThongKePhuTung(pt, slNhap, slXuat, ton, gtTon, canhBao));
+                    dsPT.add(new ThongKePhuTung(pt, slNhap, slXuat));
 
                     soMatHang++;
-                    tongGiaTriTon += gtTon;
                     tongSLNhap += slNhap;
                     tongGTNhap += rs.getDouble("gtNhap");
                     tongSLXuat += slXuat;
@@ -210,7 +195,6 @@ public class ThongKe_Dao {
             }
         }
 
-        kq.setGiaTriTonKhoHienTai(tongGiaTriTon);
         kq.setSoMatHangQuanLy(soMatHang);
         kq.setTongSoLuongNhap(tongSLNhap);
         kq.setTongGiaTriNhap(tongGTNhap);
@@ -243,9 +227,10 @@ public class ThongKe_Dao {
 
         String sqlKTV = "SELECT nv.maNV, nv.hoTen, nv.soDienThoai, nv.diaChi, "
                 + "COUNT(DISTINCT p.maPhieuTNSC) AS soXe, "
-                + "COALESCE(SUM(CASE WHEN ct.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END), 0) AS hmXong, "
+                + "COALESCE(SUM(CASE WHEN ct.trangThaiTienDo = N'Hoàn thành' AND p.maPhieuTNSC IS NOT NULL THEN 1 ELSE 0 END), 0) AS hmXong, "
                 + "COALESCE(SUM(CASE WHEN ct.trangThaiTienDo <> N'Hoàn thành' AND p.maPhieuTNSC IS NOT NULL THEN 1 ELSE 0 END), 0) AS hmDangLam, "
-                + "COALESCE(SUM(CASE WHEN ct.trangThaiTienDo = N'Hoàn thành' THEN ct.tienCongThucTe ELSE 0 END), 0) AS tienCong "
+                + "COALESCE(SUM(CASE WHEN ct.trangThaiTienDo = N'Hoàn thành' AND p.maPhieuTNSC IS NOT NULL THEN ct.tienCongThucTe ELSE 0 END), 0) AS tienCong "
+                // p chỉ khác NULL khi phiếu nằm trong kỳ: mọi phép đếm phải kiểm tra, nếu không sẽ cộng cả lịch sử.
                 + "FROM NhanVien nv "
                 + "LEFT JOIN ChiTietSuaChua_DichVu ct ON ct.maNV_KyThuat = nv.maNV "
                 + "LEFT JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = ct.maPhieuTNSC "
@@ -255,7 +240,6 @@ public class ThongKe_Dao {
                 + "ORDER BY hmXong DESC, tienCong DESC";
 
         List<NangSuatKTV> dsKTV = new ArrayList<>();
-        int tongHMXong = 0, tongHMDangLam = 0, ktvHoatDong = 0;
 
         try (PreparedStatement ps = c.prepareStatement(sqlKTV)) {
             ps.setTimestamp(1, tsTu);
@@ -274,20 +258,7 @@ public class ThongKe_Dao {
                     int hmDang = rs.getInt("hmDangLam");
                     double tienCong = rs.getDouble("tienCong");
 
-                    if (soXe == 0) {
-                        hmXong = 0;
-                        hmDang = 0;
-                        tienCong = 0;
-                    } else {
-                        ktvHoatDong++;
-                    }
-
-                    int tongHM = hmXong + hmDang;
-                    double tyLe = tongHM > 0 ? Math.round((hmXong * 1000.0) / tongHM) / 10.0 : 0.0;
-
-                    dsKTV.add(new NangSuatKTV(nv, soXe, hmXong, hmDang, tienCong, tyLe));
-                    tongHMXong += hmXong;
-                    tongHMDangLam += hmDang;
+                    dsKTV.add(new NangSuatKTV(nv, soXe, hmXong, hmDang, tienCong));
                 }
             }
         }
@@ -307,19 +278,8 @@ public class ThongKe_Dao {
             }
         }
 
-        double tyLeXeXong = tongXe > 0 ? Math.round((xeXong * 1000.0) / tongXe) / 10.0 : 0.0;
-        double tbHangMuc = tongXe > 0 ? Math.round((tongHMXong * 10.0) / tongXe) / 10.0 : 0.0;
-        int tongTatCaHM = tongHMXong + tongHMDangLam;
-        double tyLeChung = tongTatCaHM > 0 ? Math.round((tongHMXong * 1000.0) / tongTatCaHM) / 10.0 : 0.0;
-
         kq.setTongLuotXeVaoXuong(tongXe);
         kq.setTongXeSuaXong(xeXong);
-        kq.setTyLeXeSuaXong(tyLeXeXong);
-        kq.setTongHangMucHoanThanh(tongHMXong);
-        kq.setTongHangMucDangLam(tongHMDangLam);
-        kq.setTrungBinhHangMucTrenXe(tbHangMuc);
-        kq.setSoKyThuatVienHoatDong(ktvHoatDong);
-        kq.setTyLeHoanThanhChung(tyLeChung);
         kq.setDanhSachNangSuatKTV(dsKTV);
         kq.setDanhSachLuotXeNgay(dsLuotNgay);
     }

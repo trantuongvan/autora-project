@@ -178,7 +178,7 @@ public class QLThongKe extends JPanel {
         kpi1 = new ThongKeKpiCard("Tổng doanh thu", "0đ", "Sau giảm giá và VAT", RED_KPI);
         kpi2 = new ThongKeKpiCard("Tiền công dịch vụ", "0đ", "0% doanh thu", BLUE_KPI);
         kpi3 = new ThongKeKpiCard("Tiền phụ tùng", "0đ", "0% doanh thu", AMBER_KPI);
-        kpi4 = new ThongKeKpiCard("Lợi nhuận", "0đ", "Kỳ báo cáo", GREEN_KPI);
+        kpi4 = new ThongKeKpiCard("Lợi nhuận ước tính", "0đ", "Giá vốn theo giá nhập hiện tại", GREEN_KPI);
         pnlKpis.add(kpi1);
         pnlKpis.add(kpi2);
         pnlKpis.add(kpi3);
@@ -513,7 +513,8 @@ public class QLThongKe extends JPanel {
             kpi1.setValues("Tổng doanh thu", dfTien.format(duLieuHienTai.getTongDoanhThu()) + "đ", "Sau giảm giá và VAT");
             kpi2.setValues("Tiền công dịch vụ", dfTien.format(duLieuHienTai.getTongTienCong()) + "đ", duLieuHienTai.getTyTrongTienCong() + "% doanh thu");
             kpi3.setValues("Tiền phụ tùng", dfTien.format(duLieuHienTai.getTongTienPhuTung()) + "đ", duLieuHienTai.getTyTrongPhuTung() + "% doanh thu");
-            kpi4.setValues("Lợi nhuận", dfTien.format(duLieuHienTai.getTongLoiNhuan()) + "đ", chuoiKyNgan);
+            kpi4.setValues("Lợi nhuận ước tính", dfTien.format(duLieuHienTai.getTongLoiNhuan()) + "đ",
+                    chuoiKyNgan + " • giá vốn theo giá nhập hiện tại");
         } else if (tabHienTai == 1) {
             kpi1.setValues("Giá trị tồn kho hiện tại", dfTien.format(duLieuHienTai.getGiaTriTonKhoHienTai()) + "đ", duLieuHienTai.getSoMatHangQuanLy() + " mặt hàng đang quản lý");
             kpi2.setValues("Số lượng nhập", String.valueOf(duLieuHienTai.getTongSoLuongNhap()), "Giá trị " + dfTien.format(duLieuHienTai.getTongGiaTriNhap()) + "đ");

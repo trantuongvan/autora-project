@@ -159,6 +159,10 @@ public class TestNghiepVuTiepNhan {
         dung("Mật khẩu rõ còn sót không đăng nhập được", !MatKhauUtil.kiemTra("123456", "123456"));
         dung("Giá trị băm hỏng", !MatKhauUtil.kiemTra("a", "pbkdf2$x$y$z") && !MatKhauUtil.kiemTra("a", null));
 
+        dung("Còn việc và còn yêu cầu phụ tùng chờ xuất thì vẫn Chờ phụ tùng",
+                TrangThaiPhieu.theoTienDo(1, true) == TrangThaiPhieu.CHO_PHU_TUNG
+                && TrangThaiPhieu.theoTienDo(1, false) == TrangThaiPhieu.DANG_SUA
+                && TrangThaiPhieu.theoTienDo(0, true) == TrangThaiPhieu.HOAN_THANH);
         dung("Luồng hợp lệ", TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
                 && TrangThaiPhieu.DANG_SUA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
                 && TrangThaiPhieu.CHO_PHU_TUNG.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
@@ -198,6 +202,7 @@ public class TestNghiepVuTiepNhan {
         dung("Phần trăm có dấu phẩy", QLKhuyenMaiController.docGiaTri("7,5", HinhThucKhuyenMai.PHAN_TRAM) == 7.5);
         loi("Phần trăm trên 100", () -> QLKhuyenMaiController.docGiaTri("101", HinhThucKhuyenMai.PHAN_TRAM));
         loi("Giá trị chữ", () -> QLKhuyenMaiController.docGiaTri("abc", HinhThucKhuyenMai.TIEN_MAT));
+        loi("Tiền mặt có phần lẻ không bị đọc thành số lớn", () -> QLKhuyenMaiController.docGiaTri("150.5", HinhThucKhuyenMai.TIEN_MAT));
         dung("Số lượt trống là không giới hạn", QLKhuyenMaiController.docSoLuot(" ") == null);
         loi("Số lượt bằng 0", () -> QLKhuyenMaiController.docSoLuot("0"));
         loi("Ngày không tồn tại", () -> QLKhuyenMaiController.docNgay("31/02/2026", "Ngày"));

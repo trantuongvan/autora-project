@@ -265,9 +265,8 @@ public class ChiTietPhieuSuaChuaController {
                 ChiTietSuaChua_DichVu d = danhSach.get(i);
                 Object tho = view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_THO);
                 d.setKyThuatVien(tho instanceof NhanVien ? (NhanVien) tho : null);
-                d.setTienCongThucTe(Double.parseDouble(
-                        String.valueOf(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_TIEN_CONG))
-                                .replace(".", "").trim()));
+                d.setTienCongThucTe(util.FormatUtil.parseCurrency(
+                        String.valueOf(view.getTableModel().getValueAt(i, ChiTietPhieuSuaChua.COT_TIEN_CONG))));
             }
             Object ktv = view.getCboKtvPhuTrach().getSelectedItem();
             return chiTietDao.luuPhanCong(maPhieu, danhSach, ktv instanceof NhanVien ? ((NhanVien) ktv).getMaNV() : null,
@@ -342,7 +341,7 @@ public class ChiTietPhieuSuaChuaController {
             }
             taiDuLieu();
         } catch (NumberFormatException ex) {
-            view.hienLoi("Tiền công phải là số.");
+            view.hienLoi("Tiền công phải là số nguyên đồng, ví dụ 150000 hoặc 150.000.");
         } catch (IllegalArgumentException ex) {
             view.hienLoi(ex.getMessage());
         } catch (SQLException ex) {

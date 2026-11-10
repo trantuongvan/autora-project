@@ -7,21 +7,14 @@ public class ThongKePhuTung {
     private PhuTung phuTung;
     private int soLuongNhap;
     private int soLuongXuat;
-    private int tonHienTai;
-    private double giaTriTon;
-    private boolean duoiNguongCanhBao;
 
     public ThongKePhuTung() {
     }
 
-    public ThongKePhuTung(PhuTung phuTung, int soLuongNhap, int soLuongXuat,
-                          int tonHienTai, double giaTriTon, boolean duoiNguongCanhBao) {
+    public ThongKePhuTung(PhuTung phuTung, int soLuongNhap, int soLuongXuat) {
         setPhuTung(phuTung);
         setSoLuongNhap(soLuongNhap);
         setSoLuongXuat(soLuongXuat);
-        setTonHienTai(tonHienTai);
-        setGiaTriTon(giaTriTon);
-        setDuoiNguongCanhBao(duoiNguongCanhBao);
     }
 
     public PhuTung getPhuTung() {
@@ -58,33 +51,16 @@ public class ThongKePhuTung {
     }
 
     public int getTonHienTai() {
-        return tonHienTai;
+        return phuTung.getSoLuongTon();
     }
 
-    public void setTonHienTai(int tonHienTai) {
-        if (tonHienTai < 0) {
-            throw new IllegalArgumentException("Số lượng tồn không được âm.");
-        }
-        this.tonHienTai = tonHienTai;
-    }
-
+    /** Giá trị tồn theo giá nhập hiện tại của phụ tùng. */
     public double getGiaTriTon() {
-        return giaTriTon;
-    }
-
-    public void setGiaTriTon(double giaTriTon) {
-        if (giaTriTon < 0) {
-            throw new IllegalArgumentException("Giá trị tồn kho không được âm.");
-        }
-        this.giaTriTon = giaTriTon;
+        return phuTung.getSoLuongTon() * phuTung.getGiaNhap();
     }
 
     public boolean isDuoiNguongCanhBao() {
-        return duoiNguongCanhBao;
-    }
-
-    public void setDuoiNguongCanhBao(boolean duoiNguongCanhBao) {
-        this.duoiNguongCanhBao = duoiNguongCanhBao;
+        return phuTung.kiemTraCanhBaoTon();
     }
 
     @Override

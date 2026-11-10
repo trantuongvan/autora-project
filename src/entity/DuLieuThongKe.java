@@ -15,14 +15,11 @@ public class DuLieuThongKe {
     private double tongTienPhuTung;
     private double tongGiamGia;
     private double tongVAT;
-    private double tongLoiNhuan;
     private int tongSoHoaDon;
-    private double tyTrongTienCong;
-    private double tyTrongPhuTung;
+    private double tongGiaVonPhuTung;
     private List<DoanhThuNgay> danhSachDoanhThuNgay = new ArrayList<>();
 
     // 2. Dữ liệu tổng hợp Tab Phụ tùng
-    private double giaTriTonKhoHienTai;
     private int soMatHangQuanLy;
     private int tongSoLuongNhap;
     private double tongGiaTriNhap;
@@ -35,14 +32,78 @@ public class DuLieuThongKe {
     // 3. Dữ liệu tổng hợp Tab Hiệu suất Kỹ thuật viên
     private int tongLuotXeVaoXuong;
     private int tongXeSuaXong;
-    private double tyLeXeSuaXong;
-    private int tongHangMucHoanThanh;
-    private int tongHangMucDangLam;
-    private double trungBinhHangMucTrenXe;
-    private int soKyThuatVienHoatDong;
-    private double tyLeHoanThanhChung;
     private List<NangSuatKTV> danhSachNangSuatKTV = new ArrayList<>();
     private List<LuotXeNgay> danhSachLuotXeNgay = new ArrayList<>();
+
+    public double getTongGiaVonPhuTung() { return tongGiaVonPhuTung; }
+    public void setTongGiaVonPhuTung(double tongGiaVonPhuTung) { this.tongGiaVonPhuTung = tongGiaVonPhuTung; }
+
+    // Các giá trị dưới đây do báo cáo tự tính từ số liệu đã đọc, nên không có setter.
+
+    /** Lợi nhuận gộp = doanh thu trước thuế sau giảm giá - giá vốn phụ tùng theo giá nhập hiện tại; có thể âm. */
+    public double getTongLoiNhuan() {
+        return tongTienCong + tongTienPhuTung - tongGiamGia - tongGiaVonPhuTung;
+    }
+
+    public double getTyTrongTienCong() {
+        return phanTram(tongTienCong, tongTienCong + tongTienPhuTung);
+    }
+
+    public double getTyTrongPhuTung() {
+        return tongTienCong + tongTienPhuTung > 0 ? Math.round((100.0 - getTyTrongTienCong()) * 10.0) / 10.0 : 0;
+    }
+
+    public double getGiaTriTonKhoHienTai() {
+        double tong = 0;
+        for (ThongKePhuTung pt : danhSachPhuTung) {
+            tong += pt.getGiaTriTon();
+        }
+        return tong;
+    }
+
+    public double getTyLeXeSuaXong() {
+        return phanTram(tongXeSuaXong, tongLuotXeVaoXuong);
+    }
+
+    public int getTongHangMucHoanThanh() {
+        int tong = 0;
+        for (NangSuatKTV k : danhSachNangSuatKTV) {
+            tong += k.getHangMucHoanThanh();
+        }
+        return tong;
+    }
+
+    public int getTongHangMucDangLam() {
+        int tong = 0;
+        for (NangSuatKTV k : danhSachNangSuatKTV) {
+            tong += k.getHangMucDangThucHien();
+        }
+        return tong;
+    }
+
+    public double getTrungBinhHangMucTrenXe() {
+        return tongLuotXeVaoXuong > 0 ? Math.round(getTongHangMucHoanThanh() * 10.0 / tongLuotXeVaoXuong) / 10.0 : 0;
+    }
+
+    /** Kỹ thuật viên có ít nhất một xe trong kỳ. */
+    public int getSoKyThuatVienHoatDong() {
+        int dem = 0;
+        for (NangSuatKTV k : danhSachNangSuatKTV) {
+            if (k.getSoXeThamGia() > 0) {
+                dem++;
+            }
+        }
+        return dem;
+    }
+
+    public double getTyLeHoanThanhChung() {
+        return phanTram(getTongHangMucHoanThanh(), getTongHangMucHoanThanh() + getTongHangMucDangLam());
+    }
+
+    /** Phần trăm làm tròn 1 chữ số; mẫu bằng 0 thì 0. */
+    static double phanTram(double tu, double mau) {
+        return mau > 0 ? Math.round(tu * 1000.0 / mau) / 10.0 : 0;
+    }
 
     public DuLieuThongKe() {
     }
@@ -62,25 +123,13 @@ public class DuLieuThongKe {
     public double getTongVAT() { return tongVAT; }
     public void setTongVAT(double tongVAT) { this.tongVAT = tongVAT; }
 
-    public double getTongLoiNhuan() { return tongLoiNhuan; }
-    public void setTongLoiNhuan(double tongLoiNhuan) { this.tongLoiNhuan = tongLoiNhuan; }
-
     public int getTongSoHoaDon() { return tongSoHoaDon; }
     public void setTongSoHoaDon(int tongSoHoaDon) { this.tongSoHoaDon = tongSoHoaDon; }
-
-    public double getTyTrongTienCong() { return tyTrongTienCong; }
-    public void setTyTrongTienCong(double tyTrongTienCong) { this.tyTrongTienCong = tyTrongTienCong; }
-
-    public double getTyTrongPhuTung() { return tyTrongPhuTung; }
-    public void setTyTrongPhuTung(double tyTrongPhuTung) { this.tyTrongPhuTung = tyTrongPhuTung; }
 
     public List<DoanhThuNgay> getDanhSachDoanhThuNgay() { return danhSachDoanhThuNgay; }
     public void setDanhSachDoanhThuNgay(List<DoanhThuNgay> danhSachDoanhThuNgay) {
         this.danhSachDoanhThuNgay = danhSachDoanhThuNgay != null ? danhSachDoanhThuNgay : new ArrayList<>();
     }
-
-    public double getGiaTriTonKhoHienTai() { return giaTriTonKhoHienTai; }
-    public void setGiaTriTonKhoHienTai(double giaTriTonKhoHienTai) { this.giaTriTonKhoHienTai = giaTriTonKhoHienTai; }
 
     public int getSoMatHangQuanLy() { return soMatHangQuanLy; }
     public void setSoMatHangQuanLy(int soMatHangQuanLy) { this.soMatHangQuanLy = soMatHangQuanLy; }
@@ -115,24 +164,6 @@ public class DuLieuThongKe {
 
     public int getTongXeSuaXong() { return tongXeSuaXong; }
     public void setTongXeSuaXong(int tongXeSuaXong) { this.tongXeSuaXong = tongXeSuaXong; }
-
-    public double getTyLeXeSuaXong() { return tyLeXeSuaXong; }
-    public void setTyLeXeSuaXong(double tyLeXeSuaXong) { this.tyLeXeSuaXong = tyLeXeSuaXong; }
-
-    public int getTongHangMucHoanThanh() { return tongHangMucHoanThanh; }
-    public void setTongHangMucHoanThanh(int tongHangMucHoanThanh) { this.tongHangMucHoanThanh = tongHangMucHoanThanh; }
-
-    public int getTongHangMucDangLam() { return tongHangMucDangLam; }
-    public void setTongHangMucDangLam(int tongHangMucDangLam) { this.tongHangMucDangLam = tongHangMucDangLam; }
-
-    public double getTrungBinhHangMucTrenXe() { return trungBinhHangMucTrenXe; }
-    public void setTrungBinhHangMucTrenXe(double trungBinhHangMucTrenXe) { this.trungBinhHangMucTrenXe = trungBinhHangMucTrenXe; }
-
-    public int getSoKyThuatVienHoatDong() { return soKyThuatVienHoatDong; }
-    public void setSoKyThuatVienHoatDong(int soKyThuatVienHoatDong) { this.soKyThuatVienHoatDong = soKyThuatVienHoatDong; }
-
-    public double getTyLeHoanThanhChung() { return tyLeHoanThanhChung; }
-    public void setTyLeHoanThanhChung(double tyLeHoanThanhChung) { this.tyLeHoanThanhChung = tyLeHoanThanhChung; }
 
     public List<NangSuatKTV> getDanhSachNangSuatKTV() { return danhSachNangSuatKTV; }
     public void setDanhSachNangSuatKTV(List<NangSuatKTV> danhSachNangSuatKTV) {

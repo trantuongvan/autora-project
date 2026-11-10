@@ -183,6 +183,7 @@ public class NhanVien_Dao {
             connection.setAutoCommit(false);
             try {
                 String oldValue;
+                String viTriCu;
                 try (PreparedStatement statement = connection.prepareStatement(sqlCu)) {
                     statement.setString(1, employee.getMaNV());
                     try (ResultSet result = statement.executeQuery()) {
@@ -190,6 +191,7 @@ public class NhanVien_Dao {
                             connection.rollback();
                             return false;
                         }
+                        viTriCu = result.getString("viTriLamViec");
                         oldValue = giaTri(
                                 result.getString("hoTen"),
                                 result.getString("soDienThoai"),
@@ -210,6 +212,7 @@ public class NhanVien_Dao {
                     }
                 }
                 luuKyNang(connection, employee);
+                doiVaiTroTaiKhoan(connection, employee, viTriCu);
                 new NhatKy_Dao().ghi(connection, tenDangNhap, "Cập nhật nhân viên",
                         employee.getMaNV(), oldValue, giaTri(employee));
                 connection.commit();
@@ -218,6 +221,34 @@ public class NhanVien_Dao {
                 connection.rollback();
                 throw ex;
             }
+        }
+    }
+
+    /** Tài khoản theo vị trí mới của nhân viên; chặn khi đó là tài khoản chủ cửa hàng còn hoạt động cuối cùng. */
+    private static void doiVaiTroTaiKhoan(Connection connection, NhanVien employee, String viTriCu) throws SQLException {
+        String viTriMoi = employee.getViTriLamViec().getText();
+        if (viTriMoi.equals(viTriCu)) {
+            return;
+        }
+        if (VaiTro.CHU_CUA_HANG.getText().equals(viTriCu)) {
+            String sqlChuKhac = "SELECT "
+                    + "(SELECT COUNT(*) FROM TaiKhoan WHERE maNV = ? AND vaiTro = N'Chủ cửa hàng' AND trangThai = 1), "
+                    + "(SELECT COUNT(*) FROM TaiKhoan WHERE maNV <> ? AND vaiTro = N'Chủ cửa hàng' AND trangThai = 1)";
+            try (PreparedStatement p = connection.prepareStatement(sqlChuKhac)) {
+                p.setString(1, employee.getMaNV());
+                p.setString(2, employee.getMaNV());
+                try (ResultSet r = p.executeQuery()) {
+                    r.next();
+                    if (r.getInt(1) > 0 && r.getInt(2) == 0) {
+                        throw new IllegalArgumentException("Không thể đổi vị trí của chủ cửa hàng cuối cùng còn tài khoản hoạt động.");
+                    }
+                }
+            }
+        }
+        try (PreparedStatement p = connection.prepareStatement("UPDATE TaiKhoan SET vaiTro = ? WHERE maNV = ?")) {
+            p.setString(1, viTriMoi);
+            p.setString(2, employee.getMaNV());
+            p.executeUpdate();
         }
     }
 

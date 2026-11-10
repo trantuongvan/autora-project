@@ -141,7 +141,6 @@ public class TrangChuLeTan extends JPanel {
     /** Điểm tạo View theo chuẩn nhóm. */
     public static JPanel createPanel() {
         TrangChuLeTan panel = new TrangChuLeTan();
-        panel.napDuLieuMau();
         panel.controller = new TrangChuLeTanController(panel);
         return panel;
     }
@@ -260,21 +259,4 @@ public class TrangChuLeTan extends JPanel {
     public JButton getBtnLamMoi() { return btnLamMoi; }
     public JLabel getLblXemTatCa() { return lblXemTatCa; }
 
-    // ==========================================================
-    // Dữ liệu mẫu để xem trước giao diện (xóa khi nối Controller)
-    // ==========================================================
-
-    public void napDuLieuMau() {
-        setTenNguoiDung("Lan Anh");
-        setSoLieu(4, 12, 3, 8);
-        List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"SC-261012-021", "51H-123.45", "Nguyễn Văn Minh", "Toyota Vios \u2022 2021", "Chờ bàn giao", "Bàn giao \u2192"});
-        ds.add(new Object[]{"SC-261012-020", "51G-678.90", "Trần Thị Hương", "Honda City \u2022 2020", "Đang sửa \u2022 80%", "Xem phiếu"});
-        ds.add(new Object[]{"SC-261012-019", "59A-246.80", "Lê Hoàng Nam", "Mazda 3 \u2022 2022", "Chờ bàn giao", "Bàn giao \u2192"});
-        ds.add(new Object[]{"SC-261012-018", "51K-889.99", "Phạm Ngọc Mai", "Kia Seltos \u2022 2023", "Chờ tiếp nhận", "Hồ sơ xe"});
-        ds.add(new Object[]{"SC-261012-017", "51F-345.67", "Võ Quốc Bảo", "Hyundai i10 \u2022 2019", "Đã bàn giao", "In phiếu"});
-        ds.add(new Object[]{"SC-261012-017", "51F-345.67", "Võ Quốc Bảo", "Hyundai i10 \u2022 2019", "Đã bàn giao", "In phiếu"});
-        ds.add(new Object[]{"SC-261012-017", "51F-345.67", "Võ Quốc Bảo", "Hyundai i10 \u2022 2019", "Đã bàn giao", "In phiếu"});
-        setDanhSach(ds);
-    }
 }

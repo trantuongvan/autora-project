@@ -138,7 +138,9 @@ public class QLBanGiaoXe extends JPanel {
     /** Điểm tạo View theo chuẩn nhóm. */
     public static JPanel createPanel() {
         QLBanGiaoXe panel = new QLBanGiaoXe();
-        panel.napDuLieuMau();
+        panel.anChiTiet();
+        panel.anThongBaoThanhCong();
+        panel.setCanhBaoDieuKien(null);
         new controller.QLBanGiaoXeController(panel);
         return panel;
     }
@@ -383,14 +385,4 @@ public class QLBanGiaoXe extends JPanel {
     public JButton getBtnDong() { return btnDong; }
     public JButton getBtnXacNhan() { return btnXacNhan; }
 
-    // ==========================================================
-    // Dữ liệu mẫu để xem trước giao diện (xóa khi nối Controller)
-    // ==========================================================
-
-    public void napDuLieuMau() {
-        setDanhSach(new ArrayList<>());
-        anChiTiet();
-        anThongBaoThanhCong();
-        setCanhBaoDieuKien(null);
-    }
 }

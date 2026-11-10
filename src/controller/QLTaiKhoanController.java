@@ -64,24 +64,14 @@ public class QLTaiKhoanController {
                 xuLyClickBang(e);
             }
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", () -> {
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", () -> {
             taiTatCa();
             if (dangSua == null) {
                 taiNhanVien();
             }
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
                 () -> view.getTxtTimKiem().requestFocusInWindow());
-    }
-
-    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
-        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
-        view.getActionMap().put(ten, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viec.run();
-            }
-        });
     }
 
     private void xuLyClickBang(MouseEvent e) {
@@ -257,9 +247,16 @@ public class QLTaiKhoanController {
         }
         String[] tu = Normalizer.normalize(hoTen.replace('đ', 'd').replace('Đ', 'D'), Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "").toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9 ]", "").trim().split("\\s+");
+        if (tu[0].isEmpty()) {
+            return "";
+        }
         StringBuilder ten = new StringBuilder(tu[tu.length - 1]);
         for (int i = 0; i < tu.length - 1; i++) {
             ten.append(tu[i].charAt(0));
+        }
+        // Tên đăng nhập cần ít nhất 3 ký tự, ví dụ "An" thành "an01".
+        if (ten.length() < 3) {
+            ten.append("01");
         }
         return ten.toString();
     }

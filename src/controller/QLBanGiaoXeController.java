@@ -1,11 +1,8 @@
 package controller;
 
-import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
 import entity.HoaDon;
-import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
-import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
 
@@ -23,7 +20,6 @@ public class QLBanGiaoXeController {
 
     private final QLBanGiaoXe view;
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
-    private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
     private String selected;
     private int loadVersion;
     private boolean loadErrorShown;
@@ -167,11 +163,8 @@ public class QLBanGiaoXeController {
             return;
         }
         try {
-            List<NhanVien> receptionists = nhanVienDao.findByViTri(VaiTro.LE_TAN);
-            if (receptionists.isEmpty()) {
-                throw new SQLException("Không có nhân viên lễ tân để ghi nhận bàn giao.");
-            }
-            dao.xacNhan(selected, receptionists.get(0).getMaNV(), "");
+            // Ghi người đang đăng nhập, không phải lễ tân đầu tiên trong CSDL.
+            dao.xacNhan(selected, util.PhienDangNhap.getHienTai().getMaNV(), "");
             JOptionPane.showMessageDialog(view, "Đã ghi nhận bàn giao.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             if (daTai) load();

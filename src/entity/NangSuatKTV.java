@@ -9,19 +9,17 @@ public class NangSuatKTV {
     private int hangMucHoanThanh;
     private int hangMucDangThucHien;
     private double tienCongMangLai;
-    private double tyLeHoanThanh;
 
     public NangSuatKTV() {
     }
 
     public NangSuatKTV(NhanVien kyThuatVien, int soXeThamGia, int hangMucHoanThanh,
-                       int hangMucDangThucHien, double tienCongMangLai, double tyLeHoanThanh) {
+                       int hangMucDangThucHien, double tienCongMangLai) {
         setKyThuatVien(kyThuatVien);
         setSoXeThamGia(soXeThamGia);
         setHangMucHoanThanh(hangMucHoanThanh);
         setHangMucDangThucHien(hangMucDangThucHien);
         setTienCongMangLai(tienCongMangLai);
-        setTyLeHoanThanh(tyLeHoanThanh);
     }
 
     public NhanVien getKyThuatVien() {
@@ -79,15 +77,9 @@ public class NangSuatKTV {
         this.tienCongMangLai = tienCongMangLai;
     }
 
+    /** Phần trăm hạng mục đã xong trên tổng hạng mục được giao, làm tròn 1 chữ số. */
     public double getTyLeHoanThanh() {
-        return tyLeHoanThanh;
-    }
-
-    public void setTyLeHoanThanh(double tyLeHoanThanh) {
-        if (tyLeHoanThanh < 0 || tyLeHoanThanh > 100) {
-            throw new IllegalArgumentException("Tỷ lệ hoàn thành phải từ 0 đến 100.");
-        }
-        this.tyLeHoanThanh = tyLeHoanThanh;
+        return DuLieuThongKe.phanTram(hangMucHoanThanh, hangMucHoanThanh + hangMucDangThucHien);
     }
 
     @Override

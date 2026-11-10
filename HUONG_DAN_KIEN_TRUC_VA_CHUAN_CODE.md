@@ -172,7 +172,9 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
    - Tiền bạc, số lượng, % nhiên liệu: không được âm.
 4. Ghi đè `equals()` và `hashCode()` theo Khóa chính.
 5. Ghi đè `toString()`.
-6. Phép tính và quy tắc không cần CSDL đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL; DAO chỉ giữ SQL và transaction.
+6. Phép tính và quy tắc của **một** đối tượng đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL.
+7. Giá trị do đối tượng tự tính (tổng tiền, tỷ lệ, lợi nhuận...) **không có setter**, kể cả `private`: chỉ nhận qua constructor (khi đọc từ CSDL) hoặc do chính phương thức tính của đối tượng gán.
+8. Phép gộp trên nhiều dòng (`SUM`, `COUNT`, `GROUP BY` cho báo cáo, thống kê) là việc của CSDL nên đặt trong DAO. Lớp chỉ chứa kết quả báo cáo, không có bảng riêng (ví dụ `DuLieuThongKe`), được đặt trong `entity`.
 
 ```java
 // CODE MẪU CHUẨN ENTITY

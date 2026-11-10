@@ -455,7 +455,7 @@ public class QLKhuyenMaiController {
         }
         try {
             if (hinhThuc == HinhThucKhuyenMai.TIEN_MAT) {
-                double giaTri = Double.parseDouble(s.replace(".", "").replace(" ", ""));
+                double giaTri = util.FormatUtil.parseCurrency(s.replace(" ", ""));
                 if (giaTri <= 0) {
                     throw new IllegalArgumentException("Giá trị giảm phải lớn hơn 0.");
                 }

@@ -14,9 +14,6 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.print.PrinterException;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -174,36 +171,20 @@ public class QLThongKeController {
 
     private void xuatExcel() {
         if (duLieuHienTai == null) return;
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu báo cáo Excel");
-        chooser.setFileFilter(new FileNameExtensionFilter("Excel Files (*.xls, *.csv)", "xls", "csv"));
-        chooser.setSelectedFile(new File("BaoCaoThongKe_AUTORA.xls"));
-
-        if (chooser.showSaveDialog(view) != JFileChooser.APPROVE_OPTION) return;
-        File file = chooser.getSelectedFile();
-        if (!file.getName().toLowerCase().endsWith(".xls") && !file.getName().toLowerCase().endsWith(".csv")) {
-            file = new File(file.getAbsolutePath() + ".xls");
+        JTable table = view.getBangHienTai();
+        String[] cot = new String[table.getColumnCount()];
+        for (int c = 0; c < cot.length; c++) {
+            cot[c] = table.getColumnName(c);
         }
-
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-            out.write('\ufeff');
-            JTable table = view.getBangHienTai();
-            for (int c = 0; c < table.getColumnCount(); c++) {
-                out.print(table.getColumnName(c) + (c == table.getColumnCount() - 1 ? "" : "\t"));
+        java.util.List<Object[]> dong = new java.util.ArrayList<>();
+        for (int r = 0; r < table.getRowCount(); r++) {
+            Object[] hang = new Object[cot.length];
+            for (int c = 0; c < cot.length; c++) {
+                hang[c] = table.getValueAt(r, c);
             }
-            out.println();
-            for (int r = 0; r < table.getRowCount(); r++) {
-                for (int c = 0; c < table.getColumnCount(); c++) {
-                    Object val = table.getValueAt(r, c);
-                    out.print((val == null ? "" : val.toString()) + (c == table.getColumnCount() - 1 ? "" : "\t"));
-                }
-                out.println();
-            }
-            JOptionPane.showMessageDialog(view, "Đã xuất báo cáo Excel thành công:\n" + file.getAbsolutePath());
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Không thể xuất file Excel: " + ex.getMessage(),
-                    "Lỗi xuất Excel", JOptionPane.ERROR_MESSAGE);
+            dong.add(hang);
         }
+        util.XuatFile.xuatExcel(view, "bao-cao-thong-ke", cot, dong);
     }
 
     private void inBaoCao() {

@@ -83,6 +83,11 @@ public class PhieuYeuCauXuatKho {
         this.phieu = phieu;
     }
 
+    /** Tên KTV để hiển thị; còn mã khi chưa đọc được tên. */
+    public String getTenKyThuatVien() {
+        return kyThuatVien == null ? "" : kyThuatVien.getHoTen() != null ? kyThuatVien.getHoTen() : kyThuatVien.getMaNV();
+    }
+
     public NhanVien getKyThuatVien() {
         return kyThuatVien;
     }

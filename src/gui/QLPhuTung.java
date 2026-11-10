@@ -496,18 +496,4 @@ public class QLPhuTung extends JPanel {
     public JButton getBtnHuyDrawer() { return btnHuyDrawer; }
     public JButton getBtnLuuDrawer() { return btnLuuDrawer; }
 
-//    public static void main(String[] args) {
-//        try {
-//            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//        } catch (Exception ignored) {}
-//
-//        SwingUtilities.invokeLater(() -> {
-//            JFrame frame = new JFrame("AUTORA GARAGE - Quản Lý Phụ Tùng & Tồn Kho");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.setContentPane(QLPhuTung.createPanel());
-//            frame.setSize(1366, 840);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-//    }
 }

@@ -441,25 +441,4 @@ public class QLNhanVien extends JPanel {
     public JButton getBtnXacNhanXoa() { return btnXacNhanXoa; }
     public JButton getBtnDongXoa() { return btnDongXoa; }
 
-    // ==========================================================
-    // Dữ liệu mẫu để xem trước giao diện (xóa khi nối Controller)
-    // ==========================================================
-
-    public void napDuLieuMau() {
-        List<Object[]> ds = new ArrayList<>();
-        ds.add(new Object[]{"NV0001", "Trần Minh Hoàng", "0908888666", "18 Lê Quang Định, TP.HCM", VaiTro.CHU_CUA_HANG, "minhhoang", ""});
-        ds.add(new Object[]{"NV0002", "Nguyễn Lan Anh", "0902345678", "45 Xô Viết Nghệ Tĩnh", VaiTro.LE_TAN, "lananh", ""});
-        ds.add(new Object[]{"NV0004", "Lê Văn Phúc", "0934567890", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.THU_KHO, "levanphuc", ""});
-        ds.add(new Object[]{"NV0005", "Lê Văn Sĩ", "0934564390", "26 Đinh Bộ Lĩnh, TP.HCM", VaiTro.KY_THUAT_VIEN, "levansi", ""});
-        setDanhSach(ds);
-
-        txtMaNV.setText("NV0006");
-        txtHoTen.setText("Phạm Đức Long");
-        txtSoDienThoai.setText("0912345678");
-        txtDiaChi.setText("12 Nguyễn Hữu Cảnh, TP.HCM");
-        cboViTri.setSelectedItem(VaiTro.KY_THUAT_VIEN);
-        hienLoiHoTen(null);
-        hienLoiSoDienThoai(null);
-        anXacNhanXoa();
-    }
 }
