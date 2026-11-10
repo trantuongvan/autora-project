@@ -26,6 +26,7 @@ import gui.QLDuyetXuatKho;
 import gui.QLNhapKho;
 import gui.QLPhuTung;
 import gui.QLTienDoSuaChua;
+import gui.QLThongKe;
 import util.UIComponents;
 import util.UIComponents.Loai;
 import util.UIConstants;
@@ -55,6 +56,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
     private static final String CARD_CHI_TIET_HOA_DON = "CT_HOA_DON";
     private static final String CARD_TRO_GIUP = "TRO_GIUP";
     private static final String CARD_GIOI_THIEU = "GIOI_THIEU";
+    private static final String CARD_THONG_KE = "QL_THONG_KE";
 
     private static final Map<String, String> TIEU_DE = new HashMap<>();
     private static final Map<String, Loai> ICON = new HashMap<>();
@@ -148,7 +150,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
             manHinhHoaDon = (QLHoaDon) QLHoaDon.createPanel(this);
             return manHinhHoaDon;
         });
-
+        nhaMay.put(CARD_THONG_KE, QLThongKe::createPanel);
         nhaMay.put(CARD_TRO_GIUP, TroGiup::createPanel);
         nhaMay.put(CARD_GIOI_THIEU, GioiThieu::createPanel);
 
