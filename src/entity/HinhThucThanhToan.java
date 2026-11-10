@@ -1,13 +1,7 @@
 package entity;
 
-/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum HinhThucThanhToan {
-    TIEN_MAT("Tiền mặt") {
-        @Override
-        public boolean duTien(Double tienKhachDua, double tongThanhToan) {
-            return tienKhachDua != null && tienKhachDua >= tongThanhToan;
-        }
-    },
+    TIEN_MAT("Tiền mặt"),
     CHUYEN_KHOAN("Chuyển khoản"),
     CONG_NO("Công nợ");
 
@@ -19,11 +13,6 @@ public enum HinhThucThanhToan {
 
     public String getText() {
         return text;
-    }
-
-    /** Chỉ tiền mặt cần khách đưa đủ tiền tại quầy. */
-    public boolean duTien(Double tienKhachDua, double tongThanhToan) {
-        return true;
     }
 
     public static HinhThucThanhToan fromDb(String text) {

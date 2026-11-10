@@ -92,7 +92,7 @@ public class QLTienDoSuaChuaController {
             }
         });
 
-        // 1. Tìm kiếm phiếu sửa chữa
+        // 1. Tìm kiếm phiếu sửa chữa: chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter
         view.getBtnTaiDuLieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
         view.getTxtTimPhieu().addActionListener(e -> loadDanhSachPhieu(phieuDangChon != null ? phieuDangChon.getMaPhieuTNSC() : null));
 
@@ -165,6 +165,16 @@ public class QLTienDoSuaChuaController {
         }
     }
 
+    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
+    private void hienChuaTai() {
+        JPanel container = view.getPnlDanhSachPhieu();
+        container.removeAll();
+        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
+        container.add(lblGoiY);
+        phieuDangChon = null;
+        hienThiChiTietPhieu(null);
+    }
 
     /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
     private void taiLai(String maPhieuCanChon) {
@@ -212,7 +222,7 @@ public class QLTienDoSuaChuaController {
         } else {
             for (PhieuTiepNhanVaSuaChua p : danhSachPhieu) {
                 boolean isSelected = phieuDangChon != null && p.getMaPhieuTNSC().equals(phieuDangChon.getMaPhieuTNSC());
-                JPanel cardItem = view.taoThePhieuItem(p, isSelected);
+                JPanel cardItem = view.taoThePhieuItem(p, TrangChuKyThuatVienController.getTrangThaiHienThiKTV(p), isSelected);
                 cardItem.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
@@ -253,8 +263,8 @@ public class QLTienDoSuaChuaController {
 
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
-        String tt = p.getTrangThaiHienThiKTV();
-        int pct = p.phanTramTienDo();
+        String tt = TrangChuKyThuatVienController.getTrangThaiHienThiKTV(p);
+        int pct = TrangChuKyThuatVienController.tinhPhanTramTienDo(p);
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
@@ -299,12 +309,12 @@ public class QLTienDoSuaChuaController {
         view.getPnlHopLoiTrangThai().setVisible(false);
         if (moi == cu) return;
 
-        if (!cu.coTheChuyenSang(moi)) {
-            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
+        if (!coTheChuyenTrangThai(cu, moi)) {
+            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + TrangChuKyThuatVienController.getTrangThaiHienThiKTV(phieuDangChon)
                     + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-        if (moi == TrangThaiPhieu.HOAN_THANH && !phieuDangChon.coTheHoanThanh()) {
+        if (moi == TrangThaiPhieu.HOAN_THANH && !TrangChuKyThuatVienController.coTheHoanThanh(phieuDangChon)) {
             hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
             return;
         }
@@ -461,7 +471,7 @@ public class QLTienDoSuaChuaController {
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
         JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getPhuTung().kiemTraCanhBaoTon()) {
+        if (QLPhuTungController.kiemTraCanhBaoTon(item.getPhuTung())) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));
@@ -679,5 +689,21 @@ public class QLTienDoSuaChuaController {
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu yêu cầu phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public static String getTrangThaiHienThiKTV(PhieuTiepNhanVaSuaChua p) {
+        return TrangChuKyThuatVienController.getTrangThaiHienThiKTV(p);
+    }
+
+    public static int tinhPhanTramTienDo(PhieuTiepNhanVaSuaChua p) {
+        return TrangChuKyThuatVienController.tinhPhanTramTienDo(p);
+    }
+
+    public static boolean coTheHoanThanh(PhieuTiepNhanVaSuaChua p) {
+        return TrangChuKyThuatVienController.coTheHoanThanh(p);
+    }
+
+    public static boolean coTheChuyenTrangThai(TrangThaiPhieu cu, TrangThaiPhieu moi) {
+        return TrangChuKyThuatVienController.coTheChuyenTrangThai(cu, moi);
     }
 }

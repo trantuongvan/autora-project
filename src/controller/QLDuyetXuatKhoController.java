@@ -116,7 +116,7 @@ public class QLDuyetXuatKhoController {
                 setBorder(new EmptyBorder(0, 12, 0, 12));
 
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !danhSachChiTiet.get(r).getPhuTung().duTon(danhSachChiTiet.get(r).getSoLuong());
+                        && !QLPhuTungController.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 if (c == 0 || c == 4) {
                     setFont(UIConstants.FONT_FORM_LABEL.deriveFont(13.5f));
@@ -150,7 +150,7 @@ public class QLDuyetXuatKhoController {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !danhSachChiTiet.get(r).getPhuTung().duTon(danhSachChiTiet.get(r).getSoLuong());
+                        && !QLPhuTungController.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 area.setText(v == null ? "" : v.toString());
                 area.setBackground(sel ? t.getSelectionBackground() : (thieuTon ? bgInsufficient : UIConstants.CARD_BG));
@@ -183,6 +183,16 @@ public class QLDuyetXuatKhoController {
         loadDanhSach(maPhieuYC);
     }
 
+    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
+    private void hienChuaTai() {
+        JPanel container = view.getPnlDanhSachYeuCau();
+        container.removeAll();
+        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
+        container.add(lblGoiY);
+        yeuCauDangChon = null;
+        loadChiTiet();
+    }
 
     /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
     private void taiLai() {
@@ -291,7 +301,7 @@ public class QLDuyetXuatKhoController {
             danhSachChiTiet = yeuCauDao.getChiTietByMaPhieuYC(yeuCauDangChon.getMaPhieuYC());
             for (ChiTietYeuCauXuatKho ct : danhSachChiTiet) {
                 PhuTung pt = ct.getPhuTung();
-                if (!pt.duTon(ct.getSoLuong())) {
+                if (!QLPhuTungController.duTon(pt, ct.getSoLuong())) {
                     duTonKho = false;
                 }
 

@@ -211,11 +211,17 @@ public class HoaDon_Dao {
                 hoaDon.setKhuyenMai(maKM == null ? null : docKhuyenMai(connection, maKM));
                 hoaDon.setThue(docThue(connection, maThue));
 
+                double tienCong = docTienCong(connection, maPhieu);
                 double tienPhuTung = 0;
                 for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu)) {
-                    tienPhuTung += d.thanhTien();
+                    tienPhuTung += d.getSoLuongSuDung() * d.getGiaBanThucTe();
                 }
-                hoaDon.tinhTongThanhToan(docTienCong(connection, maPhieu), tienPhuTung);
+                controller.ChiTietHoaDonController.KetQuaTinhToan kq =
+                    controller.ChiTietHoaDonController.tinhToan(tienCong, tienPhuTung, hoaDon.getKhuyenMai(), hoaDon.getThue());
+                hoaDon = new HoaDon(hoaDon.getMaHD(), null, null, kq.tongTienCong, kq.tongTienPhuTung,
+                    kq.tongTienGiam, kq.tongTienVAT, kq.tongThanhToan, hinhThuc,
+                    hinhThuc == HinhThucThanhToan.CONG_NO ? TrangThaiHoaDon.CONG_NO : TrangThaiHoaDon.DA_THANH_TOAN,
+                    null, hoaDon.getKhuyenMai(), hoaDon.getThue());
                 kiemTraTienMat(hinhThuc, tienKhachDua, hoaDon.getTongThanhToan());
 
                 String maHD = sinhMaHD(connection);
@@ -243,7 +249,7 @@ public class HoaDon_Dao {
                 }
                 KhachHang khach = new KhachHang();
                 khach.setDuocGhiNo(rs.getBoolean(2));
-                if (!khach.duocThanhToanBang(hinhThuc)) {
+                if (hinhThuc == HinhThucThanhToan.CONG_NO && !khach.isDuocGhiNo()) {
                     throw new SQLException("Khách hàng của phiếu " + maPhieu + " không được phép ghi nợ.");
                 }
             }
@@ -329,7 +335,7 @@ public class HoaDon_Dao {
     }
 
     private static void kiemTraTienMat(HinhThucThanhToan hinhThuc, Double tienKhachDua, double tong) throws SQLException {
-        if (!hinhThuc.duTien(tienKhachDua, tong)) {
+        if (hinhThuc == HinhThucThanhToan.TIEN_MAT && (tienKhachDua == null || tienKhachDua < tong)) {
             throw new SQLException("Tiền khách đưa chưa đủ tổng thanh toán.");
         }
     }

@@ -2,7 +2,9 @@ package test;
 
 import controller.DangNhapController;
 import controller.QLKhuyenMaiController;
+import controller.QLTienDoSuaChuaController;
 import controller.QLTiepNhanSuaChuaController;
+import controller.TrangChuKyThuatVienController;
 import controller.TrangChuQuanLyController;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DangNhap_Dao;
@@ -83,7 +85,7 @@ public class TestNghiepVuTiepNhan {
         vongDoiEnum("TrangThaiYeuCauXuat", TrangThaiYeuCauXuat.class, TrangThaiYeuCauXuat::fromDb);
         dung("Chờ sửa không phải trạng thái phiếu", !Arrays.asList(TrangThaiPhieu.values()).toString().contains("Chờ sửa"));
         dung("Phiếu Chờ kiểm tra hiện là Chờ sửa cho kỹ thuật viên",
-                "Chờ sửa".equals(new PhieuTiepNhanVaSuaChua().getTrangThaiHienThiKTV()));
+                "Chờ sửa".equals(TrangChuKyThuatVienController.getTrangThaiHienThiKTV(new PhieuTiepNhanVaSuaChua())));
     }
 
     private static void kiemTraKhuyenMai() {
@@ -97,12 +99,12 @@ public class TestNghiepVuTiepNhan {
         loi("KM thiếu tên", () -> new KhuyenMai("KM1", " ", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true));
 
         KhuyenMai km = new KhuyenMai("KM1", "A", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true);
-        dung("Sắp diễn ra", "Sắp diễn ra".equals(km.getTinhTrang(d1.minusDays(1))));
-        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(km.getTinhTrang(d1)));
-        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(km.getTinhTrang(d2)));
-        dung("Hết hạn", "Hết hạn".equals(km.getTinhTrang(d2.plusDays(1))));
+        dung("Sắp diễn ra", "Sắp diễn ra".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1.minusDays(1))));
+        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1)));
+        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d2)));
+        dung("Hết hạn", "Hết hạn".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d2.plusDays(1))));
         km.setTrangThai(false);
-        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(km.getTinhTrang(d1)));
+        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(QLKhuyenMaiController.tinhTrangKhuyenMai(km, d1)));
     }
 
     private static void kiemTraPhieu() {
@@ -122,7 +124,7 @@ public class TestNghiepVuTiepNhan {
     private static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
         PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
         p.setDanhSachDichVu(dong);
-        return p.coTheHoanThanh();
+        return TrangChuKyThuatVienController.coTheHoanThanh(p);
     }
 
     private static int tienDo(TrangThaiPhieu trangThai, int tong, int xong) {
@@ -130,7 +132,7 @@ public class TestNghiepVuTiepNhan {
         p.setTrangThai(trangThai);
         p.setTongSoHangMuc(tong);
         p.setSoHangMucHoanThanh(xong);
-        return p.phanTramTienDo();
+        return TrangChuKyThuatVienController.tinhPhanTramTienDo(p);
     }
 
     private static void kiemTraDieuKienHoanThanh() {
@@ -159,12 +161,12 @@ public class TestNghiepVuTiepNhan {
         dung("Mật khẩu rõ còn sót không đăng nhập được", !MatKhauUtil.kiemTra("123456", "123456"));
         dung("Giá trị băm hỏng", !MatKhauUtil.kiemTra("a", "pbkdf2$x$y$z") && !MatKhauUtil.kiemTra("a", null));
 
-        dung("Luồng hợp lệ", TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
-                && TrangThaiPhieu.DANG_SUA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
-                && TrangThaiPhieu.CHO_PHU_TUNG.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
-        dung("Luồng không hợp lệ", !TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
-                && !TrangThaiPhieu.HOAN_THANH.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
-                && !TrangThaiPhieu.DA_HUY.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
+        dung("Luồng hợp lệ", QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA)
+                && QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.HOAN_THANH)
+                && QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.CHO_PHU_TUNG, TrangThaiPhieu.DANG_SUA));
+        dung("Luồng không hợp lệ", !QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH)
+                && !QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA)
+                && !QLTienDoSuaChuaController.coTheChuyenTrangThai(TrangThaiPhieu.DA_HUY, TrangThaiPhieu.DANG_SUA));
         loi("Tiếp nhận ở tương lai", () -> new PhieuTiepNhanVaSuaChua().setThoiGianTiepNhan(LocalDateTime.now().plusDays(1)));
 
         dung("VIN đúng", QLTiepNhanSuaChuaController.soVinHopLe("1HGCR2F83HA001234"));
@@ -376,6 +378,7 @@ public class TestNghiepVuTiepNhan {
 
         dung("Tra xe theo biển số", dao.findXeVaChuXe("60A-456.78") != null);
         dung("Xe không tồn tại", dao.findXeVaChuXe("99Z-000.00") == null);
+        dung("Tra biển số theo SĐT", "60A-456.78".equals(dao.timBienSoTheoSdt("0966333444")));
         dung("Xe đang có phiếu mở", dao.coPhieuDangMo("50E-999.12"));
         dung("Xe không có phiếu mở", !dao.coPhieuDangMo("60A-456.78"));
         dung("Tìm theo khách có dấu", !dao.search("Phạm Minh", null, null, null).isEmpty());

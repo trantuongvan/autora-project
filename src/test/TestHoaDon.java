@@ -87,7 +87,7 @@ public class TestHoaDon {
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
         loi("Tổng âm", () -> new HoaDon(TrangThaiHoaDon.DA_THANH_TOAN, -1));
         loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
-        kiem("Thuế tính tiền", new Thue("X", "A", 8).tinhTienThue(1395000) == 111600);
+        kiem("Thuế tính tiền", ChiTietHoaDonController.tinhTienThue(new Thue("X", "A", 8), 1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
         kiem("Tiền không dấu", ChiTietHoaDonController.docTien("1500000") == 1500000);
         loi("Tiền có chữ", () -> ChiTietHoaDonController.docTien("15a"));
@@ -473,17 +473,17 @@ public class TestHoaDon {
     /** hinhThuc null là hóa đơn không có khuyến mãi. */
     private static HoaDon tinh(double cong, double phuTung, HinhThucKhuyenMai hinhThuc, double giaTri,
             PhamViKhuyenMai phamVi, double thueSuat) {
-        HoaDon hd = new HoaDon();
+        KhuyenMai km = null;
         if (hinhThuc != null) {
-            KhuyenMai km = new KhuyenMai("KMX");
+            km = new KhuyenMai("KMX");
             km.setHinhThuc(hinhThuc);
             km.setGiaTri(giaTri);
             km.setPhamViApDung(phamVi);
-            hd.setKhuyenMai(km);
         }
-        hd.setThue(new Thue("X", "A", thueSuat));
-        hd.tinhTongThanhToan(cong, phuTung);
-        return hd;
+        Thue thue = new Thue("X", "A", thueSuat);
+        ChiTietHoaDonController.KetQuaTinhToan ketQua = ChiTietHoaDonController.tinhToan(cong, phuTung, km, thue);
+        return new HoaDon("HD000001", TrangThaiHoaDon.DA_THANH_TOAN, ketQua.tongTienCong, ketQua.tongTienPhuTung,
+                ketQua.tongTienGiam, ketQua.tongTienVAT, ketQua.tongThanhToan, thue);
     }
 
     private static void tien(String ten, HoaDon t, double giam, double vat, double tong) {

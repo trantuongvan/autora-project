@@ -12,30 +12,22 @@ public class LuotXeNgay {
     }
 
     public LuotXeNgay(LocalDate ngay, int soLuotXe) {
-        setNgay(ngay);
-        setSoLuotXe(soLuotXe);
+        if (ngay == null) {
+            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
+        }
+        if (soLuotXe < 0) {
+            throw new IllegalArgumentException("Số lượt xe không được âm.");
+        }
+        this.ngay = ngay;
+        this.soLuotXe = soLuotXe;
     }
 
     public LocalDate getNgay() {
         return ngay;
     }
 
-    public void setNgay(LocalDate ngay) {
-        if (ngay == null) {
-            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
-        }
-        this.ngay = ngay;
-    }
-
     public int getSoLuotXe() {
         return soLuotXe;
-    }
-
-    public void setSoLuotXe(int soLuotXe) {
-        if (soLuotXe < 0) {
-            throw new IllegalArgumentException("Số lượt xe không được âm.");
-        }
-        this.soLuotXe = soLuotXe;
     }
 
     @Override

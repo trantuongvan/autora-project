@@ -53,11 +53,6 @@ public class Thue {
         this.thueSuat = thueSuat;
     }
 
-    /** Tiền thuế trên số tiền cơ sở theo thuế suất của loại thuế. */
-    public double tinhTienThue(double tongTienCoSo) {
-        return HoaDon.phanTram(tongTienCoSo, thueSuat);
-    }
-
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Thue && Objects.equals(maThue, ((Thue) obj).maThue);

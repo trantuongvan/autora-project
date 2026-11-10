@@ -1,25 +1,9 @@
 package entity;
 
-/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum PhamViKhuyenMai {
-    TONG_HOA_DON("Tổng hóa đơn") {
-        @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
-            return tienCong + tienPhuTung;
-        }
-    },
-    NHOM_DICH_VU("Nhóm dịch vụ") {
-        @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
-            return tienCong;
-        }
-    },
-    PHU_TUNG("Phụ tùng") {
-        @Override
-        double coSoGiam(double tienCong, double tienPhuTung) {
-            return tienPhuTung;
-        }
-    };
+    TONG_HOA_DON("Tổng hóa đơn"),
+    NHOM_DICH_VU("Nhóm dịch vụ"),
+    PHU_TUNG("Phụ tùng");
 
     private final String text;
 
@@ -30,9 +14,6 @@ public enum PhamViKhuyenMai {
     public String getText() {
         return text;
     }
-
-    /** Phần tiền của hóa đơn mà khuyến mãi được áp dụng. */
-    abstract double coSoGiam(double tienCong, double tienPhuTung);
 
     public static PhamViKhuyenMai fromDb(String text) {
         for (PhamViKhuyenMai giaTri : values()) {
