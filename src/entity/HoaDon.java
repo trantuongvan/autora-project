@@ -32,18 +32,14 @@ public class HoaDon {
             double tongTienGiam, double tongTienVAT, double tongThanhToan, Thue thue) {
         setMaHD(maHD);
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        ghiSoTien(tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan);
         this.thue = thue;
     }
 
     /** Hóa đơn đã lưu, đọc kèm lịch sử sửa chữa: chỉ cần trạng thái và tổng tiền. */
     public HoaDon(TrangThaiHoaDon trangThaiThanhToan, double tongThanhToan) {
         setTrangThaiThanhToan(trangThaiThanhToan);
-        setTongThanhToan(tongThanhToan);
+        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
     }
 
     public HoaDon(String maHD, PhieuTiepNhanVaSuaChua phieu, LocalDateTime ngayLap, double tongTienCong, double tongTienPhuTung,
@@ -52,11 +48,7 @@ public class HoaDon {
         setMaHD(maHD);
         setPhieu(phieu);
         setNgayLap(ngayLap);
-        setTongTienCong(tongTienCong);
-        setTongTienPhuTung(tongTienPhuTung);
-        setTongTienGiam(tongTienGiam);
-        setTongTienVAT(tongTienVAT);
-        setTongThanhToan(tongThanhToan);
+        ghiSoTien(tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan);
         setHinhThucThanhToan(hinhThucThanhToan);
         setTrangThaiThanhToan(trangThaiThanhToan);
         setLyDoHuy(lyDoHuy);
@@ -99,40 +91,29 @@ public class HoaDon {
         return tongTienCong;
     }
 
-    private void setTongTienCong(double tongTienCong) {
-        this.tongTienCong = khongAm(tongTienCong, "Tổng tiền công không được âm");
-    }
-
     public double getTongTienPhuTung() {
         return tongTienPhuTung;
-    }
-
-    private void setTongTienPhuTung(double tongTienPhuTung) {
-        this.tongTienPhuTung = khongAm(tongTienPhuTung, "Tổng tiền phụ tùng không được âm");
     }
 
     public double getTongTienGiam() {
         return tongTienGiam;
     }
 
-    private void setTongTienGiam(double tongTienGiam) {
-        this.tongTienGiam = khongAm(tongTienGiam, "Tổng tiền giảm không được âm");
-    }
-
     public double getTongTienVAT() {
         return tongTienVAT;
-    }
-
-    private void setTongTienVAT(double tongTienVAT) {
-        this.tongTienVAT = khongAm(tongTienVAT, "Tổng tiền VAT không được âm");
     }
 
     public double getTongThanhToan() {
         return tongThanhToan;
     }
 
-    private void setTongThanhToan(double tongThanhToan) {
-        this.tongThanhToan = khongAm(tongThanhToan, "Tổng thanh toán không hợp lệ");
+    /** Số tiền chỉ vào hóa đơn qua constructor hoặc tinhTongThanhToan(), không có setter. */
+    private void ghiSoTien(double cong, double phuTung, double giam, double vat, double tong) {
+        this.tongTienCong = khongAm(cong, "Tổng tiền công không được âm");
+        this.tongTienPhuTung = khongAm(phuTung, "Tổng tiền phụ tùng không được âm");
+        this.tongTienGiam = khongAm(giam, "Tổng tiền giảm không được âm");
+        this.tongTienVAT = khongAm(vat, "Tổng tiền VAT không được âm");
+        this.tongThanhToan = khongAm(tong, "Tổng thanh toán không hợp lệ");
     }
 
     private static double khongAm(double giaTri, String loi) {
@@ -210,11 +191,7 @@ public class HoaDon {
         double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
         double sauGiam = cong + phuTung - giam;
         double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
-        setTongTienCong(cong);
-        setTongTienPhuTung(phuTung);
-        setTongTienGiam(giam);
-        setTongTienVAT(vat);
-        setTongThanhToan(sauGiam + vat);
+        ghiSoTien(cong, phuTung, giam, vat, sauGiam + vat);
     }
 
     public boolean daThanhToan() {
