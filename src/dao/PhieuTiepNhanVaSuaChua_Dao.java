@@ -476,22 +476,6 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    public String timBienSoTheoSdt(String sdt) throws SQLException {
-        String sql = "SELECT TOP (1) x.bienSo FROM Xe x "
-                + "JOIN KhachHang k ON k.maKH = x.maKH "
-                + "WHERE k.soDienThoai = ? ORDER BY x.bienSo";
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, sdt);
-            try (ResultSet rs = statement.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("bienSo");
-                }
-                return null;
-            }
-        }
-    }
-
     private PhieuTiepNhanVaSuaChua mapPhieu(ResultSet rs) throws SQLException {
         Timestamp tiepNhan = rs.getTimestamp("thoiGianTiepNhan");
         Timestamp duKien = rs.getTimestamp("thoiGianDuKien");
