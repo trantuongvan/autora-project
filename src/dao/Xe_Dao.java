@@ -27,22 +27,14 @@ public class Xe_Dao {
     public List<Xe> search(String keyword, String hang) throws SQLException {
         String q = keyword == null ? "" : keyword.trim();
         List<Xe> ds = new ArrayList<>();
+        String sql = "SELECT x.bienSo, x.hangXe, x.dongXe, x.doiXe, x.soVIN, x.mauSon, "
+                + "k.maKH, k.hoTen, k.soDienThoai "
+                + "FROM Xe x JOIN KhachHang k ON k.maKH = x.maKH "
+                + "WHERE (? = '' OR x.bienSo LIKE ? OR x.soVIN LIKE ? "
+                + "OR k.hoTen LIKE ? OR k.soDienThoai LIKE ?) "
+                + "AND (? = '' OR x.hangXe = ?) "
+                + "ORDER BY x.bienSo";
         try (Connection c = ConnectDB.getConnection()) {
-            String vin = column(c, "soVIN", "soKhung", "soKhungXe");
-            String brand = column(c, "hangXe", "hang", "thuongHieu");
-            String model = column(c, "dongXe", "dong", "tenDongXe", "model");
-            String year = column(c, "doiXe", "namSanXuat", "namSX", "nam");
-            String owner = column(c, "maKH", "maKhachHang", "maChuXe");
-            String color = optionalColumn(c, "mauSon", "mauSac", "mauXe");
-            String sql = "SELECT x.bienSo, x.[" + brand + "] AS hangXe, x.[" + model + "] AS dongXe, "
-                    + "x.[" + year + "] AS doiXe, x.[" + vin + "] AS soVIN, "
-                    + (color == null ? "CAST('' AS NVARCHAR(50))" : "x.[" + color + "]") + " AS mauSon, "
-                    + "k.maKH, k.hoTen, k.soDienThoai "
-                    + "FROM Xe x JOIN KhachHang k ON k.maKH = x.[" + owner + "] "
-                    + "WHERE (? = '' OR x.bienSo LIKE ? OR x.[" + vin + "] LIKE ? "
-                    + "OR k.hoTen LIKE ? OR k.soDienThoai LIKE ?) "
-                    + "AND (? = '' OR x.[" + brand + "] = ?) "
-                    + "ORDER BY x.bienSo";
             try (PreparedStatement p = c.prepareStatement(sql)) {
                 p.setString(1, q);
                 for (int i = 2; i <= 5; i++) {
@@ -64,18 +56,8 @@ public class Xe_Dao {
     }
 
     public Xe findById(String bienSo) throws SQLException {
+        String sql = "SELECT bienSo, soVIN, hangXe, dongXe, doiXe, mauSon, maKH FROM Xe WHERE bienSo = ?";
         try (Connection c = ConnectDB.getConnection()) {
-            String color = optionalColumn(c, "mauSon", "mauSac", "mauXe");
-            String colorExpression = color == null
-                    ? "CAST('' AS NVARCHAR(50))" : "[" + color + "]";
-            String sql = "SELECT bienSo, ["
-                    + column(c, "soVIN", "soKhung", "soKhungXe") + "] AS soVIN, ["
-                    + column(c, "hangXe", "hang", "thuongHieu") + "] AS hangXe, ["
-                    + column(c, "dongXe", "dong", "tenDongXe", "model") + "] AS dongXe, ["
-                    + column(c, "doiXe", "namSanXuat", "namSX", "nam") + "] AS doiXe, "
-                    + colorExpression + " AS mauSon, ["
-                    + column(c, "maKH", "maKhachHang", "maChuXe")
-                    + "] AS maKH FROM Xe WHERE bienSo = ?";
             try (PreparedStatement p = c.prepareStatement(sql)) {
                 p.setString(1, bienSo);
                 try (ResultSet r = p.executeQuery()) {
@@ -94,28 +76,10 @@ public class Xe_Dao {
     }
 
     private boolean write(Xe xe, boolean update) throws SQLException {
+        String sql = update
+                ? "UPDATE Xe SET soVIN = ?, hangXe = ?, dongXe = ?, doiXe = ?, mauSon = ?, maKH = ? WHERE bienSo = ?"
+                : "INSERT INTO Xe(soVIN, hangXe, dongXe, doiXe, mauSon, maKH, bienSo) VALUES(?, ?, ?, ?, ?, ?, ?)";
         try (Connection c = ConnectDB.getConnection()) {
-            String vin = column(c, "soVIN", "soKhung", "soKhungXe");
-            String brand = column(c, "hangXe", "hang", "thuongHieu");
-            String model = column(c, "dongXe", "dong", "tenDongXe", "model");
-            String year = column(c, "doiXe", "namSanXuat", "namSX", "nam");
-            String owner = column(c, "maKH", "maKhachHang", "maChuXe");
-            String color = optionalColumn(c, "mauSon", "mauSac", "mauXe");
-            String colorColumn = color == null ? "" : ",[" + color + "]";
-            String colorValue = color == null ? "" : ",?";
-            String sql;
-            if (update) {
-                sql = "UPDATE Xe SET [" + vin + "] = ?, [" + brand + "] = ?, ["
-                        + model + "] = ?, [" + year + "] = ?";
-                if (color != null) {
-                    sql += ", [" + color + "] = ?";
-                }
-                sql += ", [" + owner + "] = ? WHERE bienSo = ?";
-            } else {
-                sql = "INSERT INTO Xe([" + vin + "], [" + brand + "], [" + model + "], ["
-                        + year + "]" + colorColumn + ", [" + owner + "], bienSo) "
-                        + "VALUES(?, ?, ?, ?" + colorValue + ", ?, ?)";
-            }
             try (PreparedStatement p = c.prepareStatement(sql)) {
                 p.setString(1, xe.getSoVIN());
                 p.setString(2, xe.getHangXe());
@@ -125,12 +89,9 @@ public class Xe_Dao {
                 } else {
                     p.setInt(4, xe.getDoiXe());
                 }
-                int next = 5;
-                if (color != null) {
-                    p.setString(next++, xe.getMauSon());
-                }
-                p.setString(next++, xe.getKhachHang().getMaKH());
-                p.setString(next, xe.getBienSo());
+                p.setString(5, xe.getMauSon());
+                p.setString(6, xe.getKhachHang().getMaKH());
+                p.setString(7, xe.getBienSo());
                 return p.executeUpdate() == 1;
             }
         }
@@ -163,47 +124,6 @@ public class Xe_Dao {
                 doiXe,
                 r.getString("mauSon"),
                 chuXe);
-    }
-
-    /** Hỗ trợ tên cột từ schema hiện tại và các bản CSDL cũ. */
-    private String column(Connection c, String... candidates) throws SQLException {
-        String column = optionalColumn(c, candidates);
-        if (column != null) {
-            return column;
-        }
-        throw new SQLException("Bảng Xe thiếu cột cần thiết ("
-                + String.join(" / ", candidates) + "). Kiểm tra CSDL GaraAUTORA.");
-    }
-
-    private String optionalColumn(Connection c, String... candidates) throws SQLException {
-        StringBuilder placeholders = new StringBuilder();
-        StringBuilder orderBy = new StringBuilder("CASE name");
-        for (int i = 0; i < candidates.length; i++) {
-            if (i > 0) {
-                placeholders.append(", ");
-            }
-            placeholders.append('?');
-            orderBy.append(" WHEN ? THEN ").append(i);
-        }
-        orderBy.append(" ELSE 999 END");
-        String sql = "SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(?) "
-                + "AND name IN (" + placeholders + ") ORDER BY " + orderBy;
-        try (PreparedStatement ps = c.prepareStatement(sql)) {
-            int parameter = 1;
-            ps.setString(parameter++, "dbo.Xe");
-            for (String candidate : candidates) {
-                ps.setString(parameter++, candidate);
-            }
-            for (String candidate : candidates) {
-                ps.setString(parameter++, candidate);
-            }
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getString("name");
-                }
-            }
-        }
-        return null;
     }
 
     public List<String> findChuSoHuu() throws SQLException {

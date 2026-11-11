@@ -55,7 +55,7 @@ public class TrangChuKyThuatVienController {
                 view.getLblMoTaChao().setText("Xin chào " + tenGoi + ", đây là các hạng mục sửa chữa được giao cho bạn hôm nay.");
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -119,7 +119,7 @@ public class TrangChuKyThuatVienController {
 
     public void loadData() {
         try {
-            List<PhieuTiepNhanVaSuaChua> all = tienDoDao.searchPhieuĐượcGiao("", "", "Tất cả");
+            List<PhieuTiepNhanVaSuaChua> all = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), "", "Tất cả");
 
             int choSua = 0, dangSua = 0, choPhuTung = 0, hoanThanh = 0;
             for (PhieuTiepNhanVaSuaChua p : all) {
@@ -143,7 +143,6 @@ public class TrangChuKyThuatVienController {
 
             locBangTheoTuKhoa();
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi tải dữ liệu trang chủ KTV: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -152,10 +151,10 @@ public class TrangChuKyThuatVienController {
     private void locBangTheoTuKhoa() {
         try {
             String kw = view.getTxtTimKiem().getText();
-            danhSachTimDuoc = tienDoDao.searchPhieuĐượcGiao("", kw, "Tất cả");
+            danhSachTimDuoc = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, "Tất cả");
             doDuLieuLenBang();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -169,10 +168,10 @@ public class TrangChuKyThuatVienController {
         danhSachHienThi = new ArrayList<>(danhSachTimDuoc.subList(0, gioiHan));
 
         for (PhieuTiepNhanVaSuaChua p : danhSachHienThi) {
-            String tt = p.getTrangThaiHienThiKTV();
+            String tt = NghiepVuPhieu.trangThaiHienThiKTV(p);
             String nhanTrangThai = tt;
             if (p.getTrangThai() == TrangThaiPhieu.DANG_SUA) {
-                nhanTrangThai = "Đang sửa • " + p.phanTramTienDo() + "%";
+                nhanTrangThai = "Đang sửa • " + NghiepVuPhieu.phanTramTienDo(p) + "%";
             }
 
             String thaoTac;

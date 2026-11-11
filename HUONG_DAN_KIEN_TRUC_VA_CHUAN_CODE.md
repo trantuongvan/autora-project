@@ -90,9 +90,9 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
 | Package | Nhiệm vụ kỹ thuật |
 | :--- | :--- |
 | **`connection`** | Chứa duy nhất class `ConnectDB.java` hiện thực Singleton kết nối SQL Server qua JDBC. |
-| **`entity`** | Chứa các đối tượng nghiệp vụ: đóng gói dữ liệu, có validation trong setter, tự thực hiện phép tính và quy tắc không cần CSDL. Không chứa SQL. |
-| **`dao`** | Chứa các lớp Data Access Object (hậu tố `_Dao.java`). Thực thi JDBC PreparedStatement trong `try-with-resources`. |
-| **`controller`** | Chứa các Controller lắng nghe sự kiện từ View, validate form, điều phối giữa GUI và DAO. |
+| **`entity`** | Chứa các POJO đại diện cho bảng CSDL: đóng gói dữ liệu, có validation định dạng đầu vào trong setter. Không có setter cho các trường tổng tiền tính toán. Không chứa hàm xử lý nghiệp vụ hay tính toán, không chứa SQL. |
+| **`dao`** | Chứa các lớp Data Access Object (hậu tố `_Dao.java`). Chỉ thực thi câu lệnh SQL (JDBC PreparedStatement trong `try-with-resources`) và transaction. Không import `controller` hay `gui`. |
+| **`controller`** | Chứa các Controller lắng nghe sự kiện từ View, thực hiện toàn bộ logic nghiệp vụ và tính toán, validate form, điều phối giữa GUI và DAO. Quy tắc dùng chung cho nhiều màn hình đặt trong `NghiepVuHoaDon`, `NghiepVuPhieu`, `NghiepVuKho`. |
 | **`gui`** | Chứa giao diện Java Swing (`GiaoDienChinh`, các `JPanel` nghiệp vụ, các `JDialog` popup). |
 | **`util`** | Chứa tiện ích dùng chung: `UIConstants.java` (bảng màu, font), `FormatUtil.java`, `VietQRUtil.java`, `PdfExporter.java`. |
 | **`test`** | Chứa các class kiểm thử kết nối CSDL và chạy thử nghiệm độc lập. |
@@ -172,7 +172,9 @@ Hệ thống được thiết kế theo mô hình **MVC kết hợp Kiến trúc
    - Tiền bạc, số lượng, % nhiên liệu: không được âm.
 4. Ghi đè `equals()` và `hashCode()` theo Khóa chính.
 5. Ghi đè `toString()`.
-6. Phép tính và quy tắc không cần CSDL đặt trong entity hoặc enum, không đặt trong DAO hay Controller. Ví dụ: `HoaDon.tinhTongThanhToan()`, `PhuTung.xuatKho()`, `TrangThaiPhieu.coTheChuyenSang()`. Entity không chứa SQL; DAO chỉ giữ SQL và transaction.
+6. Entity chỉ có thuộc tính, constructor, getter/setter có kiểm tra đầu vào, `equals()`, `hashCode()`, `toString()` và hàm ghép chuỗi hiển thị đơn giản (ví dụ `getTenXe()`). **Không** đặt phép tính tiền, tính phần trăm, kiểm tra điều kiện nghiệp vụ hay thay đổi tồn kho trong entity hoặc enum; những việc đó đặt ở Controller. Entity không chứa SQL.
+7. Trường tổng tiền và giá trị tính toán (tổng tiền hóa đơn, lợi nhuận, tỷ lệ...) **không có setter**, kể cả `private`: Controller tính xong rồi truyền vào constructor (ví dụ `NghiepVuHoaDon.tinhHoaDon(...)` tạo `HoaDon` đã có đủ 5 khoản tiền).
+8. Quy tắc dùng ở nhiều màn hình đặt trong lớp nghiệp vụ của tầng Controller (`NghiepVuHoaDon`, `NghiepVuPhieu`, `NghiepVuKho`), để Controller của màn hình này không phải gọi sang Controller của màn hình khác. DAO không gọi các lớp này: Controller tính xong rồi truyền kết quả xuống DAO để lưu.
 
 ```java
 // CODE MẪU CHUẨN ENTITY
@@ -487,6 +489,9 @@ AUTORA/
     │   └── ThongKe_Dao.java
     │
     ├── controller/
+    │   ├── NghiepVuHoaDon.java                     # Tính tiền hóa đơn, khuyến mãi, thuế, kiểm tra thanh toán
+    │   ├── NghiepVuPhieu.java                      # Luồng trạng thái, tiến độ, bàn giao, phân công
+    │   ├── NghiepVuKho.java                        # Đủ tồn, cảnh báo tồn, giá nhập, số lượng nhập đề xuất
     │   ├── DangNhapController.java
     │   ├── GiaoDienChinhController.java
     │   ├── TrangChuLeTanController.java

@@ -177,7 +177,7 @@ public class ChiTietHoaDonController {
     private List<Object[]> dongPhuTung(List<ChiTietSuaChua_PhuTung> nguon) {
         List<Object[]> dong = new ArrayList<>();
         for (ChiTietSuaChua_PhuTung d : nguon) {
-            double thanhTien = d.thanhTien();
+            double thanhTien = NghiepVuHoaDon.thanhTien(d);
             tongTienPhuTung += thanhTien;
             dong.add(new Object[] {d.getPhuTung().getTenPhuTung(), d.getPhuTung().getMaSKU(), d.getSoLuongSuDung(),
                 tien(d.getGiaBanThucTe()), tien(thanhTien)});
@@ -204,11 +204,11 @@ public class ChiTietHoaDonController {
         }
         view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
         view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
-        if (d.phieu.getXe().getKhachHang().duocThanhToanBang(HinhThucThanhToan.CONG_NO)) {
+        if (NghiepVuHoaDon.duocThanhToanBang(d.phieu.getXe().getKhachHang(), HinhThucThanhToan.CONG_NO)) {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
         // Mặc định chọn khuyến mãi giảm nhiều nhất; nhân viên vẫn đổi hoặc bỏ chọn được.
-        view.getCboKhuyenMai().setSelectedItem(KhuyenMai.totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
+        view.getCboKhuyenMai().setSelectedItem(NghiepVuHoaDon.khuyenMaiTotNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
         view.getCboThue().addActionListener(e -> tinhLaiXemTruoc());
         ganSuKienThanhToan();
@@ -259,10 +259,8 @@ public class ChiTietHoaDonController {
     /** Chỉ để xem trước; số tiền thật được tính lại khi lưu. */
     private void tinhLaiXemTruoc() {
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
-        HoaDon xemTruoc = new HoaDon();
-        xemTruoc.setKhuyenMai((KhuyenMai) view.getCboKhuyenMai().getSelectedItem());
-        xemTruoc.setThue(thue);
-        xemTruoc.tinhTongThanhToan(tongTienCong, tongTienPhuTung);
+        HoaDon xemTruoc = NghiepVuHoaDon.tinhHoaDon(new PhieuTiepNhanVaSuaChua(maPhieu), (KhuyenMai) view.getCboKhuyenMai().getSelectedItem(), thue,
+                (HinhThucThanhToan) view.getCboHinhThuc().getSelectedItem(), tongTienCong, tongTienPhuTung);
         tongHienTai = xemTruoc.getTongThanhToan();
         hienTongHop(xemTruoc.getTongTienCong(), xemTruoc.getTongTienPhuTung(), xemTruoc.getTongTienGiam(),
                 thue == null ? 0 : thue.getThueSuat(), xemTruoc.getTongTienVAT(), tongHienTai);
@@ -356,7 +354,7 @@ public class ChiTietHoaDonController {
         }
         KhuyenMai km = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
         try {
-            String ma = dao.lapHoaDon(maPhieu, km == null ? null : km.getMaKM(), thue.getMaThue(), hinhThuc, dua,
+            String ma = NghiepVuHoaDon.lapHoaDon(maPhieu, km == null ? null : km.getMaKM(), thue.getMaThue(), hinhThuc, dua,
                     PhienDangNhap.getHienTai().getMaNV());
             JOptionPane.showMessageDialog(view, "Đã lập hóa đơn " + ma + ".");
             dieuHuong.moChiTietHoaDon(ma);
@@ -376,7 +374,7 @@ public class ChiTietHoaDonController {
             }
         }
         try {
-            dao.thanhToanCongNo(hoaDon.getMaHD(), hinhThuc, dua, PhienDangNhap.getHienTai().getTenDangNhap());
+            NghiepVuHoaDon.thuCongNo(hoaDon.getMaHD(), hinhThuc, dua, PhienDangNhap.getHienTai().getTenDangNhap());
             dieuHuong.moChiTietHoaDon(hoaDon.getMaHD());
         } catch (IllegalArgumentException | SQLException ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể thanh toán", JOptionPane.WARNING_MESSAGE);

@@ -483,6 +483,23 @@ public final class UIComponents {
         t.repaint();
     }
 
+    /** Gán phím tắt cho cả màn hình (F5, Ctrl+F...), chạy được khi bất kỳ ô nào trong màn hình đang được chọn. */
+    public static void ganPhim(JComponent noi, KeyStroke phim, String ten, Runnable viec) {
+        noi.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
+        noi.getActionMap().put(ten, new AbstractAction() {
+            @Override
+            public void actionPerformed(java.awt.event.ActionEvent e) {
+                viec.run();
+            }
+        });
+    }
+
+    /** Báo lỗi CSDL cho người dùng, để danh sách lỗi không bị hiểu nhầm là danh sách trống. */
+    public static void baoLoiCsdl(Component cha, Exception ex) {
+        JOptionPane.showMessageDialog(cha, "Không thể làm việc với cơ sở dữ liệu.\n" + ex.getMessage(),
+                "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+    }
+
     /** Tự tải lại khi ngừng gõ ở ô tìm kiếm hoặc ô ngày, hay đổi bộ lọc; nhiều thay đổi liền nhau chỉ tải một lần. */
     public static void tuTaiLai(Runnable tai, JComponent... nguon) {
         Timer cho = new Timer(350, e -> tai.run());

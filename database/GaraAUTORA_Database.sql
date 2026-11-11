@@ -328,6 +328,37 @@ CREATE TABLE NhatKyHoatDong (
 GO
 
 -- ==============================================================
+-- 4.6. RÀNG BUỘC CHECK: CSDL tự từ chối số âm và trạng thái gõ sai,
+--      kể cả khi dữ liệu không đi qua ứng dụng.
+-- ==============================================================
+ALTER TABLE KhachHang ADD CONSTRAINT CK_KH_Loai CHECK (loaiKhachHang IN (N'Khách vãng lai', N'Thành viên', N'VIP'));
+ALTER TABLE NhanVien ADD CONSTRAINT CK_NV_ViTri CHECK (viTriLamViec IN (N'Chủ cửa hàng', N'Lễ tân', N'Kỹ thuật viên', N'Thủ kho'));
+ALTER TABLE TaiKhoan ADD CONSTRAINT CK_TK_VaiTro CHECK (vaiTro IN (N'Chủ cửa hàng', N'Lễ tân', N'Kỹ thuật viên', N'Thủ kho'));
+ALTER TABLE DichVu ADD CONSTRAINT CK_DV_So CHECK (tienCong >= 0 AND thoiGianChuan > 0);
+ALTER TABLE NhanVien_DichVu ADD CONSTRAINT CK_NVDV_Phut CHECK (thoiGianPhut > 0);
+ALTER TABLE PhuTung ADD CONSTRAINT CK_PT_So CHECK (giaNhap >= 0 AND giaBanLe >= 0 AND soLuongTon >= 0 AND nguongCanhBao >= 0);
+ALTER TABLE KhuyenMai ADD CONSTRAINT CK_KM_GiaTri CHECK (giaTri > 0 AND (hinhThuc <> N'Giảm %' OR giaTri <= 100));
+ALTER TABLE KhuyenMai ADD CONSTRAINT CK_KM_ThoiGian CHECK (thoiGianKetThuc >= thoiGianBatDau);
+ALTER TABLE KhuyenMai ADD CONSTRAINT CK_KM_Loai CHECK (hinhThuc IN (N'Giảm %', N'Giảm tiền mặt')
+    AND phamViApDung IN (N'Tổng hóa đơn', N'Nhóm dịch vụ', N'Phụ tùng') AND (soLuotToiDa IS NULL OR soLuotToiDa > 0));
+ALTER TABLE Thue ADD CONSTRAINT CK_Thue_Suat CHECK (thueSuat >= 0 AND thueSuat <= 100);
+ALTER TABLE LichHen ADD CONSTRAINT CK_LH_TrangThai CHECK (trangThai IN (N'Đang hẹn', N'Đã đến', N'Đã hủy'));
+ALTER TABLE PhieuTiepNhanVaSuaChua ADD CONSTRAINT CK_PTN_So CHECK (soKm >= 0 AND mucNhienLieu BETWEEN 0 AND 100);
+ALTER TABLE PhieuTiepNhanVaSuaChua ADD CONSTRAINT CK_PTN_TrangThai CHECK (trangThai IN (N'Chờ kiểm tra', N'Đang sửa', N'Chờ phụ tùng', N'Hoàn thành', N'Đã hủy')
+    AND uuTien IN (N'Thường', N'Khẩn'));
+ALTER TABLE PhieuYeuCauXuatKho ADD CONSTRAINT CK_PYC_TrangThai CHECK (trangThai IN (N'Chờ xuất', N'Đã xuất', N'Từ chối'));
+ALTER TABLE PhieuNhapKho ADD CONSTRAINT CK_PNK_Tong CHECK (tongTienNhap >= 0);
+ALTER TABLE HoaDon ADD CONSTRAINT CK_HD_So CHECK (tongTienCong >= 0 AND tongTienPhuTung >= 0 AND tongTienGiam >= 0
+    AND tongTienVAT >= 0 AND tongThanhToan >= 0);
+ALTER TABLE HoaDon ADD CONSTRAINT CK_HD_TrangThai CHECK (trangThaiThanhToan IN (N'Đã thanh toán', N'Công nợ', N'Đã hủy')
+    AND hinhThucThanhToan IN (N'Tiền mặt', N'Chuyển khoản', N'Công nợ'));
+ALTER TABLE ChiTietSuaChua_DichVu ADD CONSTRAINT CK_CTDV CHECK (tienCongThucTe >= 0 AND trangThaiTienDo IN (N'Chờ sửa', N'Đang sửa', N'Hoàn thành'));
+ALTER TABLE ChiTietSuaChua_PhuTung ADD CONSTRAINT CK_CTPT CHECK (soLuongSuDung > 0 AND giaBanThucTe >= 0);
+ALTER TABLE ChiTietYeuCauXuatKho ADD CONSTRAINT CK_CTYC CHECK (soLuong > 0);
+ALTER TABLE ChiTietNhapKho ADD CONSTRAINT CK_CTNK CHECK (soLuongNhap > 0 AND giaNhapThucTe >= 0);
+GO
+
+-- ==============================================================
 -- 5. BỘ DỮ LIỆU MẪU ĐẦY ĐỦ ĐỂ TEST CHỨC NĂNG (SAMPLE DATA)
 -- ==============================================================
 
@@ -464,12 +495,13 @@ INSERT INTO LichHen (maLichHen, thoiGianHen, ghiChu, trangThai, maKH, bienSo) VA
 ('LH00003', DATEADD(HOUR, 14, DATEADD(DAY, 7, CAST(CAST(GETDATE() AS DATE) AS DATETIME))), N'Thay lốp', N'Đang hẹn', 'KH0001', NULL);
 GO
 
--- Tài khoản ứng dụng chỉ đọc/ghi dữ liệu. Login do database/TaoLoginUngDung.sql tạo, nên chạy lại script này vẫn giữ quyền.
+-- Tài khoản ứng dụng chỉ đọc/ghi dữ liệu và sao lưu. Login do database/TaoLoginUngDung.sql tạo, nên chạy lại script này vẫn giữ quyền.
 IF SUSER_ID(N'autora_app') IS NOT NULL
 BEGIN
     CREATE USER autora_app FOR LOGIN autora_app;
     ALTER ROLE db_datareader ADD MEMBER autora_app;
     ALTER ROLE db_datawriter ADD MEMBER autora_app;
+    ALTER ROLE db_backupoperator ADD MEMBER autora_app;
 END
 GO
 

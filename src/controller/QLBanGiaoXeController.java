@@ -1,11 +1,8 @@
 package controller;
 
-import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
 import entity.HoaDon;
-import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
-import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
 
@@ -23,7 +20,6 @@ public class QLBanGiaoXeController {
 
     private final QLBanGiaoXe view;
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
-    private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
     private String selected;
     private int loadVersion;
     private boolean loadErrorShown;
@@ -110,10 +106,10 @@ public class QLBanGiaoXeController {
                     p.getXe().getBienSo(),
                     p.getXe().getKhachHang().getHoTen(),
                     p.getTenXe(),
-                    p.phanTramHoanTat() + "%",
-                    p.getNhanHoaDonBanGiao(),
+                    NghiepVuPhieu.phanTramHoanTat(p) + "%",
+                    NghiepVuPhieu.nhanHoaDonBanGiao(p),
                     money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan()),
-                    p.duDieuKienBanGiao() ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
+                    NghiepVuPhieu.duDieuKienBanGiao(p) ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
             });
         }
         return rows;
@@ -130,8 +126,8 @@ public class QLBanGiaoXeController {
             QLBanGiaoXe.ChiTietBanGiao detail = new QLBanGiaoXe.ChiTietBanGiao();
             detail.xe = p.getXe().getBienSo() + " • " + p.getTenXe();
             detail.chuXeVaPhieu = p.getXe().getKhachHang().getHoTen() + " • " + id;
-            detail.nhanTienDo = "Hoàn tất " + p.phanTramHoanTat() + "%";
-            detail.hoanTat100 = p.phanTramHoanTat() == 100;
+            detail.nhanTienDo = "Hoàn tất " + NghiepVuPhieu.phanTramHoanTat(p) + "%";
+            detail.hoanTat100 = NghiepVuPhieu.phanTramHoanTat(p) == 100;
             detail.tienCong = money(hoaDon.getTongTienCong());
             detail.phuTung = money(hoaDon.getTongTienPhuTung());
             detail.giamGia = "− " + money(hoaDon.getTongTienGiam());
@@ -139,14 +135,14 @@ public class QLBanGiaoXeController {
                     java.util.Locale.forLanguageTag("vi-VN"), "VAT (%.0f%%)", taxRate);
             detail.vat = money(hoaDon.getTongTienVAT());
             detail.tongThanhToan = money(hoaDon.getTongThanhToan());
-            detail.duDieuKien = p.duDieuKienBanGiao();
+            detail.duDieuKien = NghiepVuPhieu.duDieuKienBanGiao(p);
             detail.daBanGiao = p.getBanGiao() != null;
             if (detail.daBanGiao) {
                 detail.thongBao = "Phiếu đã bàn giao, có thể xem và in lại phiếu xuất xưởng.";
             } else if (detail.duDieuKien) {
                 detail.thongBao = hoaDon.getMaHD() + " đã xử lý. Đủ điều kiện bàn giao.";
             } else {
-                detail.thongBao = p.lyDoChuaDuDieuKienBanGiao();
+                detail.thongBao = NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(p);
             }
             view.hienChiTiet(detail);
         } catch (SQLException ex) {
@@ -167,11 +163,8 @@ public class QLBanGiaoXeController {
             return;
         }
         try {
-            List<NhanVien> receptionists = nhanVienDao.findByViTri(VaiTro.LE_TAN);
-            if (receptionists.isEmpty()) {
-                throw new SQLException("Không có nhân viên lễ tân để ghi nhận bàn giao.");
-            }
-            dao.xacNhan(selected, receptionists.get(0).getMaNV(), "");
+            // Ghi người đang đăng nhập, không phải lễ tân đầu tiên trong CSDL.
+            dao.xacNhan(selected, util.PhienDangNhap.getHienTai().getMaNV(), "");
             JOptionPane.showMessageDialog(view, "Đã ghi nhận bàn giao.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             if (daTai) load();
@@ -200,7 +193,7 @@ public class QLBanGiaoXeController {
             receipt.tenKhach = p.getXe().getKhachHang().getHoTen();
             receipt.soDienThoai = p.getXe().getKhachHang().getSoDienThoai();
             receipt.tongThanhToan = money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan());
-            receipt.trangThaiHoaDon = p.getTrangThaiHoaDonHienThi();
+            receipt.trangThaiHoaDon = NghiepVuPhieu.trangThaiHoaDonHienThi(p);
             receipt.ngayBanGiao = p.getBanGiao() == null || p.getBanGiao().getNgayBanGiao() == null
                     ? "Chưa xác nhận bàn giao"
                     : p.getBanGiao().getNgayBanGiao().format(

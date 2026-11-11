@@ -643,7 +643,7 @@ public class QLTienDoSuaChua extends JPanel {
         }
     }
 
-    public JPanel taoThePhieuItem(PhieuTiepNhanVaSuaChua phieu, boolean dangChon) {
+    public JPanel taoThePhieuItem(PhieuTiepNhanVaSuaChua phieu, String tt, boolean dangChon) {
         Color vien = dangChon ? UIConstants.ROLE_RECEPTION_LIGHT : UIConstants.BORDER_COLOR;
         Color nen = dangChon ? UIComponents.tint(UIConstants.ROLE_RECEPTION_LIGHT, 0.94f) : UIConstants.CARD_BG;
 
@@ -662,7 +662,6 @@ public class QLTienDoSuaChua extends JPanel {
         left.add(lblMa);
         left.add(lblXe);
 
-        String tt = phieu.getTrangThaiHienThiKTV();
         UIComponents.Badge badge = new UIComponents.Badge(tt, mauTrangThai(tt));
         JPanel right = UIComponents.trong(new GridBagLayout());
         right.add(badge);

@@ -19,6 +19,7 @@ public class QLNhatKy extends JPanel {
             "Thời gian", "Tài khoản", "Hành động", "Đối tượng", "Giá trị cũ", "Giá trị mới");
     private final JTable tblDanhSach = new JTable(tableModel);
     private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
+    private final JButton btnSaoLuu = UIComponents.nutPhu("Sao lưu dữ liệu");
 
     public QLNhatKy() {
         setLayout(new BorderLayout());
@@ -39,6 +40,7 @@ public class QLNhatKy extends JPanel {
         hang.add(fTuNgay);
         hang.add(fDenNgay);
         hang.add(btnTaiDuLieu);
+        hang.add(btnSaoLuu);
         noiDung.them(hang, 18);
 
         UIComponents.styleTable(tblDanhSach);
@@ -69,6 +71,7 @@ public class QLNhatKy extends JPanel {
 
     public JTextField getTxtTimKiem() { return txtTimKiem; }
     public JButton getBtnTaiDuLieu() { return btnTaiDuLieu; }
+    public JButton getBtnSaoLuu() { return btnSaoLuu; }
     public JTable getTblDanhSach() { return tblDanhSach; }
     public JTextField getTxtTuNgay() { return fTuNgay.getTextField(); }
     public JTextField getTxtDenNgay() { return fDenNgay.getTextField(); }

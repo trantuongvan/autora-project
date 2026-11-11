@@ -141,11 +141,6 @@ public class KhachHang {
         this.lichHenGanNhat = lichHenGanNhat;
     }
 
-    /** Chỉ khách được duyệt mới được ghi nợ; các hình thức khác ai cũng dùng được. */
-    public boolean duocThanhToanBang(HinhThucThanhToan hinhThuc) {
-        return hinhThuc != HinhThucThanhToan.CONG_NO || duocGhiNo;
-    }
-
     @Override
     public boolean equals(Object o) {
         return this == o || o instanceof KhachHang && Objects.equals(maKH, ((KhachHang) o).maKH);

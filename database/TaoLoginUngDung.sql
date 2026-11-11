@@ -20,4 +20,6 @@ IF USER_ID(N'autora_app') IS NULL
     CREATE USER autora_app FOR LOGIN autora_app;
 ALTER ROLE db_datareader ADD MEMBER autora_app;
 ALTER ROLE db_datawriter ADD MEMBER autora_app;
+-- Cho nút "Sao lưu dữ liệu" ở màn hình Nhật ký hệ thống.
+ALTER ROLE db_backupoperator ADD MEMBER autora_app;
 GO

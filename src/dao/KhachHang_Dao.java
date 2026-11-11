@@ -164,13 +164,29 @@ public class KhachHang_Dao {
     }
 
     /** Trả về false khi khách hàng còn xe liên kết, đã có phiếu sửa chữa hoặc không còn tồn tại. */
-    public boolean delete(String maKH) throws SQLException {
-        String sql = "DELETE FROM KhachHang WHERE maKH = ? AND NOT EXISTS (SELECT 1 FROM Xe WHERE maKH = ?)";
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, maKH);
-            statement.setString(2, maKH);
-            return statement.executeUpdate() == 1;
+    /** Xóa khách chưa có xe và ghi nhật ký người xóa; false khi khách còn xe, đã có phiếu hoặc không tồn tại. */
+    public boolean delete(String maKH, String tenDangNhap) throws SQLException {
+        String sql = "DELETE FROM KhachHang OUTPUT deleted.hoTen WHERE maKH = ? AND NOT EXISTS (SELECT 1 FROM Xe WHERE maKH = ?)";
+        try (Connection connection = ConnectDB.getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement statement = connection.prepareStatement(sql)) {
+                statement.setString(1, maKH);
+                statement.setString(2, maKH);
+                String hoTen;
+                try (ResultSet rs = statement.executeQuery()) {
+                    if (!rs.next()) {
+                        connection.rollback();
+                        return false;
+                    }
+                    hoTen = rs.getString(1);
+                }
+                new NhatKy_Dao().ghi(connection, tenDangNhap, "Xóa khách hàng", maKH, hoTen, null);
+                connection.commit();
+                return true;
+            } catch (SQLException | RuntimeException ex) {
+                connection.rollback();
+                throw ex;
+            }
         } catch (SQLException ex) {
             // Khách đã có phiếu sửa chữa.
             if (ex.getErrorCode() == LOI_VI_PHAM_KHOA_NGOAI) {

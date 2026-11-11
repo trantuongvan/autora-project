@@ -120,8 +120,8 @@ public class TrangChuLeTanController {
     private static List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
         List<Object[]> rows = new ArrayList<>();
         for (PhieuTiepNhanVaSuaChua p : dsPhieu) {
-            boolean ready = p.duDieuKienBanGiao();
-            int progress = p.phanTramHoanTat();
+            boolean ready = NghiepVuPhieu.duDieuKienBanGiao(p);
+            int progress = NghiepVuPhieu.phanTramHoanTat(p);
             String status;
             if (ready) {
                 status = "Chờ bàn giao";

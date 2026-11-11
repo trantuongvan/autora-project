@@ -33,6 +33,7 @@ public class QLNhatKyController {
 
     private void initController() {
         view.getBtnTaiDuLieu().addActionListener(e -> taiDuLieu());
+        view.getBtnSaoLuu().addActionListener(e -> saoLuu());
         view.getTxtTimKiem().addActionListener(e -> taiDuLieu());
         view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai");
         view.getActionMap().put("taiLai", new AbstractAction() {
@@ -41,6 +42,20 @@ public class QLNhatKyController {
                 taiDuLieu();
             }
         });
+    }
+
+    /** Sao lưu toàn bộ CSDL; tệp nằm trên máy chạy SQL Server. */
+    private void saoLuu() {
+        try {
+            String tep = new dao.SaoLuu_Dao().saoLuu(util.PhienDangNhap.getHienTai().getTenDangNhap());
+            JOptionPane.showMessageDialog(view, "Đã sao lưu dữ liệu vào tệp:\n" + tep, "Sao lưu",
+                    JOptionPane.INFORMATION_MESSAGE);
+            taiDuLieu();
+        } catch (java.sql.SQLException ex) {
+            JOptionPane.showMessageDialog(view, "Không sao lưu được.\n" + ex.getMessage()
+                    + "\n\nTài khoản CSDL của ứng dụng cần quyền db_backupoperator: chạy lại database/TaoLoginUngDung.sql.",
+                    "Lỗi sao lưu", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void taiDuLieu() {

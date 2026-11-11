@@ -199,25 +199,22 @@ public class HoaDon_Dao {
         }
     }
 
-    /** Lập hóa đơn trong một transaction, không đổi tồn kho vì phụ tùng đã trừ lúc duyệt xuất kho. tienKhachDua chỉ dùng cho tiền mặt. Trả về mã hóa đơn. */
-    public String lapHoaDon(String maPhieu, String maKM, String maThue, HinhThucThanhToan hinhThuc, Double tienKhachDua,
-            String maNV) throws SQLException {
-        HoaDon hoaDon = new HoaDon();
-        hoaDon.setHinhThucThanhToan(hinhThuc);
+    /**
+     * Lưu hóa đơn đã tính sẵn tiền trong một transaction, không đổi tồn kho vì phụ tùng đã trừ lúc duyệt xuất kho.
+     * Từ chối khi dữ liệu phiếu đã đổi so với lúc tính, để không lưu số tiền cũ. Trả về mã hóa đơn.
+     */
+    public String lapHoaDon(String maPhieu, HoaDon hoaDon, String maNV) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
-                kiemTraPhieu(connection, maPhieu, hinhThuc);
-                hoaDon.setKhuyenMai(maKM == null ? null : docKhuyenMai(connection, maKM));
-                hoaDon.setThue(docThue(connection, maThue));
-
-                double tienPhuTung = 0;
-                for (ChiTietSuaChua_PhuTung d : docPhuTung(connection, maPhieu)) {
-                    tienPhuTung += d.thanhTien();
+                kiemTraPhieu(connection, maPhieu);
+                if (hoaDon.getKhuyenMai() != null && !khuyenMaiConHieuLuc(connection, hoaDon.getKhuyenMai().getMaKM())) {
+                    throw new SQLException("Khuyến mãi " + hoaDon.getKhuyenMai().getMaKM() + " đã hết hạn, ngừng áp dụng hoặc hết lượt.");
                 }
-                hoaDon.tinhTongThanhToan(docTienCong(connection, maPhieu), tienPhuTung);
-                kiemTraTienMat(hinhThuc, tienKhachDua, hoaDon.getTongThanhToan());
-
+                if (Math.round(docTienCong(connection, maPhieu)) != hoaDon.getTongTienCong()
+                        || Math.round(docTienPhuTung(connection, maPhieu)) != hoaDon.getTongTienPhuTung()) {
+                    throw new SQLException("Dịch vụ hoặc phụ tùng của phiếu " + maPhieu + " vừa thay đổi. Vui lòng lập lại hóa đơn.");
+                }
                 String maHD = sinhMaHD(connection);
                 themHoaDon(connection, maHD, maPhieu, maNV, hoaDon);
                 connection.commit();
@@ -229,9 +226,8 @@ public class HoaDon_Dao {
         }
     }
 
-    private static void kiemTraPhieu(Connection connection, String maPhieu, HinhThucThanhToan hinhThuc) throws SQLException {
-        String sql = "SELECT p.trangThai, k.duocGhiNo FROM PhieuTiepNhanVaSuaChua p "
-                + "JOIN Xe x ON x.bienSo = p.bienSo JOIN KhachHang k ON k.maKH = p.maKH WHERE p.maPhieuTNSC = ?";
+    private static void kiemTraPhieu(Connection connection, String maPhieu) throws SQLException {
+        String sql = "SELECT p.trangThai FROM PhieuTiepNhanVaSuaChua p WHERE p.maPhieuTNSC = ?";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maPhieu);
             try (ResultSet rs = statement.executeQuery()) {
@@ -240,11 +236,6 @@ public class HoaDon_Dao {
                 }
                 if (TrangThaiPhieu.fromDb(rs.getString(1)) != TrangThaiPhieu.HOAN_THANH) {
                     throw new SQLException("Phiếu " + maPhieu + " chưa hoàn thành nên chưa lập được hóa đơn.");
-                }
-                KhachHang khach = new KhachHang();
-                khach.setDuocGhiNo(rs.getBoolean(2));
-                if (!khach.duocThanhToanBang(hinhThuc)) {
-                    throw new SQLException("Khách hàng của phiếu " + maPhieu + " không được phép ghi nợ.");
                 }
             }
         }
@@ -264,46 +255,12 @@ public class HoaDon_Dao {
         }
     }
 
-    private static KhuyenMai docKhuyenMai(Connection connection, String maKM) throws SQLException {
-        String sql = "SELECT hinhThuc, giaTri, phamViApDung FROM KhuyenMai "
-                + "WHERE maKM = ? AND " + KHUYEN_MAI_HOP_LE;
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+    private static boolean khuyenMaiConHieuLuc(Connection connection, String maKM) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT 1 FROM KhuyenMai WHERE maKM = ? AND " + KHUYEN_MAI_HOP_LE)) {
             statement.setString(1, maKM);
             try (ResultSet rs = statement.executeQuery()) {
-                if (!rs.next()) {
-                    throw new SQLException("Khuyến mãi " + maKM + " đã hết hạn, ngừng áp dụng hoặc hết lượt.");
-                }
-                KhuyenMai km = new KhuyenMai(maKM);
-                km.setHinhThuc(HinhThucKhuyenMai.fromDb(rs.getString(1)));
-                km.setGiaTri(rs.getDouble(2));
-                km.setPhamViApDung(PhamViKhuyenMai.fromDb(rs.getString(3)));
-                return km;
-            }
-        }
-    }
-
-    private static Thue docThue(Connection connection, String maThue) throws SQLException {
-        if (maThue == null) {
-            throw new IllegalArgumentException("Vui lòng chọn loại thuế.");
-        }
-        try (PreparedStatement statement = connection.prepareStatement("SELECT tenLoaiThue, thueSuat FROM Thue WHERE maThue = ?")) {
-            statement.setString(1, maThue);
-            try (ResultSet rs = statement.executeQuery()) {
-                if (!rs.next()) {
-                    throw new SQLException("Loại thuế " + maThue + " không tồn tại.");
-                }
-                return new Thue(maThue, rs.getString(1), rs.getDouble(2));
-            }
-        }
-    }
-
-    private static double docTienCong(Connection connection, String maPhieu) throws SQLException {
-        String sql = "SELECT COALESCE(SUM(tienCongThucTe), 0) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ?";
-        try (PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, maPhieu);
-            try (ResultSet rs = statement.executeQuery()) {
-                rs.next();
-                return rs.getDouble(1);
+                return rs.next();
             }
         }
     }
@@ -328,9 +285,25 @@ public class HoaDon_Dao {
         return ketQua;
     }
 
-    private static void kiemTraTienMat(HinhThucThanhToan hinhThuc, Double tienKhachDua, double tong) throws SQLException {
-        if (!hinhThuc.duTien(tienKhachDua, tong)) {
-            throw new SQLException("Tiền khách đưa chưa đủ tổng thanh toán.");
+    private static double docTienPhuTung(Connection connection, String maPhieu) throws SQLException {
+        String sql = "SELECT COALESCE(SUM(soLuongSuDung * giaBanThucTe), 0) FROM ChiTietSuaChua_PhuTung WHERE maPhieuTNSC = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maPhieu);
+            try (ResultSet rs = statement.executeQuery()) {
+                rs.next();
+                return rs.getDouble(1);
+            }
+        }
+    }
+
+    private static double docTienCong(Connection connection, String maPhieu) throws SQLException {
+        String sql = "SELECT COALESCE(SUM(tienCongThucTe), 0) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, maPhieu);
+            try (ResultSet rs = statement.executeQuery()) {
+                rs.next();
+                return rs.getDouble(1);
+            }
         }
     }
 
@@ -349,7 +322,7 @@ public class HoaDon_Dao {
         String sql = "INSERT INTO HoaDon (maHD, maPhieuTNSC, maNV_Lap, maKM, maThue, ngayLap, tongTienCong, tongTienPhuTung, "
                 + "tongTienGiam, tongTienVAT, tongThanhToan, hinhThucThanhToan, trangThaiThanhToan, ngayThanhToan) "
                 + "VALUES (?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, "
-                + (hinhThuc == HinhThucThanhToan.CONG_NO ? "NULL" : "GETDATE()") + ")";
+                + (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO ? "NULL" : "GETDATE()") + ")";
         try (PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, maHD);
             statement.setString(2, maPhieu);
@@ -366,17 +339,13 @@ public class HoaDon_Dao {
             statement.setDouble(9, hoaDon.getTongTienVAT());
             statement.setDouble(10, hoaDon.getTongThanhToan());
             statement.setString(11, hinhThuc.getText());
-            statement.setString(12, (hinhThuc == HinhThucThanhToan.CONG_NO ? TrangThaiHoaDon.CONG_NO : TrangThaiHoaDon.DA_THANH_TOAN).getText());
+            statement.setString(12, hoaDon.getTrangThaiThanhToan().getText());
             statement.executeUpdate();
         }
     }
 
-    /** Thu tiền hóa đơn công nợ. */
-    public void thanhToanCongNo(String maHD, HinhThucThanhToan hinhThuc, Double tienKhachDua, String tenDangNhap)
-            throws SQLException {
-        if (hinhThuc != HinhThucThanhToan.TIEN_MAT && hinhThuc != HinhThucThanhToan.CHUYEN_KHOAN) {
-            throw new IllegalArgumentException("Hình thức thanh toán không hợp lệ");
-        }
+    /** Ghi nhận đã thu tiền hóa đơn công nợ; chỉ đổi khi hóa đơn vẫn đang là Công nợ. */
+    public void thanhToanCongNo(String maHD, HinhThucThanhToan hinhThuc, String tenDangNhap) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {
@@ -392,7 +361,6 @@ public class HoaDon_Dao {
                         tong = rs.getDouble(1);
                     }
                 }
-                kiemTraTienMat(hinhThuc, tienKhachDua, tong);
                 String ghi = "UPDATE HoaDon SET hinhThucThanhToan = ?, trangThaiThanhToan = N'Đã thanh toán', "
                         + "ngayThanhToan = GETDATE() WHERE maHD = ?";
                 try (PreparedStatement statement = connection.prepareStatement(ghi)) {

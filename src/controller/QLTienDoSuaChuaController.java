@@ -72,7 +72,7 @@ public class QLTienDoSuaChuaController {
                 view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -177,7 +177,7 @@ public class QLTienDoSuaChuaController {
         daTai = true;
         try {
             String kw = view.getTxtTimPhieu().getText();
-            danhSachPhieu = tienDoDao.searchPhieuĐượcGiao("", kw, tabTrangThaiDangChon);
+            danhSachPhieu = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, tabTrangThaiDangChon);
 
             PhieuTiepNhanVaSuaChua chon = null;
             if (maPhieuCanChon != null) {
@@ -195,7 +195,6 @@ public class QLTienDoSuaChuaController {
             veDanhSachThePhieu();
             hienThiChiTietPhieu(phieuDangChon);
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi tải danh sách phiếu sửa chữa: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -212,7 +211,7 @@ public class QLTienDoSuaChuaController {
         } else {
             for (PhieuTiepNhanVaSuaChua p : danhSachPhieu) {
                 boolean isSelected = phieuDangChon != null && p.getMaPhieuTNSC().equals(phieuDangChon.getMaPhieuTNSC());
-                JPanel cardItem = view.taoThePhieuItem(p, isSelected);
+                JPanel cardItem = view.taoThePhieuItem(p, NghiepVuPhieu.trangThaiHienThiKTV(p), isSelected);
                 cardItem.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
@@ -253,8 +252,8 @@ public class QLTienDoSuaChuaController {
 
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
-        String tt = p.getTrangThaiHienThiKTV();
-        int pct = p.phanTramTienDo();
+        String tt = NghiepVuPhieu.trangThaiHienThiKTV(p);
+        int pct = NghiepVuPhieu.phanTramTienDo(p);
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
@@ -282,7 +281,7 @@ public class QLTienDoSuaChuaController {
         try {
             daThanhToan = tienDoDao.isPhieuDaThanhToan(p.getMaPhieuTNSC());
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
         view.getBtnCapNhatTrangThai().setEnabled(!daThanhToan);
         view.getBtnMoYeuCauPhuTung().setEnabled(!daThanhToan && p.getTrangThai() != TrangThaiPhieu.HOAN_THANH);
@@ -299,18 +298,18 @@ public class QLTienDoSuaChuaController {
         view.getPnlHopLoiTrangThai().setVisible(false);
         if (moi == cu) return;
 
-        if (!cu.coTheChuyenSang(moi)) {
-            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
+        if (!NghiepVuPhieu.coTheChuyenSang(cu, moi)) {
+            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + NghiepVuPhieu.trangThaiHienThiKTV(phieuDangChon)
                     + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-        if (moi == TrangThaiPhieu.HOAN_THANH && !phieuDangChon.coTheHoanThanh()) {
+        if (moi == TrangThaiPhieu.HOAN_THANH && !NghiepVuPhieu.coTheHoanThanh(phieuDangChon)) {
             hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
             return;
         }
         String ma = phieuDangChon.getMaPhieuTNSC();
         try {
-            if (phieuDao.capNhatTrangThai(ma, cu, moi, PhienDangNhap.getHienTai().getTenDangNhap())) {
+            if (NghiepVuPhieu.doiTrangThai(ma, cu, moi, PhienDangNhap.getHienTai().getTenDangNhap())) {
                 JOptionPane.showMessageDialog(view, "Đã cập nhật trạng thái phiếu " + ma + " sang '" + nhanMoi + "'.",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -320,7 +319,6 @@ public class QLTienDoSuaChuaController {
             }
             taiLai(ma);
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi cập nhật trạng thái: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -356,7 +354,7 @@ public class QLTienDoSuaChuaController {
                     view.getPnlHopLoiTrangThai().setVisible(true);
                     return;
                 }
-                if (!tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi,
+                if (!NghiepVuPhieu.capNhatHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi,
                         PhienDangNhap.getHienTai().getTenDangNhap())) {
                     JOptionPane.showMessageDialog(view, "Phiếu đã có hóa đơn hoặc đã hủy nên không thể cập nhật hạng mục.",
                             "Cảnh báo", JOptionPane.WARNING_MESSAGE);
@@ -364,7 +362,7 @@ public class QLTienDoSuaChuaController {
                 taiLai(ct.getPhieu().getMaPhieuTNSC());
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -401,7 +399,7 @@ public class QLTienDoSuaChuaController {
         view.getTxtPhieuSuaChuaYC().setText(phieuDangChon.getMaPhieuTNSC());
         view.getTxtXeYC().setText(phieuDangChon.getThongTinXeDayDu());
 
-        String tenKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getHoTen() : "Lê Văn Thợ Máy";
+        String tenKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getHoTen() : util.PhienDangNhap.getHienTai().getHoTen();
         if (!phieuDangChon.getDanhSachDichVu().isEmpty()
                 && phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien() != null) {
             tenKTV = phieuDangChon.getDanhSachDichVu().get(0).getKyThuatVien().getHoTen();
@@ -461,7 +459,7 @@ public class QLTienDoSuaChuaController {
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
         JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getPhuTung().kiemTraCanhBaoTon()) {
+        if (NghiepVuKho.duoiNguongCanhBao(item.getPhuTung())) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));
@@ -618,7 +616,6 @@ public class QLTienDoSuaChuaController {
                 }
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi truy vấn danh mục phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -656,7 +653,7 @@ public class QLTienDoSuaChuaController {
             String maPYC = yeuCauDao.nextId();
             view.getTxtMaYeuCau().setText(maPYC);
 
-            String maKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getMaNV() : "NV0005";
+            String maKTV = kyThuatVienHienTai != null ? kyThuatVienHienTai.getMaNV() : util.PhienDangNhap.getHienTai().getMaNV();
             PhieuYeuCauXuatKho phieu = new PhieuYeuCauXuatKho(
                     maPYC,
                     LocalDateTime.now(),
@@ -675,7 +672,6 @@ public class QLTienDoSuaChuaController {
             view.hienThiManHinh(QLTienDoSuaChua.CARD_TIEN_DO);
             taiLai(phieuDangChon.getMaPhieuTNSC());
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phiếu yêu cầu phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }

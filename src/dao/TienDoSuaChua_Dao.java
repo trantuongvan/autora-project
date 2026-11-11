@@ -89,29 +89,57 @@ public class TienDoSuaChua_Dao {
             ps.setString(10, tt);
             ps.setString(11, tt);
 
+            java.util.Map<String, PhieuTiepNhanVaSuaChua> theoMa = new java.util.LinkedHashMap<>();
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     PhieuTiepNhanVaSuaChua p = mapPhieu(rs);
-                    List<ChiTietSuaChua_DichVu> dvList = findDichVuByPhieu(c, p, maKTV);
-                    p.setDanhSachDichVu(dvList);
-                    p.setTongSoHangMuc(dvList.size());
-
-                    int done = 0;
-                    StringBuilder sb = new StringBuilder();
-                    for (ChiTietSuaChua_DichVu ct : dvList) {
-                        if (ct.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
-                            done++;
-                        }
-                        if (sb.length() > 0) sb.append(", ");
-                        sb.append(ct.getDichVu().getTenDichVu());
-                    }
-                    p.setSoHangMucHoanThanh(done);
-                    p.setTomTatHangMuc(sb.length() > 0 ? sb.toString() : p.getYeuCauBanDau());
-                    list.add(p);
+                    theoMa.put(p.getMaPhieuTNSC(), p);
                 }
+            }
+            java.util.Map<String, List<ChiTietSuaChua_DichVu>> dichVuTheoPhieu = docDichVuPhieuChuaHuy(c, theoMa);
+            for (PhieuTiepNhanVaSuaChua p : theoMa.values()) {
+                List<ChiTietSuaChua_DichVu> dvList = dichVuTheoPhieu.getOrDefault(p.getMaPhieuTNSC(), new ArrayList<>());
+                p.setDanhSachDichVu(dvList);
+                p.setTongSoHangMuc(dvList.size());
+
+                int done = 0;
+                StringBuilder sb = new StringBuilder();
+                for (ChiTietSuaChua_DichVu ct : dvList) {
+                    if (ct.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
+                        done++;
+                    }
+                    if (sb.length() > 0) sb.append(", ");
+                    sb.append(ct.getDichVu().getTenDichVu());
+                }
+                p.setSoHangMucHoanThanh(done);
+                p.setTomTatHangMuc(sb.length() > 0 ? sb.toString() : p.getYeuCauBanDau());
+                list.add(p);
             }
         }
         return list;
+    }
+
+    /** Dịch vụ của mọi phiếu chưa hủy trong một lần đọc, chia theo mã phiếu; chỉ giữ phiếu có trong danh sách. */
+    private static java.util.Map<String, List<ChiTietSuaChua_DichVu>> docDichVuPhieuChuaHuy(Connection c,
+            java.util.Map<String, PhieuTiepNhanVaSuaChua> theoMa) throws SQLException {
+        java.util.Map<String, List<ChiTietSuaChua_DichVu>> ketQua = new java.util.HashMap<>();
+        if (theoMa.isEmpty()) {
+            return ketQua;
+        }
+        String sql = "SELECT c.maPhieuTNSC AS maPhieuDv, " + ChiTietSuaChua_DichVu_Dao.COT_DICH_VU + ChiTietSuaChua_DichVu_Dao.TU_DICH_VU
+                + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = c.maPhieuTNSC "
+                + "WHERE p.trangThai <> N'Đã hủy' "
+                + "ORDER BY c.maPhieuTNSC, c.maDichVu";
+        try (PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                PhieuTiepNhanVaSuaChua phieu = theoMa.get(rs.getString("maPhieuDv"));
+                if (phieu != null) {
+                    ketQua.computeIfAbsent(phieu.getMaPhieuTNSC(), k -> new ArrayList<>())
+                            .add(ChiTietSuaChua_DichVu_Dao.docDichVu(rs, phieu));
+                }
+            }
+        }
+        return ketQua;
     }
 
     public List<ChiTietSuaChua_DichVu> findDichVuByPhieu(String maPhieuTNSC, String maNVKyThuat) throws SQLException {
@@ -152,23 +180,20 @@ public class TienDoSuaChua_Dao {
     }
 
     /**
-     * Cập nhật tiến độ cho từng hạng mục dịch vụ; nếu tất cả hạng mục đều Hoàn thành
-     * thì tự động cập nhật Phiếu sang đúng chữ "Hoàn thành".
+     * Ghi tiến độ một hạng mục và trạng thái phiếu đã tính ở tầng nghiệp vụ, trong cùng một transaction.
      * Trả về false khi phiếu đã có hóa đơn hoặc đã hủy (màn hình có thể đang hiện dữ liệu cũ).
      */
     public boolean capNhatTienDoHangMuc(String maPhieuTNSC, String maDichVu, TrangThaiTienDo trangThaiHangMucMoi,
-            String tenDangNhap) throws SQLException {
+            TrangThaiPhieu trangThaiPhieuMoi, String tenDangNhap) throws SQLException {
         String sqlUpdateDV = "UPDATE d SET trangThaiTienDo = ? FROM ChiTietSuaChua_DichVu d "
                 + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = d.maPhieuTNSC "
                 + "WHERE d.maPhieuTNSC = ? AND d.maDichVu = ? AND " + PhieuTiepNhanVaSuaChua_Dao.NOT_LOCKED;
-        String sqlCheckNotDone = "SELECT COUNT(*) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ? AND trangThaiTienDo <> N'Hoàn thành'";
         String sqlUpdatePhieu = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = ? WHERE maPhieuTNSC = ?";
 
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAuto = c.getAutoCommit();
             c.setAutoCommit(false);
             try (PreparedStatement psDV = c.prepareStatement(sqlUpdateDV);
-                 PreparedStatement psCheck = c.prepareStatement(sqlCheckNotDone);
                  PreparedStatement psPhieu = c.prepareStatement(sqlUpdatePhieu)) {
 
                 psDV.setString(1, trangThaiHangMucMoi.getText());
@@ -180,13 +205,6 @@ public class TienDoSuaChua_Dao {
                     return false;
                 }
 
-                psCheck.setString(1, maPhieuTNSC);
-                int notDoneCount = 0;
-                try (ResultSet rs = psCheck.executeQuery()) {
-                    if (rs.next()) notDoneCount = rs.getInt(1);
-                }
-
-                TrangThaiPhieu trangThaiPhieuMoi = (notDoneCount == 0) ? TrangThaiPhieu.HOAN_THANH : TrangThaiPhieu.DANG_SUA;
                 psPhieu.setString(1, trangThaiPhieuMoi.getText());
                 psPhieu.setString(2, maPhieuTNSC);
                 psPhieu.executeUpdate();
@@ -201,6 +219,18 @@ public class TienDoSuaChua_Dao {
                 c.rollback();
                 c.setAutoCommit(oldAuto);
                 throw ex;
+            }
+        }
+    }
+
+    /** Phiếu còn yêu cầu phụ tùng chờ thủ kho duyệt. */
+    public boolean coYeuCauPhuTungCho(String maPhieuTNSC) throws SQLException {
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ? AND trangThai = N'Chờ xuất'")) {
+            ps.setString(1, maPhieuTNSC);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         }
     }

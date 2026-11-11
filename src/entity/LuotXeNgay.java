@@ -8,9 +8,6 @@ public class LuotXeNgay {
     private LocalDate ngay;
     private int soLuotXe;
 
-    public LuotXeNgay() {
-    }
-
     public LuotXeNgay(LocalDate ngay, int soLuotXe) {
         setNgay(ngay);
         setSoLuotXe(soLuotXe);
@@ -20,7 +17,7 @@ public class LuotXeNgay {
         return ngay;
     }
 
-    public void setNgay(LocalDate ngay) {
+    private void setNgay(LocalDate ngay) {
         if (ngay == null) {
             throw new IllegalArgumentException("Ngày thống kê không được để trống.");
         }
@@ -31,7 +28,7 @@ public class LuotXeNgay {
         return soLuotXe;
     }
 
-    public void setSoLuotXe(int soLuotXe) {
+    private void setSoLuotXe(int soLuotXe) {
         if (soLuotXe < 0) {
             throw new IllegalArgumentException("Số lượt xe không được âm.");
         }

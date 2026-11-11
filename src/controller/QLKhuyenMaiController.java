@@ -146,7 +146,7 @@ public class QLKhuyenMaiController {
         int dangDienRa = 0;
         int sapHetHan = 0;
         for (KhuyenMai km : tatCa) {
-            String tinhTrang = km.getTinhTrang(homNay);
+            String tinhTrang = NghiepVuHoaDon.tinhTrangKhuyenMai(km, homNay);
             if ("Đang áp dụng".equals(tinhTrang)) {
                 dangDienRa++;
                 if (!km.getThoiGianKetThuc().isAfter(homNay.plusDays(SO_NGAY_SAP_HET_HAN))) {
@@ -162,7 +162,7 @@ public class QLKhuyenMaiController {
         LocalDate homNay = LocalDate.now();
         List<Object[]> dong = new ArrayList<>();
         for (KhuyenMai km : ketQuaTimKiem) {
-            String tinhTrang = km.getTinhTrang(homNay);
+            String tinhTrang = NghiepVuHoaDon.tinhTrangKhuyenMai(km, homNay);
             if (!"Tất cả".equals(locTinhTrang) && !locTinhTrang.equals(tinhTrang)) {
                 continue;
             }
@@ -251,7 +251,7 @@ public class QLKhuyenMaiController {
     /** Kết thúc hẳn: đóng ngày kết thúc về hôm nay, khác với Tạm ngưng có thể kích hoạt lại đúng thời hạn cũ. */
     private void ketThucSom(KhuyenMai km) {
         LocalDate homNay = LocalDate.now();
-        if (!"Đang áp dụng".equals(km.getTinhTrang(homNay))) {
+        if (!"Đang áp dụng".equals(NghiepVuHoaDon.tinhTrangKhuyenMai(km, homNay))) {
             JOptionPane.showMessageDialog(view, "Chỉ kết thúc sớm được chương trình đang áp dụng.");
             return;
         }
@@ -455,7 +455,7 @@ public class QLKhuyenMaiController {
         }
         try {
             if (hinhThuc == HinhThucKhuyenMai.TIEN_MAT) {
-                double giaTri = Double.parseDouble(s.replace(".", "").replace(" ", ""));
+                double giaTri = util.FormatUtil.parseCurrency(s.replace(" ", ""));
                 if (giaTri <= 0) {
                     throw new IllegalArgumentException("Giá trị giảm phải lớn hơn 0.");
                 }

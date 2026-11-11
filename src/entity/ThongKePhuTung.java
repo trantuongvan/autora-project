@@ -7,28 +7,26 @@ public class ThongKePhuTung {
     private PhuTung phuTung;
     private int soLuongNhap;
     private int soLuongXuat;
-    private int tonHienTai;
-    private double giaTriTon;
-    private boolean duoiNguongCanhBao;
+    private final double giaTriNhap;
+    private final double giaTriXuat;
 
-    public ThongKePhuTung() {
-    }
-
-    public ThongKePhuTung(PhuTung phuTung, int soLuongNhap, int soLuongXuat,
-                          int tonHienTai, double giaTriTon, boolean duoiNguongCanhBao) {
+    /** giaTriNhap, giaTriXuat: tổng tiền nhập và xuất của mặt hàng trong kỳ, tính bằng SQL. */
+    public ThongKePhuTung(PhuTung phuTung, int soLuongNhap, int soLuongXuat, double giaTriNhap, double giaTriXuat) {
         setPhuTung(phuTung);
         setSoLuongNhap(soLuongNhap);
         setSoLuongXuat(soLuongXuat);
-        setTonHienTai(tonHienTai);
-        setGiaTriTon(giaTriTon);
-        setDuoiNguongCanhBao(duoiNguongCanhBao);
+        if (giaTriNhap < 0 || giaTriXuat < 0) {
+            throw new IllegalArgumentException("Giá trị nhập, xuất không được âm.");
+        }
+        this.giaTriNhap = giaTriNhap;
+        this.giaTriXuat = giaTriXuat;
     }
 
     public PhuTung getPhuTung() {
         return phuTung;
     }
 
-    public void setPhuTung(PhuTung phuTung) {
+    private void setPhuTung(PhuTung phuTung) {
         if (phuTung == null) {
             throw new IllegalArgumentException("Phụ tùng không được để trống.");
         }
@@ -39,7 +37,7 @@ public class ThongKePhuTung {
         return soLuongNhap;
     }
 
-    public void setSoLuongNhap(int soLuongNhap) {
+    private void setSoLuongNhap(int soLuongNhap) {
         if (soLuongNhap < 0) {
             throw new IllegalArgumentException("Số lượng nhập không được âm.");
         }
@@ -50,41 +48,19 @@ public class ThongKePhuTung {
         return soLuongXuat;
     }
 
-    public void setSoLuongXuat(int soLuongXuat) {
+    private void setSoLuongXuat(int soLuongXuat) {
         if (soLuongXuat < 0) {
             throw new IllegalArgumentException("Số lượng xuất không được âm.");
         }
         this.soLuongXuat = soLuongXuat;
     }
 
-    public int getTonHienTai() {
-        return tonHienTai;
+    public double getGiaTriNhap() {
+        return giaTriNhap;
     }
 
-    public void setTonHienTai(int tonHienTai) {
-        if (tonHienTai < 0) {
-            throw new IllegalArgumentException("Số lượng tồn không được âm.");
-        }
-        this.tonHienTai = tonHienTai;
-    }
-
-    public double getGiaTriTon() {
-        return giaTriTon;
-    }
-
-    public void setGiaTriTon(double giaTriTon) {
-        if (giaTriTon < 0) {
-            throw new IllegalArgumentException("Giá trị tồn kho không được âm.");
-        }
-        this.giaTriTon = giaTriTon;
-    }
-
-    public boolean isDuoiNguongCanhBao() {
-        return duoiNguongCanhBao;
-    }
-
-    public void setDuoiNguongCanhBao(boolean duoiNguongCanhBao) {
-        this.duoiNguongCanhBao = duoiNguongCanhBao;
+    public double getGiaTriXuat() {
+        return giaTriXuat;
     }
 
     @Override
