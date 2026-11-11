@@ -48,7 +48,7 @@ public class QLTienDoSuaChua extends JPanel {
             new UIComponents.LineIcon(UIComponents.Loai.SEARCH, UIConstants.TEXT_MUTED, 16),
             true
     );
-    private final String[] CAC_TAB_LOC = {"Tất cả", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"};
+    private final String[] CAC_TAB_LOC = {"Chưa xong", "Tất cả", "Chờ sửa", "Đang sửa", "Chờ phụ tùng", "Hoàn thành"};
     private final JButton btnTaiDuLieu = UIComponents.nutTaiDuLieu();
     private final JButton[] btnLocTrangThai = new JButton[CAC_TAB_LOC.length];
     private final JPanel pnlDanhSachPhieu = new JPanel();

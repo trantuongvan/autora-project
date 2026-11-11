@@ -50,6 +50,8 @@ public class QLPhuTungController {
         if (chiXem) {
             view.getBtnMoThemPhuTung().setVisible(false);
         }
+        view.getCboTinhTrangTon().setSelectedIndex(1);
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(), () -> view.getCboTinhTrangTon().setSelectedIndex(0));
         UIComponents.tuTaiLai(this::loadData, view.getTxtTimKiem(), view.getCboHangSanXuat(), view.getCboKhoangGia(),
                 view.getCboTinhTrangTon());
         loadData();
