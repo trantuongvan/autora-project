@@ -146,7 +146,7 @@ public class QLKhuyenMaiController {
         int dangDienRa = 0;
         int sapHetHan = 0;
         for (KhuyenMai km : tatCa) {
-            String tinhTrang = tinhTrangKhuyenMai(km, homNay);
+            String tinhTrang = km.getTinhTrang(homNay);
             if ("Đang áp dụng".equals(tinhTrang)) {
                 dangDienRa++;
                 if (!km.getThoiGianKetThuc().isAfter(homNay.plusDays(SO_NGAY_SAP_HET_HAN))) {
@@ -157,35 +157,12 @@ public class QLKhuyenMaiController {
         view.setThongKe(tatCa.size(), dangDienRa, sapHetHan);
     }
 
-    /**
-     * Tính trạng thái khuyến mãi tại một ngày cụ thể.
-     * @param km Khuyến mãi
-     * @param homNay Ngày cần kiểm tra
-     * @return "Đang áp dụng", "Sắp diễn ra", "Hết hạn", hoặc "Ngừng áp dụng"
-     */
-    public static String tinhTrangKhuyenMai(KhuyenMai km, LocalDate homNay) {
-        if (!km.isTrangThai()) {
-            return "Ngừng áp dụng";
-        }
-        if (homNay == null) {
-            throw new IllegalArgumentException("Ngày xét tình trạng không được để trống.");
-        }
-        km.kiemTraHopLe();
-        if (homNay.isBefore(km.getThoiGianBatDau())) {
-            return "Sắp diễn ra";
-        }
-        if (homNay.isAfter(km.getThoiGianKetThuc())) {
-            return "Hết hạn";
-        }
-        return "Đang áp dụng";
-    }
-
     private void hienThiBang() {
         String locTinhTrang = String.valueOf(view.getCboLocTinhTrang().getSelectedItem());
         LocalDate homNay = LocalDate.now();
         List<Object[]> dong = new ArrayList<>();
         for (KhuyenMai km : ketQuaTimKiem) {
-            String tinhTrang = tinhTrangKhuyenMai(km, homNay);
+            String tinhTrang = km.getTinhTrang(homNay);
             if (!"Tất cả".equals(locTinhTrang) && !locTinhTrang.equals(tinhTrang)) {
                 continue;
             }
@@ -274,7 +251,7 @@ public class QLKhuyenMaiController {
     /** Kết thúc hẳn: đóng ngày kết thúc về hôm nay, khác với Tạm ngưng có thể kích hoạt lại đúng thời hạn cũ. */
     private void ketThucSom(KhuyenMai km) {
         LocalDate homNay = LocalDate.now();
-        if (!"Đang áp dụng".equals(tinhTrangKhuyenMai(km, homNay))) {
+        if (!"Đang áp dụng".equals(km.getTinhTrang(homNay))) {
             JOptionPane.showMessageDialog(view, "Chỉ kết thúc sớm được chương trình đang áp dụng.");
             return;
         }

@@ -13,30 +13,42 @@ public class NhapXuatNgay {
     }
 
     public NhapXuatNgay(LocalDate ngay, int soLuongNhap, int soLuongXuat) {
-        if (ngay == null) {
-            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
-        }
-        if (soLuongNhap < 0) {
-            throw new IllegalArgumentException("Số lượng nhập không được âm.");
-        }
-        if (soLuongXuat < 0) {
-            throw new IllegalArgumentException("Số lượng xuất không được âm.");
-        }
-        this.ngay = ngay;
-        this.soLuongNhap = soLuongNhap;
-        this.soLuongXuat = soLuongXuat;
+        setNgay(ngay);
+        setSoLuongNhap(soLuongNhap);
+        setSoLuongXuat(soLuongXuat);
     }
 
     public LocalDate getNgay() {
         return ngay;
     }
 
+    public void setNgay(LocalDate ngay) {
+        if (ngay == null) {
+            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
+        }
+        this.ngay = ngay;
+    }
+
     public int getSoLuongNhap() {
         return soLuongNhap;
     }
 
+    public void setSoLuongNhap(int soLuongNhap) {
+        if (soLuongNhap < 0) {
+            throw new IllegalArgumentException("Số lượng nhập không được âm.");
+        }
+        this.soLuongNhap = soLuongNhap;
+    }
+
     public int getSoLuongXuat() {
         return soLuongXuat;
+    }
+
+    public void setSoLuongXuat(int soLuongXuat) {
+        if (soLuongXuat < 0) {
+            throw new IllegalArgumentException("Số lượng xuất không được âm.");
+        }
+        this.soLuongXuat = soLuongXuat;
     }
 
     @Override

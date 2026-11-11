@@ -89,7 +89,6 @@ public class QLPhuTungController {
             }
         });
 
-        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
         view.getBtnTaiDuLieu().addActionListener(e -> loadData());
         view.getTxtTimKiem().addActionListener(e -> loadData());
 
@@ -436,15 +435,5 @@ public class QLPhuTungController {
         } catch (SQLException ex) {
             ex.printStackTrace();
         }
-    }
-
-    /** Kiểm tra phụ tùng có dưới hoặc chạm ngưỡng cảnh báo không. */
-    public static boolean kiemTraCanhBaoTon(PhuTung pt) {
-        return pt != null && pt.getSoLuongTon() <= pt.getNguongCanhBao();
-    }
-
-    /** Kiểm tra tồn kho có đủ cho số lượng yêu cầu không. */
-    public static boolean duTon(PhuTung pt, int soLuong) {
-        return pt != null && pt.getSoLuongTon() >= soLuong;
     }
 }

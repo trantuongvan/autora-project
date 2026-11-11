@@ -193,8 +193,7 @@ public class PhieuNhapKho_Dao {
 
                 for (ChiTietNhapKho ct : chiTietList) {
                     PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    phuTung.setSoLuongTon(phuTung.getSoLuongTon() + ct.getSoLuongNhap());
-                    phuTung.setGiaNhap(ct.getGiaNhapThucTe());
+                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
                     PhuTung_Dao.luuTon(c, phuTung);
                 }
 

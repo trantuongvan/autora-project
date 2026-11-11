@@ -361,8 +361,11 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    /** Chỉ đổi khi phiếu còn ở trạng thái cũ. Caller phải kiểm tra coTheChuyenTrangThai() trước khi gọi. */
+    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ. */
     public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi, String tenDangNhap) throws SQLException {
+        if (!cu.coTheChuyenSang(moi)) {
+            return false;
+        }
         String sql = "UPDATE p SET trangThai = ? "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "WHERE p.maPhieuTNSC = ? AND p.trangThai = ? AND " + NOT_LOCKED;
@@ -495,18 +498,5 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         phieu.setUuTien(MucUuTien.fromDb(rs.getString("uuTien")));
         phieu.setNhanVienPhuTrach(NhanVien_Dao.docNhanVien(rs, "pt_"));
         return phieu;
-    }
-
-    public String timBienSoTheoSdt(String sdt) throws SQLException {
-        String sql = "SELECT TOP (1) x.bienSo FROM Xe x "
-                + "JOIN KhachHang k ON k.maKH = x.maKH "
-                + "WHERE k.soDienThoai = ? ORDER BY x.bienSo";
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, sdt);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                return resultSet.next() ? resultSet.getString(1) : null;
-            }
-        }
     }
 }

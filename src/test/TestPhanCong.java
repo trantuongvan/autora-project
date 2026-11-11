@@ -69,7 +69,7 @@ public class TestPhanCong {
     // ---------- congPhut ----------
 
     private static void gio(String ten, LocalDateTime tu, int phut, LocalTime bd, LocalTime kt, LocalDateTime mong) {
-        LocalDateTime thuc = PhanCongTuDong.congPhut(new CaLamViec("CAX", "Ca", bd, kt), tu, phut);
+        LocalDateTime thuc = new CaLamViec("CAX", "Ca", bd, kt).congPhut(tu, phut);
         dung(ten + " (được " + thuc + ")", mong.equals(thuc));
     }
 
@@ -86,7 +86,7 @@ public class TestPhanCong {
         gio("Không có việc thì giữ nguyên giờ", D9.withHour(6), 0, S8, S17, D9.withHour(6));
         gio("Giữ giây lẻ", D9.withSecond(30), 60, S8, S17, D9.withHour(10).withSecond(30));
         CaLamViec ca = new CaLamViec("CAX", "Ca", S8, S17);
-        dung("Trong ca tính cả giờ vào, không tính giờ tan", PhanCongTuDong.dangTrongCa(ca, S8) && !PhanCongTuDong.dangTrongCa(ca, S17));
+        dung("Trong ca tính cả giờ vào, không tính giờ tan", ca.dangTrongCa(S8) && !ca.dangTrongCa(S17));
     }
 
     /** Quyết định chọn ai không cần CSDL: dữ liệu đưa vào là đối tượng thường. */

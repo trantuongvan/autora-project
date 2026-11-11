@@ -282,12 +282,12 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi(null);
             return;
         }
-        if (!QLTienDoSuaChuaController.coTheChuyenTrangThai(hienTai, trangThai)) {
+        if (!hienTai.coTheChuyenSang(trangThai)) {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
         phieu.setDanhSachDichVu(danhSach);
-        if (trangThai == TrangThaiPhieu.HOAN_THANH && !TrangChuKyThuatVienController.coTheHoanThanh(phieu)) {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !phieu.coTheHoanThanh()) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }

@@ -276,6 +276,71 @@ public class PhieuTiepNhanVaSuaChua {
         this.banGiao = banGiao;
     }
 
+    /** Làm tròn xuống: còn hạng mục chưa xong thì chưa đủ 100. */
+    public int phanTramHoanTat() {
+        return tongSoHangMuc == 0 ? 0 : soHangMucHoanThanh * 100 / tongSoHangMuc;
+    }
+
+    /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
+    public boolean duDieuKienBanGiao() {
+        return phanTramHoanTat() == 100 && hoaDon != null && hoaDon.daThanhToanHopLe(xe.getKhachHang());
+    }
+
+    public String getTrangThaiHoaDonHienThi() {
+        return hoaDon == null ? "Chưa lập hóa đơn" : hoaDon.getTrangThaiThanhToan().getText();
+    }
+
+    public String getNhanHoaDonBanGiao() {
+        return hoaDon != null && hoaDon.laCongNoHopLe(xe.getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi();
+    }
+
+    public String lyDoChuaDuDieuKienBanGiao() {
+        int tienDo = phanTramHoanTat();
+        if (tienDo < 100) {
+            return tienDo == 0
+                    ? "Chưa có hạng mục sửa chữa hoàn tất."
+                    : "Còn " + (100 - tienDo) + "% hạng mục sửa chữa chưa hoàn tất.";
+        }
+        if (hoaDon == null) {
+            return "Phiếu chưa có hóa đơn.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY) {
+            return "Hóa đơn đã bị hủy.";
+        }
+        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !hoaDon.laCongNoHopLe(xe.getKhachHang())) {
+            return "Khách hàng không được phép ghi nợ.";
+        }
+        return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
+    }
+
+    /** Phiếu chỉ được đánh dấu hoàn thành khi có dịch vụ và mọi dịch vụ đã xong. */
+    public boolean coTheHoanThanh() {
+        if (danhSachDichVu.isEmpty()) {
+            return false;
+        }
+        for (ChiTietSuaChua_DichVu d : danhSachDichVu) {
+            if (d.getTrangThaiTienDo() != TrangThaiTienDo.HOAN_THANH) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong. */
+    public int phanTramTienDo() {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH) {
+            return 100;
+        }
+        if (trangThai == TrangThaiPhieu.CHO_KIEM_TRA) {
+            return tongSoHangMuc > 0 && soHangMucHoanThanh > 0 ? Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc) : 0;
+        }
+        if (tongSoHangMuc > 0) {
+            int phanTram = Math.round((soHangMucHoanThanh * 100f) / tongSoHangMuc);
+            return trangThai == TrangThaiPhieu.DANG_SUA && phanTram == 0 ? 50 : phanTram;
+        }
+        return trangThai == TrangThaiPhieu.DANG_SUA ? 50 : 0;
+    }
+
     public void kiemTraHopLe() throws IllegalArgumentException {
         if (thoiGianTiepNhan != null && thoiGianDuKien != null
                 && thoiGianDuKien.isBefore(thoiGianTiepNhan)) {
@@ -302,6 +367,11 @@ public class PhieuTiepNhanVaSuaChua {
 
     public String getThongTinXeDayDu() {
         return getThongTinXeNgan() + " • " + (xe == null ? "" : xe.getBienSo());
+    }
+
+    /** Hiển thị nhãn trạng thái đồng nhất cho riêng phân hệ Kỹ thuật viên */
+    public String getTrangThaiHienThiKTV() {
+        return trangThai == null || trangThai == TrangThaiPhieu.CHO_KIEM_TRA ? "Chờ sửa" : trangThai.getText();
     }
 
     @Override

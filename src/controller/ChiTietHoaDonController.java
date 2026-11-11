@@ -5,12 +5,10 @@ import dao.HoaDon_Dao;
 import dao.Thue_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.ChiTietSuaChua_PhuTung;
-import entity.HinhThucKhuyenMai;
 import entity.HinhThucThanhToan;
 import entity.HoaDon;
 import entity.KhachHang;
 import entity.KhuyenMai;
-import entity.PhamViKhuyenMai;
 import util.PhienDangNhap;
 import entity.PhieuTiepNhanVaSuaChua;
 import entity.Thue;
@@ -31,8 +29,6 @@ import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
@@ -69,106 +65,6 @@ public class ChiTietHoaDonController {
         view.getBtnQuayLai().addActionListener(e -> dieuHuong.moDanhSachHoaDon());
         taiDuLieu();
     }
-
-    // ============================================================================
-    // BUSINESS LOGIC - Tính toán hóa đơn và khuyến mãi
-    // ============================================================================
-
-    /** Tính phần trăm với BigDecimal để làm tròn chính xác HALF_UP. */
-    public static double phanTram(double coSo, double tyLe) {
-        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
-    }
-
-    /** Tính tiền thuế dựa trên thuế suất. */
-    public static double tinhTienThue(Thue thue, double tongTienCoSo) {
-        if (thue == null) return 0;
-        return phanTram(tongTienCoSo, thue.getThueSuat());
-    }
-
-    /** Tính cơ sở áp dụng giảm giá theo phạm vi khuyến mãi. */
-    public static double coSoGiam(PhamViKhuyenMai phamVi, double tienCong, double tienPhuTung) {
-        if (phamVi == null) return 0;
-        switch (phamVi.toString()) {
-            case "Tổng hóa đơn": return tienCong + tienPhuTung;
-            case "Nhóm dịch vụ": return tienCong;
-            case "Phụ tùng": return tienPhuTung;
-            default: return 0;
-        }
-    }
-
-    /** Tính số tiền giảm từ khuyến mãi, làm tròn về đồng. */
-    public static double tinhTienGiam(KhuyenMai km, double tienCong, double tienPhuTung) {
-        if (km == null) return 0;
-        double coSo = coSoGiam(km.getPhamViApDung(), Math.round(tienCong), Math.round(tienPhuTung));
-        HinhThucKhuyenMai hinhThuc = km.getHinhThuc();
-        double giamTruocChan = "Giảm %".equals(hinhThuc.getText())
-            ? phanTram(coSo, km.getGiaTri())
-            : Math.round(km.getGiaTri());
-        return Math.min(coSo, giamTruocChan);
-    }
-
-    /** Chọn khuyến mãi giảm nhiều nhất; hòa thì lấy cái đầu; không có thì null. */
-    public static KhuyenMai totNhat(List<KhuyenMai> hopLe, double tienCong, double tienPhuTung) {
-        KhuyenMai tot = null;
-        double giamMax = 0;
-        for (KhuyenMai km : hopLe) {
-            double giam = tinhTienGiam(km, tienCong, tienPhuTung);
-            if (giam > giamMax) {
-                giamMax = giam;
-                tot = km;
-            }
-        }
-        return tot;
-    }
-
-    /** Kiểm tra khách hàng có được thanh toán bằng hình thức này không. */
-    public static boolean duocThanhToanBang(KhachHang kh, HinhThucThanhToan hinhThuc) {
-        if (kh == null || hinhThuc == null) return false;
-        return !"Công nợ".equals(hinhThuc.getText()) || kh.isDuocGhiNo();
-    }
-
-    /** Kiểm tra tiền khách đưa có đủ không (chỉ áp dụng cho tiền mặt). */
-    public static boolean duTien(HinhThucThanhToan hinhThuc, Double tienKhachDua, double tongThanhToan) {
-        if ("Tiền mặt".equals(hinhThuc.getText())) {
-            return tienKhachDua != null && tienKhachDua >= tongThanhToan;
-        }
-        return true;
-    }
-
-    /** Kết quả tính toán tổng hóa đơn. */
-    public static class KetQuaTinhToan {
-        public final double tongTienCong;
-        public final double tongTienPhuTung;
-        public final double tongTienGiam;
-        public final double tongTienVAT;
-        public final double tongThanhToan;
-
-        public KetQuaTinhToan(double cong, double phuTung, double giam, double vat, double tong) {
-            this.tongTienCong = cong;
-            this.tongTienPhuTung = phuTung;
-            this.tongTienGiam = giam;
-            this.tongTienVAT = vat;
-            this.tongThanhToan = tong;
-        }
-    }
-
-    /** Tính toán toàn bộ các khoản tiền của hóa đơn, làm tròn tới đồng. */
-    public static KetQuaTinhToan tinhToan(double tienCong, double tienPhuTung, KhuyenMai khuyenMai, Thue thue) {
-        if (tienCong < 0 || tienPhuTung < 0) {
-            throw new IllegalArgumentException("Số tiền không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = tinhTienGiam(khuyenMai, cong, phuTung);
-        double sauGiam = cong + phuTung - giam;
-        double vat = tinhTienThue(thue, sauGiam);
-        return new KetQuaTinhToan(cong, phuTung, giam, vat, sauGiam + vat);
-    }
-
-    // ============================================================================
-    // UI INTERACTION
-    // ============================================================================
 
     /** Tiền khách đưa: số nguyên, cho phép dấu chấm ngăn cách hàng nghìn. */
     public static double docTien(String chuoi) {
@@ -281,7 +177,7 @@ public class ChiTietHoaDonController {
     private List<Object[]> dongPhuTung(List<ChiTietSuaChua_PhuTung> nguon) {
         List<Object[]> dong = new ArrayList<>();
         for (ChiTietSuaChua_PhuTung d : nguon) {
-            double thanhTien = d.getSoLuongSuDung() * d.getGiaBanThucTe();
+            double thanhTien = d.thanhTien();
             tongTienPhuTung += thanhTien;
             dong.add(new Object[] {d.getPhuTung().getTenPhuTung(), d.getPhuTung().getMaSKU(), d.getSoLuongSuDung(),
                 tien(d.getGiaBanThucTe()), tien(thanhTien)});
@@ -308,10 +204,11 @@ public class ChiTietHoaDonController {
         }
         view.getCboHinhThuc().addItem(HinhThucThanhToan.TIEN_MAT);
         view.getCboHinhThuc().addItem(HinhThucThanhToan.CHUYEN_KHOAN);
-        if (duocThanhToanBang(d.phieu.getXe().getKhachHang(), HinhThucThanhToan.CONG_NO)) {
+        if (d.phieu.getXe().getKhachHang().duocThanhToanBang(HinhThucThanhToan.CONG_NO)) {
             view.getCboHinhThuc().addItem(HinhThucThanhToan.CONG_NO);
         }
-        view.getCboKhuyenMai().setSelectedItem(totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
+        // Mặc định chọn khuyến mãi giảm nhiều nhất; nhân viên vẫn đổi hoặc bỏ chọn được.
+        view.getCboKhuyenMai().setSelectedItem(KhuyenMai.totNhat(d.khuyenMai, tongTienCong, tongTienPhuTung));
         view.getCboKhuyenMai().addActionListener(e -> tinhLaiXemTruoc());
         view.getCboThue().addActionListener(e -> tinhLaiXemTruoc());
         ganSuKienThanhToan();
@@ -337,6 +234,7 @@ public class ChiTietHoaDonController {
             capNhatTheoHinhThuc();
             return;
         }
+        // Đã thanh toán hoặc đã hủy: chỉ xem; đã thanh toán vẫn được hủy khi xe chưa bàn giao.
         boolean daHuy = trangThai == TrangThaiHoaDon.DA_HUY;
         view.getCboHinhThuc().addItem(hoaDon.getHinhThucThanhToan());
         view.getCboHinhThuc().setEnabled(false);
@@ -358,13 +256,16 @@ public class ChiTietHoaDonController {
         });
     }
 
+    /** Chỉ để xem trước; số tiền thật được tính lại khi lưu. */
     private void tinhLaiXemTruoc() {
         Thue thue = (Thue) view.getCboThue().getSelectedItem();
-        KhuyenMai km = (KhuyenMai) view.getCboKhuyenMai().getSelectedItem();
-        KetQuaTinhToan kq = tinhToan(tongTienCong, tongTienPhuTung, km, thue);
-        tongHienTai = kq.tongThanhToan;
-        hienTongHop(kq.tongTienCong, kq.tongTienPhuTung, kq.tongTienGiam,
-                thue == null ? 0 : thue.getThueSuat(), kq.tongTienVAT, tongHienTai);
+        HoaDon xemTruoc = new HoaDon();
+        xemTruoc.setKhuyenMai((KhuyenMai) view.getCboKhuyenMai().getSelectedItem());
+        xemTruoc.setThue(thue);
+        xemTruoc.tinhTongThanhToan(tongTienCong, tongTienPhuTung);
+        tongHienTai = xemTruoc.getTongThanhToan();
+        hienTongHop(xemTruoc.getTongTienCong(), xemTruoc.getTongTienPhuTung(), xemTruoc.getTongTienGiam(),
+                thue == null ? 0 : thue.getThueSuat(), xemTruoc.getTongTienVAT(), tongHienTai);
         capNhatTheoHinhThuc();
     }
 
@@ -416,6 +317,7 @@ public class ChiTietHoaDonController {
                 try {
                     view.hienQr(get());
                 } catch (Exception ex) {
+                    // Không có mạng vẫn thu được tiền: hiện thông tin để khách chuyển tay.
                     view.hienChuQr("Không tải được mã QR.\nSTK: " + VietQRUtil.SO_TAI_KHOAN + "\nBIN: " + VietQRUtil.MA_BIN
                             + "\n" + VietQRUtil.TEN_TAI_KHOAN + "\nSố tiền: " + tien(soTien) + "\nNội dung: " + maQr);
                 }
@@ -423,6 +325,7 @@ public class ChiTietHoaDonController {
         }.execute();
     }
 
+    /** Đọc tiền khách đưa khi trả tiền mặt; trả về null và báo lỗi nếu không hợp lệ. */
     private Double docTienKhachDua() {
         try {
             double dua = docTien(view.getTxtTienKhachDua().getText());
@@ -499,6 +402,7 @@ public class ChiTietHoaDonController {
         }
     }
 
+    /** Dùng chung cho nút In ở danh sách và trang chi tiết. */
     public static void inHoaDon(Component cha, String maHD) {
         HoaDon_Dao dao = new HoaDon_Dao();
         JFileChooser chon = new JFileChooser();

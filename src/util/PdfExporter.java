@@ -153,7 +153,7 @@ public final class PdfExporter {
                 bangPhuTung.addCell(new Phrase(d.getPhuTung().getMaSKU(), thuong));
                 bangPhuTung.addCell(new Phrase(String.valueOf(d.getSoLuongSuDung()), thuong));
                 bangPhuTung.addCell(new Phrase(tien.format(d.getGiaBanThucTe()), thuong));
-                bangPhuTung.addCell(new Phrase(tien.format(d.getSoLuongSuDung() * d.getGiaBanThucTe()), thuong));
+                bangPhuTung.addCell(new Phrase(tien.format(d.thanhTien()), thuong));
             }
             tai.add(bangPhuTung);
             tai.add(new Paragraph(" ", thuong));

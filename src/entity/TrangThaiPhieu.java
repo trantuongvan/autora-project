@@ -1,5 +1,6 @@
 package entity;
 
+/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum TrangThaiPhieu {
     CHO_KIEM_TRA("Chờ kiểm tra"),
     DANG_SUA("Đang sửa"),
@@ -17,6 +18,21 @@ public enum TrangThaiPhieu {
         return text;
     }
 
+    /** Bước chuyển hợp lệ theo tiến trình thực tế; phiếu đã xong hoặc đã hủy không chuyển được nữa. */
+    public boolean coTheChuyenSang(TrangThaiPhieu moi) {
+        switch (this) {
+            case CHO_KIEM_TRA:
+                return moi == DANG_SUA || moi == CHO_PHU_TUNG;
+            case DANG_SUA:
+                return moi == CHO_PHU_TUNG || moi == HOAN_THANH;
+            case CHO_PHU_TUNG:
+                return moi == DANG_SUA;
+            default:
+                return false;
+        }
+    }
+
+    /** Nhãn "Chờ sửa" chỉ để hiển thị; trong CSDL phiếu đó là "Chờ kiểm tra". */
     public static TrangThaiPhieu tuNhan(String nhan) {
         if (nhan == null) {
             return CHO_KIEM_TRA;

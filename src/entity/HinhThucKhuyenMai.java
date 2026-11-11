@@ -1,8 +1,19 @@
 package entity;
 
+/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum HinhThucKhuyenMai {
-    PHAN_TRAM("Giảm %"),
-    TIEN_MAT("Giảm tiền mặt");
+    PHAN_TRAM("Giảm %") {
+        @Override
+        double tinhTienGiam(double coSo, double giaTri) {
+            return HoaDon.phanTram(coSo, giaTri);
+        }
+    },
+    TIEN_MAT("Giảm tiền mặt") {
+        @Override
+        double tinhTienGiam(double coSo, double giaTri) {
+            return Math.round(giaTri);
+        }
+    };
 
     private final String text;
 
@@ -13,6 +24,9 @@ public enum HinhThucKhuyenMai {
     public String getText() {
         return text;
     }
+
+    /** Số tiền giảm trên số tiền cơ sở, chưa chặn theo cơ sở. */
+    abstract double tinhTienGiam(double coSo, double giaTri);
 
     public static HinhThucKhuyenMai fromDb(String text) {
         for (HinhThucKhuyenMai giaTri : values()) {

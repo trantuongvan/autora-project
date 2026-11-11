@@ -2,6 +2,7 @@ package dao;
 
 import connection.ConnectDB;
 import entity.DoanhThuNgay;
+import entity.DuLieuThongKe;
 import entity.LuotXeNgay;
 import entity.NangSuatKTV;
 import entity.NhanVien;
@@ -16,11 +17,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DAO chỉ thực hiện truy vấn SQL lấy dữ liệu thô từ CSDL phục vụ báo cáo thống kê (UC014).
+ * DAO xử lý toàn bộ truy vấn và tính toán số liệu cho UC014 - Xem báo cáo thống kê.
+ * Mọi phép tính tổng, lợi nhuận, tỷ trọng %, giá trị tồn đều thực hiện ở đây.
  */
 public class ThongKe_Dao {
 
-    public List<DoanhThuNgay> taiDoanhThuTheoNgay(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+    public DuLieuThongKe taiDuLieuThongKe(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+        DuLieuThongKe kq = new DuLieuThongKe();
+        try (Connection c = ConnectDB.getConnection()) {
+            tinhThongKeDoanhThu(c, tuNgay, denNgay, kq);
+            tinhThongKePhuTung(c, tuNgay, denNgay, kq);
+            tinhThongKeHieuSuatKTV(c, tuNgay, denNgay, kq);
+        }
+        return kq;
+    }
+
+    private void tinhThongKeDoanhThu(Connection c, LocalDate tuNgay, LocalDate denNgay, DuLieuThongKe kq) throws SQLException {
         Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
         Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
@@ -37,55 +49,76 @@ public class ThongKe_Dao {
                 + "ORDER BY ngay DESC";
 
         List<DoanhThuNgay> dsNgay = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlNgay)) {
+        int tongHD = 0;
+        double tongCong = 0, tongPT = 0, tongGiam = 0, tongVAT = 0, tongDT = 0;
+
+        try (PreparedStatement ps = c.prepareStatement(sqlNgay)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    dsNgay.add(new DoanhThuNgay(
-                            rs.getDate("ngay").toLocalDate(),
-                            rs.getInt("soHD"),
-                            rs.getDouble("tienCong"),
-                            rs.getDouble("tienPhuTung"),
-                            rs.getDouble("giamGia"),
-                            rs.getDouble("vat"),
-                            rs.getDouble("tongThanhToan")
-                    ));
+                    Date d = rs.getDate("ngay");
+                    int soHD = rs.getInt("soHD");
+                    double tc = rs.getDouble("tienCong");
+                    double tpt = rs.getDouble("tienPhuTung");
+                    double gg = rs.getDouble("giamGia");
+                    double vat = rs.getDouble("vat");
+                    double tt = rs.getDouble("tongThanhToan");
+
+                    dsNgay.add(new DoanhThuNgay(d.toLocalDate(), soHD, tc, tpt, gg, vat, tt));
+
+                    tongHD += soHD;
+                    tongCong += tc;
+                    tongPT += tpt;
+                    tongGiam += gg;
+                    tongVAT += vat;
+                    tongDT += tt;
                 }
             }
         }
-        return dsNgay;
-    }
-
-    public double taiTongGiaVonPhuTung(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
-        Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
         String sqlGiaVon = "SELECT COALESCE(SUM(ct.soLuongSuDung * pt.giaNhap), 0) AS tongGiaVon "
                 + "FROM HoaDon h "
                 + "JOIN ChiTietSuaChua_PhuTung ct ON ct.maPhieuTNSC = h.maPhieuTNSC "
                 + "JOIN PhuTung pt ON pt.maSKU = ct.maSKU "
                 + "WHERE h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayLap >= ? AND h.ngayLap < ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlGiaVon)) {
+        double tongGiaVonPhuTung = 0;
+        try (PreparedStatement ps = c.prepareStatement(sqlGiaVon)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return rs.getDouble("tongGiaVon");
+                    tongGiaVonPhuTung = rs.getDouble("tongGiaVon");
                 }
             }
         }
-        return 0;
+
+        double loiNhuan = (tongCong + tongPT - tongGiam) - tongGiaVonPhuTung;
+        if (loiNhuan < 0) loiNhuan = 0;
+
+        double tongTruocThue = tongCong + tongPT;
+        double tyTrongCong = tongTruocThue > 0 ? Math.round((tongCong * 1000.0) / tongTruocThue) / 10.0 : 0;
+        double tyTrongPT = tongTruocThue > 0 ? Math.round((100.0 - tyTrongCong) * 10.0) / 10.0 : 0;
+
+        kq.setTongSoHoaDon(tongHD);
+        kq.setTongTienCong(tongCong);
+        kq.setTongTienPhuTung(tongPT);
+        kq.setTongGiamGia(tongGiam);
+        kq.setTongVAT(tongVAT);
+        kq.setTongDoanhThu(tongDT);
+        kq.setTongLoiNhuan(loiNhuan);
+        kq.setTyTrongTienCong(tyTrongCong);
+        kq.setTyTrongPhuTung(tyTrongPT);
+        kq.setDanhSachDoanhThuNgay(dsNgay);
     }
 
-    public List<ThongKePhuTung> taiDanhSachPhuTungTho(LocalDate tuNgay, LocalDate denNgay, double[] tongGiaTriNhapXuat) throws SQLException {
+    private void tinhThongKePhuTung(Connection c, LocalDate tuNgay, LocalDate denNgay, DuLieuThongKe kq) throws SQLException {
         Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
         Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
         String sqlPT = "SELECT pt.maSKU, pt.tenPhuTung, pt.hangSanXuat, pt.viTriLuuKho, "
                 + "pt.giaNhap, pt.giaBanLe, pt.soLuongTon, pt.nguongCanhBao, "
+                + "(pt.soLuongTon * pt.giaNhap) AS giaTriTon, "
                 + "COALESCE(nhap.slNhap, 0) AS slNhap, COALESCE(nhap.gtNhap, 0) AS gtNhap, "
                 + "COALESCE(xuat.slXuat, 0) AS slXuat, COALESCE(xuat.gtXuat, 0) AS gtXuat "
                 + "FROM PhuTung pt "
@@ -102,10 +135,10 @@ public class ThongKe_Dao {
                 + "ORDER BY COALESCE(xuat.slXuat, 0) DESC, pt.maSKU ASC";
 
         List<ThongKePhuTung> dsPT = new ArrayList<>();
-        double tongGTNhap = 0, tongGTXuat = 0;
+        double tongGiaTriTon = 0, tongGTNhap = 0, tongGTXuat = 0;
+        int soMatHang = 0, tongSLNhap = 0, tongSLXuat = 0;
 
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlPT)) {
+        try (PreparedStatement ps = c.prepareStatement(sqlPT)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             ps.setTimestamp(3, tsTu);
@@ -125,39 +158,30 @@ public class ThongKe_Dao {
 
                     int slNhap = rs.getInt("slNhap");
                     int slXuat = rs.getInt("slXuat");
+                    double gtTon = rs.getDouble("giaTriTon");
+                    boolean canhBao = ton <= nguong;
 
-                    dsPT.add(new ThongKePhuTung(pt, slNhap, slXuat, ton));
+                    dsPT.add(new ThongKePhuTung(pt, slNhap, slXuat, ton, gtTon, canhBao));
+
+                    soMatHang++;
+                    tongGiaTriTon += gtTon;
+                    tongSLNhap += slNhap;
                     tongGTNhap += rs.getDouble("gtNhap");
+                    tongSLXuat += slXuat;
                     tongGTXuat += rs.getDouble("gtXuat");
                 }
             }
         }
-        if (tongGiaTriNhapXuat != null && tongGiaTriNhapXuat.length >= 2) {
-            tongGiaTriNhapXuat[0] = tongGTNhap;
-            tongGiaTriNhapXuat[1] = tongGTXuat;
-        }
-        return dsPT;
-    }
 
-    public int demSoPhieuNhap(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
-        Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
-
+        int soPhieuNhap = 0;
         String sqlDemPN = "SELECT COUNT(*) FROM PhieuNhapKho WHERE ngayNhap >= ? AND ngayNhap < ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlDemPN)) {
+        try (PreparedStatement ps = c.prepareStatement(sqlDemPN)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return rs.getInt(1);
+                if (rs.next()) soPhieuNhap = rs.getInt(1);
             }
         }
-        return 0;
-    }
-
-    public List<NhapXuatNgay> taiNhapXuatTheoNgay(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
-        Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
         String sqlNXNgay = "SELECT ngay, SUM(slNhap) AS nhap, SUM(slXuat) AS xuat FROM ( "
                 + "    SELECT CAST(pn.ngayNhap AS DATE) AS ngay, SUM(ct.soLuongNhap) AS slNhap, 0 AS slXuat "
@@ -170,8 +194,7 @@ public class ThongKe_Dao {
                 + ") t GROUP BY ngay ORDER BY ngay ASC";
 
         List<NhapXuatNgay> dsNXNgay = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlNXNgay)) {
+        try (PreparedStatement ps = c.prepareStatement(sqlNXNgay)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             ps.setTimestamp(3, tsTu);
@@ -186,10 +209,19 @@ public class ThongKe_Dao {
                 }
             }
         }
-        return dsNXNgay;
+
+        kq.setGiaTriTonKhoHienTai(tongGiaTriTon);
+        kq.setSoMatHangQuanLy(soMatHang);
+        kq.setTongSoLuongNhap(tongSLNhap);
+        kq.setTongGiaTriNhap(tongGTNhap);
+        kq.setTongSoLuongXuat(tongSLXuat);
+        kq.setTongGiaTriXuat(tongGTXuat);
+        kq.setSoPhieuNhapTrongKy(soPhieuNhap);
+        kq.setDanhSachPhuTung(dsPT);
+        kq.setDanhSachNhapXuatNgay(dsNXNgay);
     }
 
-    public int[] taiSoLuotXeVaoXuongVaSuaXong(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
+    private void tinhThongKeHieuSuatKTV(Connection c, LocalDate tuNgay, LocalDate denNgay, DuLieuThongKe kq) throws SQLException {
         Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
         Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
@@ -197,22 +229,17 @@ public class ThongKe_Dao {
                 + "COALESCE(SUM(CASE WHEN trangThai = N'Hoàn thành' THEN 1 ELSE 0 END), 0) AS xeXong "
                 + "FROM PhieuTiepNhanVaSuaChua "
                 + "WHERE trangThai <> N'Đã hủy' AND thoiGianTiepNhan >= ? AND thoiGianTiepNhan < ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlXe)) {
+        int tongXe = 0, xeXong = 0;
+        try (PreparedStatement ps = c.prepareStatement(sqlXe)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    return new int[]{rs.getInt("tongXe"), rs.getInt("xeXong")};
+                    tongXe = rs.getInt("tongXe");
+                    xeXong = rs.getInt("xeXong");
                 }
             }
         }
-        return new int[]{0, 0};
-    }
-
-    public List<NangSuatKTV> taiDanhSachNangSuatKTVTho(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
-        Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
         String sqlKTV = "SELECT nv.maNV, nv.hoTen, nv.soDienThoai, nv.diaChi, "
                 + "COUNT(DISTINCT p.maPhieuTNSC) AS soXe, "
@@ -228,8 +255,9 @@ public class ThongKe_Dao {
                 + "ORDER BY hmXong DESC, tienCong DESC";
 
         List<NangSuatKTV> dsKTV = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlKTV)) {
+        int tongHMXong = 0, tongHMDangLam = 0, ktvHoatDong = 0;
+
+        try (PreparedStatement ps = c.prepareStatement(sqlKTV)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
@@ -242,28 +270,34 @@ public class ThongKe_Dao {
                             VaiTro.KY_THUAT_VIEN
                     );
                     int soXe = rs.getInt("soXe");
-                    int hmXong = soXe == 0 ? 0 : rs.getInt("hmXong");
-                    int hmDang = soXe == 0 ? 0 : rs.getInt("hmDangLam");
-                    double tienCong = soXe == 0 ? 0 : rs.getDouble("tienCong");
+                    int hmXong = rs.getInt("hmXong");
+                    int hmDang = rs.getInt("hmDangLam");
+                    double tienCong = rs.getDouble("tienCong");
 
-                    dsKTV.add(new NangSuatKTV(nv, soXe, hmXong, hmDang, tienCong));
+                    if (soXe == 0) {
+                        hmXong = 0;
+                        hmDang = 0;
+                        tienCong = 0;
+                    } else {
+                        ktvHoatDong++;
+                    }
+
+                    int tongHM = hmXong + hmDang;
+                    double tyLe = tongHM > 0 ? Math.round((hmXong * 1000.0) / tongHM) / 10.0 : 0.0;
+
+                    dsKTV.add(new NangSuatKTV(nv, soXe, hmXong, hmDang, tienCong, tyLe));
+                    tongHMXong += hmXong;
+                    tongHMDangLam += hmDang;
                 }
             }
         }
-        return dsKTV;
-    }
-
-    public List<LuotXeNgay> taiLuotXeTheoNgay(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        Timestamp tsTu = Timestamp.valueOf(tuNgay.atStartOfDay());
-        Timestamp tsDen = Timestamp.valueOf(denNgay.plusDays(1).atStartOfDay());
 
         String sqlLuotNgay = "SELECT CAST(thoiGianTiepNhan AS DATE) AS ngay, COUNT(*) AS soLuot "
                 + "FROM PhieuTiepNhanVaSuaChua "
                 + "WHERE trangThai <> N'Đã hủy' AND thoiGianTiepNhan >= ? AND thoiGianTiepNhan < ? "
                 + "GROUP BY CAST(thoiGianTiepNhan AS DATE) ORDER BY ngay ASC";
         List<LuotXeNgay> dsLuotNgay = new ArrayList<>();
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sqlLuotNgay)) {
+        try (PreparedStatement ps = c.prepareStatement(sqlLuotNgay)) {
             ps.setTimestamp(1, tsTu);
             ps.setTimestamp(2, tsDen);
             try (ResultSet rs = ps.executeQuery()) {
@@ -272,6 +306,21 @@ public class ThongKe_Dao {
                 }
             }
         }
-        return dsLuotNgay;
+
+        double tyLeXeXong = tongXe > 0 ? Math.round((xeXong * 1000.0) / tongXe) / 10.0 : 0.0;
+        double tbHangMuc = tongXe > 0 ? Math.round((tongHMXong * 10.0) / tongXe) / 10.0 : 0.0;
+        int tongTatCaHM = tongHMXong + tongHMDangLam;
+        double tyLeChung = tongTatCaHM > 0 ? Math.round((tongHMXong * 1000.0) / tongTatCaHM) / 10.0 : 0.0;
+
+        kq.setTongLuotXeVaoXuong(tongXe);
+        kq.setTongXeSuaXong(xeXong);
+        kq.setTyLeXeSuaXong(tyLeXeXong);
+        kq.setTongHangMucHoanThanh(tongHMXong);
+        kq.setTongHangMucDangLam(tongHMDangLam);
+        kq.setTrungBinhHangMucTrenXe(tbHangMuc);
+        kq.setSoKyThuatVienHoatDong(ktvHoatDong);
+        kq.setTyLeHoanThanhChung(tyLeChung);
+        kq.setDanhSachNangSuatKTV(dsKTV);
+        kq.setDanhSachLuotXeNgay(dsLuotNgay);
     }
 }

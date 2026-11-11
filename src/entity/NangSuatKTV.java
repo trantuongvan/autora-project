@@ -15,60 +15,79 @@ public class NangSuatKTV {
     }
 
     public NangSuatKTV(NhanVien kyThuatVien, int soXeThamGia, int hangMucHoanThanh,
-                       int hangMucDangThucHien, double tienCongMangLai) {
-        this(kyThuatVien, soXeThamGia, hangMucHoanThanh, hangMucDangThucHien, tienCongMangLai, 0.0);
-    }
-
-    public NangSuatKTV(NhanVien kyThuatVien, int soXeThamGia, int hangMucHoanThanh,
                        int hangMucDangThucHien, double tienCongMangLai, double tyLeHoanThanh) {
-        if (kyThuatVien == null) {
-            throw new IllegalArgumentException("Kỹ thuật viên không được để trống.");
-        }
-        if (soXeThamGia < 0) {
-            throw new IllegalArgumentException("Số xe tham gia không được âm.");
-        }
-        if (hangMucHoanThanh < 0) {
-            throw new IllegalArgumentException("Số hạng mục hoàn thành không được âm.");
-        }
-        if (hangMucDangThucHien < 0) {
-            throw new IllegalArgumentException("Số hạng mục đang thực hiện không được âm.");
-        }
-        if (tienCongMangLai < 0) {
-            throw new IllegalArgumentException("Tiền công mang lại không được âm.");
-        }
-        if (tyLeHoanThanh < 0) {
-            throw new IllegalArgumentException("Tỷ lệ hoàn thành không được âm.");
-        }
-        this.kyThuatVien = kyThuatVien;
-        this.soXeThamGia = soXeThamGia;
-        this.hangMucHoanThanh = hangMucHoanThanh;
-        this.hangMucDangThucHien = hangMucDangThucHien;
-        this.tienCongMangLai = tienCongMangLai;
-        this.tyLeHoanThanh = tyLeHoanThanh;
+        setKyThuatVien(kyThuatVien);
+        setSoXeThamGia(soXeThamGia);
+        setHangMucHoanThanh(hangMucHoanThanh);
+        setHangMucDangThucHien(hangMucDangThucHien);
+        setTienCongMangLai(tienCongMangLai);
+        setTyLeHoanThanh(tyLeHoanThanh);
     }
 
     public NhanVien getKyThuatVien() {
         return kyThuatVien;
     }
 
+    public void setKyThuatVien(NhanVien kyThuatVien) {
+        if (kyThuatVien == null) {
+            throw new IllegalArgumentException("Kỹ thuật viên không được để trống.");
+        }
+        this.kyThuatVien = kyThuatVien;
+    }
+
     public int getSoXeThamGia() {
         return soXeThamGia;
+    }
+
+    public void setSoXeThamGia(int soXeThamGia) {
+        if (soXeThamGia < 0) {
+            throw new IllegalArgumentException("Số xe tham gia không được âm.");
+        }
+        this.soXeThamGia = soXeThamGia;
     }
 
     public int getHangMucHoanThanh() {
         return hangMucHoanThanh;
     }
 
+    public void setHangMucHoanThanh(int hangMucHoanThanh) {
+        if (hangMucHoanThanh < 0) {
+            throw new IllegalArgumentException("Số hạng mục hoàn thành không được âm.");
+        }
+        this.hangMucHoanThanh = hangMucHoanThanh;
+    }
+
     public int getHangMucDangThucHien() {
         return hangMucDangThucHien;
+    }
+
+    public void setHangMucDangThucHien(int hangMucDangThucHien) {
+        if (hangMucDangThucHien < 0) {
+            throw new IllegalArgumentException("Số hạng mục đang thực hiện không được âm.");
+        }
+        this.hangMucDangThucHien = hangMucDangThucHien;
     }
 
     public double getTienCongMangLai() {
         return tienCongMangLai;
     }
 
+    public void setTienCongMangLai(double tienCongMangLai) {
+        if (tienCongMangLai < 0) {
+            throw new IllegalArgumentException("Tiền công mang lại không được âm.");
+        }
+        this.tienCongMangLai = tienCongMangLai;
+    }
+
     public double getTyLeHoanThanh() {
         return tyLeHoanThanh;
+    }
+
+    public void setTyLeHoanThanh(double tyLeHoanThanh) {
+        if (tyLeHoanThanh < 0 || tyLeHoanThanh > 100) {
+            throw new IllegalArgumentException("Tỷ lệ hoàn thành phải từ 0 đến 100.");
+        }
+        this.tyLeHoanThanh = tyLeHoanThanh;
     }
 
     @Override
