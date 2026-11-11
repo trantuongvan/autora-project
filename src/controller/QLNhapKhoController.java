@@ -91,6 +91,7 @@ public class QLNhapKhoController {
         initHeaderAndNCC();
         initController();
         UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimPhieu(), () -> view.getTxtTuNgay().setText(""));
         UIComponents.tuTaiLai(this::loadData, view.getTxtTimPhieu(), view.getCboLocNCC(), view.getTxtTuNgay(),
                 view.getTxtDenNgay());
         loadData();

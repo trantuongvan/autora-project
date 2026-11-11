@@ -48,6 +48,9 @@ public class QLTaiKhoanController {
         this.view = view;
         initController();
         moFormTao();
+        view.getCboLocTrangThai().setSelectedItem(entity.TaiKhoan.DANG_HOAT_DONG);
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(),
+                () -> view.getCboLocTrangThai().setSelectedItem(QLTaiKhoan.TAT_CA_TRANG_THAI));
         UIComponents.tuTaiLai(this::taiTatCa, view.getTxtTimKiem(), view.getCboLocVaiTro(), view.getCboLocTrangThai());
         taiTatCa();
     }

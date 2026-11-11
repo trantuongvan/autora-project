@@ -40,6 +40,8 @@ public class QLKhuyenMaiController {
     public QLKhuyenMaiController(QLKhuyenMai view) {
         this.view = view;
         initController();
+        view.getCboLocTinhTrang().setSelectedItem("Đang áp dụng");
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(), () -> view.getCboLocTinhTrang().setSelectedIndex(0));
         UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getCboLocTinhTrang(), view.getCboLocHinhThuc());
         taiDuLieu();
     }

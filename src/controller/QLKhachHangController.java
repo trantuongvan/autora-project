@@ -54,6 +54,9 @@ public class QLKhachHangController {
         this.view = view;
         initController();
         moFormThem();
+        view.getCboLocLichHen().setSelectedItem(QLKhachHang.CO_LICH_HEN);
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(),
+                () -> view.getCboLocLichHen().setSelectedItem(QLKhachHang.TAT_CA));
         UIComponents.tuTaiLai(this::taiDanhSach, view.getTxtTimKiem(), view.getCboLocLoai(), view.getCboLocGhiNo(),
                 view.getCboLocLichHen());
         taiDanhSach();
