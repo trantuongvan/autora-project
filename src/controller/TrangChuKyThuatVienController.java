@@ -119,7 +119,7 @@ public class TrangChuKyThuatVienController {
 
     public void loadData() {
         try {
-            List<PhieuTiepNhanVaSuaChua> all = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), "", "Tất cả");
+            List<PhieuTiepNhanVaSuaChua> all = NghiepVuPhieu.timPhieuDuocGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), "", "Tất cả");
 
             int choSua = 0, dangSua = 0, choPhuTung = 0, hoanThanh = 0;
             for (PhieuTiepNhanVaSuaChua p : all) {
@@ -151,7 +151,7 @@ public class TrangChuKyThuatVienController {
     private void locBangTheoTuKhoa() {
         try {
             String kw = view.getTxtTimKiem().getText();
-            danhSachTimDuoc = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, "Tất cả");
+            danhSachTimDuoc = NghiepVuPhieu.timPhieuDuocGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, "Tất cả");
             doDuLieuLenBang();
         } catch (SQLException ex) {
             util.UIComponents.baoLoiCsdl(view, ex);

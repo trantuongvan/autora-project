@@ -111,11 +111,11 @@ public class TestTuDongHoa {
         dung("Rỗng", "".equals(QLTaiKhoanController.taoTenDangNhap("  ")) && "".equals(QLTaiKhoanController.taoTenDangNhap(null)));
 
         TaiKhoan_Dao dao = new TaiKhoan_Dao();
-        dung("Tên còn trống giữ nguyên", "vunt".equals(dao.tenDangNhapConTrong("vunt")));
-        dung("Tên trùng thêm số 2", "admin2".equals(dao.tenDangNhapConTrong("admin")));
-        dung("Không phân biệt hoa thường", "ADMIN2".equals(dao.tenDangNhapConTrong("ADMIN")));
-        dung("Tên gốc chưa có dù có tên bắt đầu giống", "ktv".equals(dao.tenDangNhapConTrong("ktv"))
-                && "ktv012".equals(dao.tenDangNhapConTrong("ktv01")));
+        dung("Tên còn trống giữ nguyên", "vunt".equals(QLTaiKhoanController.tenDangNhapConTrong("vunt")));
+        dung("Tên trùng thêm số 2", "admin2".equals(QLTaiKhoanController.tenDangNhapConTrong("admin")));
+        dung("Không phân biệt hoa thường", "ADMIN2".equals(QLTaiKhoanController.tenDangNhapConTrong("ADMIN")));
+        dung("Tên gốc chưa có dù có tên bắt đầu giống", "ktv".equals(QLTaiKhoanController.tenDangNhapConTrong("ktv"))
+                && "ktv012".equals(QLTaiKhoanController.tenDangNhapConTrong("ktv01")));
     }
 
     private static void kiemTraPhieuKhongPhuTungDuKien() throws Exception {

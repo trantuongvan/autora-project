@@ -177,7 +177,7 @@ public class QLTienDoSuaChuaController {
         daTai = true;
         try {
             String kw = view.getTxtTimPhieu().getText();
-            danhSachPhieu = tienDoDao.searchPhieuĐượcGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, tabTrangThaiDangChon);
+            danhSachPhieu = NghiepVuPhieu.timPhieuDuocGiao(util.PhienDangNhap.maKyThuatVienDeLoc(), kw, tabTrangThaiDangChon);
 
             PhieuTiepNhanVaSuaChua chon = null;
             if (maPhieuCanChon != null) {

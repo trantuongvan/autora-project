@@ -100,19 +100,6 @@ public class TienDoSuaChua_Dao {
             for (PhieuTiepNhanVaSuaChua p : theoMa.values()) {
                 List<ChiTietSuaChua_DichVu> dvList = dichVuTheoPhieu.getOrDefault(p.getMaPhieuTNSC(), new ArrayList<>());
                 p.setDanhSachDichVu(dvList);
-                p.setTongSoHangMuc(dvList.size());
-
-                int done = 0;
-                StringBuilder sb = new StringBuilder();
-                for (ChiTietSuaChua_DichVu ct : dvList) {
-                    if (ct.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
-                        done++;
-                    }
-                    if (sb.length() > 0) sb.append(", ");
-                    sb.append(ct.getDichVu().getTenDichVu());
-                }
-                p.setSoHangMucHoanThanh(done);
-                p.setTomTatHangMuc(sb.length() > 0 ? sb.toString() : p.getYeuCauBanDau());
                 list.add(p);
             }
         }
