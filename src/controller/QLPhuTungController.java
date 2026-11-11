@@ -34,6 +34,10 @@ public class QLPhuTungController {
     private boolean cheDoSua = false;
     private boolean dangNapDuLieuForm = false;
     private boolean daTai = false;
+    /** Lễ tân và KTV chỉ xem tồn kho và giá; thêm, sửa, xóa là việc của thủ kho và chủ cửa hàng. */
+    private final boolean chiXem = util.PhienDangNhap.getHienTai() != null
+            && (util.PhienDangNhap.getHienTai().getVaiTro() == entity.VaiTro.LE_TAN
+            || util.PhienDangNhap.getHienTai().getVaiTro() == entity.VaiTro.KY_THUAT_VIEN);
 
     public QLPhuTungController(QLPhuTung view) {
         this.view = view;
@@ -43,6 +47,9 @@ public class QLPhuTungController {
 
         initHeaderAndFilters();
         initController();
+        if (chiXem) {
+            view.getBtnMoThemPhuTung().setVisible(false);
+        }
         UIComponents.tuTaiLai(this::loadData, view.getTxtTimKiem(), view.getCboHangSanXuat(), view.getCboKhoangGia(),
                 view.getCboTinhTrangTon());
         loadData();
@@ -69,7 +76,7 @@ public class QLPhuTungController {
                 view.getCboHangSanXuat().setSelectedItem(dangChon);
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -89,7 +96,6 @@ public class QLPhuTungController {
             }
         });
 
-        // Bộ lọc chỉ áp dụng khi bấm Tải dữ liệu hoặc nhấn Enter ở ô tìm kiếm
         view.getBtnTaiDuLieu().addActionListener(e -> loadData());
         view.getTxtTimKiem().addActionListener(e -> loadData());
 
@@ -117,6 +123,7 @@ public class QLPhuTungController {
                 int col = view.getTblPhuTung().columnAtPoint(e.getPoint());
                 if (row < 0 || row >= danhSachHienThi.size()) return;
 
+                if (chiXem) return;
                 PhuTung pt = danhSachHienThi.get(row);
                 if (col == 8) {
                     Rectangle cellRect = view.getTblPhuTung().getCellRect(row, col, false);
@@ -191,7 +198,7 @@ public class QLPhuTungController {
 
             view.getLblFooterHienThi().setText("Hiển thị " + danhSachHienThi.size() + " / " + tongMatHang + " mặt hàng");
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -274,7 +281,7 @@ public class QLPhuTungController {
                 return false;
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
         UIComponents.setError(view.getTxtMaSKU(), false);
         QLPhuTung.showWrappedError(view.getLblLoiMaSKU(), null, 360);
@@ -400,7 +407,7 @@ public class QLPhuTungController {
         try {
             PhuTung pt = new PhuTung(maSKU, tenPT, hang, viTri, giaNhap, giaBan, soLuongTon, nguong);
             if (cheDoSua) {
-                phuTungDao.update(pt);
+                phuTungDao.update(pt, util.PhienDangNhap.getHienTai().getTenDangNhap());
                 JOptionPane.showMessageDialog(view, "Đã cập nhật phụ tùng " + maSKU + " thành công!",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -412,7 +419,6 @@ public class QLPhuTungController {
             initHeaderAndFilters();
             taiLai();
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi lưu phụ tùng: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -434,17 +440,7 @@ public class QLPhuTungController {
                 taiLai();
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
-    }
-
-    /** Kiểm tra phụ tùng có dưới hoặc chạm ngưỡng cảnh báo không. */
-    public static boolean kiemTraCanhBaoTon(PhuTung pt) {
-        return pt != null && pt.getSoLuongTon() <= pt.getNguongCanhBao();
-    }
-
-    /** Kiểm tra tồn kho có đủ cho số lượng yêu cầu không. */
-    public static boolean duTon(PhuTung pt, int soLuong) {
-        return pt != null && pt.getSoLuongTon() >= soLuong;
     }
 }

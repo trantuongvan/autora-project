@@ -56,19 +56,9 @@ public class QLHoaDonController {
                 xuLyClickBang(e);
             }
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDuLieu);
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0), "taiLai", this::taiDuLieu);
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
                 () -> view.getTxtTimKiem().requestFocusInWindow());
-    }
-
-    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
-        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
-        view.getActionMap().put(ten, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viec.run();
-            }
-        });
     }
 
     private void xuLyClickBang(MouseEvent e) {

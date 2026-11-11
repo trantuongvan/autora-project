@@ -146,7 +146,9 @@ public class QLHoSoXe extends JPanel {
     /** Điểm tạo View theo chuẩn nhóm. */
     public static JPanel createPanel() {
         QLHoSoXe panel = new QLHoSoXe();
-        panel.napDuLieuMau();
+        panel.setThongKeBang(0, null);
+        panel.xoaTrangForm();
+        panel.anLichSu();
         new controller.QLHoSoXeController(panel);
         return panel;
     }
@@ -491,18 +493,4 @@ public class QLHoSoXe extends JPanel {
     public JButton getBtnHuy() { return btnHuy; }
     public JButton getBtnLuu() { return btnLuu; }
 
-    // ==========================================================
-    // Dữ liệu mẫu để xem trước giao diện (xóa khi nối Controller)
-    // ==========================================================
-
-    public void napDuLieuMau() {
-        setDanhSach(new ArrayList<>());
-        setThongKeBang(0, null);
-
-        setDanhSachChuSoHuu(List.of("KH0001 - Nguyễn Văn Minh (0901234567)", "KH0002 - Trần Thị Hương (0912345678)"));
-        // Form thêm mới bắt đầu ở trạng thái sạch; chỉ hiển thị lỗi sau khi người dùng lưu dữ liệu sai.
-        xoaTrangForm();
-
-        anLichSu();
-    }
 }

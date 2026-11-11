@@ -64,7 +64,7 @@ public class QLDuyetXuatKhoController {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), thuKhoHienTai.getHoTen());
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -116,7 +116,7 @@ public class QLDuyetXuatKhoController {
                 setBorder(new EmptyBorder(0, 12, 0, 12));
 
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !QLPhuTungController.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
+                        && !NghiepVuKho.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 if (c == 0 || c == 4) {
                     setFont(UIConstants.FONT_FORM_LABEL.deriveFont(13.5f));
@@ -150,7 +150,7 @@ public class QLDuyetXuatKhoController {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !QLPhuTungController.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
+                        && !NghiepVuKho.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 area.setText(v == null ? "" : v.toString());
                 area.setBackground(sel ? t.getSelectionBackground() : (thieuTon ? bgInsufficient : UIConstants.CARD_BG));
@@ -183,16 +183,6 @@ public class QLDuyetXuatKhoController {
         loadDanhSach(maPhieuYC);
     }
 
-    /** Chưa bấm Tải dữ liệu: danh sách trống kèm gợi ý, khung chi tiết ở trạng thái chưa chọn. */
-    private void hienChuaTai() {
-        JPanel container = view.getPnlDanhSachYeuCau();
-        container.removeAll();
-        JLabel lblGoiY = UIComponents.label(UIComponents.GOI_Y_TAI, UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
-        lblGoiY.setBorder(new EmptyBorder(20, 12, 20, 12));
-        container.add(lblGoiY);
-        yeuCauDangChon = null;
-        loadChiTiet();
-    }
 
     /** Sau khi dữ liệu đổi: chỉ làm mới khi danh sách đã được tải. */
     private void taiLai() {
@@ -215,53 +205,49 @@ public class QLDuyetXuatKhoController {
             view.getLblDemYeuCauTrai().setText(danhSachHienTai.size() + " yêu cầu");
             hienDanhSach(maYCCanChon);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
     /** Vẽ lại danh sách đã tải và chọn một yêu cầu, không truy vấn lại theo bộ lọc mới chưa áp dụng. */
     private void hienDanhSach(String maYCCanChon) {
-        try {
-            JPanel container = view.getPnlDanhSachYeuCau();
-            container.removeAll();
-            yeuCauDangChon = null;
+        JPanel container = view.getPnlDanhSachYeuCau();
+        container.removeAll();
+        yeuCauDangChon = null;
 
-            for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
-                if (maYCCanChon != null && yc.getMaPhieuYC().equalsIgnoreCase(maYCCanChon)) {
-                    yeuCauDangChon = yc;
-                    break;
-                }
+        for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
+            if (maYCCanChon != null && yc.getMaPhieuYC().equalsIgnoreCase(maYCCanChon)) {
+                yeuCauDangChon = yc;
+                break;
             }
-            if (yeuCauDangChon == null && !danhSachHienTai.isEmpty()) {
-                yeuCauDangChon = danhSachHienTai.get(0);
-            }
-
-            if (danhSachHienTai.isEmpty()) {
-                JLabel lblEmpty = UIComponents.label("Không có yêu cầu xuất kho nào.", UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
-                lblEmpty.setBorder(new EmptyBorder(20, 12, 20, 12));
-                container.add(lblEmpty);
-            } else {
-                for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
-                    boolean isSel = yeuCauDangChon != null && yc.getMaPhieuYC().equals(yeuCauDangChon.getMaPhieuYC());
-                    String tenKTV = yeuCauDao.getTenKTV(yc.getKyThuatVien().getMaNV());
-                    JPanel item = view.taoTheYeuCau(yc, tenKTV, isSel);
-                    item.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public void mouseClicked(MouseEvent e) {
-                            hienDanhSach(yc.getMaPhieuYC());
-                        }
-                    });
-                    container.add(item);
-                    container.add(Box.createVerticalStrut(10));
-                }
-            }
-            container.revalidate();
-            container.repaint();
-
-            loadChiTiet();
-        } catch (SQLException ex) {
-            ex.printStackTrace();
         }
+        if (yeuCauDangChon == null && !danhSachHienTai.isEmpty()) {
+            yeuCauDangChon = danhSachHienTai.get(0);
+        }
+
+        if (danhSachHienTai.isEmpty()) {
+            JLabel lblEmpty = UIComponents.label("Không có yêu cầu xuất kho nào.", UIConstants.FONT_BODY, UIConstants.TEXT_MUTED);
+            lblEmpty.setBorder(new EmptyBorder(20, 12, 20, 12));
+            container.add(lblEmpty);
+        } else {
+            for (PhieuYeuCauXuatKho yc : danhSachHienTai) {
+                boolean isSel = yeuCauDangChon != null && yc.getMaPhieuYC().equals(yeuCauDangChon.getMaPhieuYC());
+                String tenKTV = yc.getTenKyThuatVien();
+                JPanel item = view.taoTheYeuCau(yc, tenKTV, isSel);
+                item.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        hienDanhSach(yc.getMaPhieuYC());
+                    }
+                });
+                container.add(item);
+                container.add(Box.createVerticalStrut(10));
+            }
+        }
+        container.revalidate();
+        container.repaint();
+
+        loadChiTiet();
     }
 
     private void loadChiTiet() {
@@ -295,13 +281,13 @@ public class QLDuyetXuatKhoController {
 
             view.getLblValPhieuSC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getPhieu().getMaPhieuTNSC() + "</div></html>");
             view.getLblValXe().setText("<html><div style='width:320px;'>" + thongTinXe + "</div></html>");
-            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDao.getTenKTV(yeuCauDangChon.getKyThuatVien().getMaNV()) + "</div></html>");
+            view.getLblValKTV().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getTenKyThuatVien() + "</div></html>");
             view.getLblValNgayYC().setText("<html><div style='width:320px;'>" + yeuCauDangChon.getNgayYeuCau().format(DT_FMT) + "</div></html>");
 
             danhSachChiTiet = yeuCauDao.getChiTietByMaPhieuYC(yeuCauDangChon.getMaPhieuYC());
             for (ChiTietYeuCauXuatKho ct : danhSachChiTiet) {
                 PhuTung pt = ct.getPhuTung();
-                if (!QLPhuTungController.duTon(pt, ct.getSoLuong())) {
+                if (!NghiepVuKho.duTon(pt, ct.getSoLuong())) {
                     duTonKho = false;
                 }
 
@@ -321,7 +307,7 @@ public class QLDuyetXuatKhoController {
 
             SwingUtilities.invokeLater(view::capNhatChieuCaoBangTon);
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -340,7 +326,7 @@ public class QLDuyetXuatKhoController {
             }
 
             // Nếu chưa có hóa đơn, tiến hành trừ kho bình thường
-            String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
+            String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : util.PhienDangNhap.getHienTai().getMaNV();
             yeuCauDao.duyetXuatKho(
                     yeuCauDangChon.getMaPhieuYC(),
                     yeuCauDangChon.getPhieu().getMaPhieuTNSC(),
@@ -353,7 +339,6 @@ public class QLDuyetXuatKhoController {
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             taiLai();
         } catch (SQLException ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(view, "Lỗi khi duyệt xuất kho: " + ex.getMessage(),
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
         }
@@ -366,7 +351,7 @@ public class QLDuyetXuatKhoController {
                 "Xác nhận từ chối", JOptionPane.YES_NO_OPTION);
         if (cf == JOptionPane.YES_OPTION) {
             try {
-                String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : "NV0004";
+                String maThuKho = thuKhoHienTai != null ? thuKhoHienTai.getMaNV() : util.PhienDangNhap.getHienTai().getMaNV();
                 if (!yeuCauDao.tuChoiYeuCau(yeuCauDangChon.getMaPhieuYC(), maThuKho,
                         PhienDangNhap.getHienTai().getTenDangNhap())) {
                     JOptionPane.showMessageDialog(view, "Yêu cầu " + yeuCauDangChon.getMaPhieuYC()
@@ -374,7 +359,7 @@ public class QLDuyetXuatKhoController {
                 }
                 taiLai();
             } catch (SQLException ex) {
-                ex.printStackTrace();
+                util.UIComponents.baoLoiCsdl(view, ex);
             }
         }
     }

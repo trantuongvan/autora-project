@@ -4,7 +4,6 @@ import connection.ConnectDB;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DichVu_Dao;
 import dao.NhanVien_Dao;
-import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.CaLamViec;
 import entity.ChiTietSuaChua_DichVu;
@@ -44,7 +43,6 @@ public class TestPhanCong {
     private static final LocalDateTime D9 = LocalDateTime.of(2025, 11, 3, 9, 0);
     private static final LocalDateTime D13 = LocalDateTime.of(2025, 11, 3, 13, 0);
 
-    private static final PhanCong_Dao pc = new PhanCong_Dao();
     private static int soLoi;
     private static int stt;
 
@@ -153,7 +151,7 @@ public class TestPhanCong {
         for (String ma : maDichVu) {
             ds.add(new DichVu(ma));
         }
-        return pc.chon(gio, ds);
+        return controller.NghiepVuPhieu.chonKyThuatVien(gio, ds);
     }
 
     private static String tho(PhanCongTuDong.KetQua kq, String maDichVu) {
@@ -291,7 +289,7 @@ public class TestPhanCong {
         List<DichVu> dv = Arrays.asList(dichVu("DV0001", 250000), dichVu("DV0005", 350000));
 
         PhieuTiepNhanVaSuaChua p = phieuMau("59A-901.01", D13);
-        PhanCongTuDong.KetQua kq = dao.taoTiepNhan(khachMau("0911000101"), xeMau("59A-901.01"), p, dv);
+        PhanCongTuDong.KetQua kq = controller.NghiepVuPhieu.tiepNhan(khachMau("0911000101"), xeMau("59A-901.01"), p, dv);
         PhieuTiepNhanVaSuaChua luu = dao.findById(p.getMaPhieuTNSC());
         dung("taoTiepNhan lưu người phụ trách", luu.getNhanVienPhuTrach() != null
                 && "NV0006".equals(luu.getNhanVienPhuTrach().getMaNV()));
@@ -304,7 +302,7 @@ public class TestPhanCong {
         LocalDateTime tayChon = D13.plusDays(5).withHour(10);
         PhieuTiepNhanVaSuaChua p2 = phieuMau("59A-901.02", D13);
         p2.setThoiGianDuKien(tayChon);
-        dao.taoTiepNhan(khachMau("0911000102"), xeMau("59A-901.02"), p2, dv);
+        controller.NghiepVuPhieu.tiepNhan(khachMau("0911000102"), xeMau("59A-901.02"), p2, dv);
         PhieuTiepNhanVaSuaChua luu2 = dao.findById(p2.getMaPhieuTNSC());
         dung("Ngày tự chọn được giữ", tayChon.equals(luu2.getThoiGianDuKien()));
         dung("Ngày tự chọn vẫn có người phụ trách và thợ", luu2.getNhanVienPhuTrach() != null
@@ -316,7 +314,7 @@ public class TestPhanCong {
         PhieuTiepNhanVaSuaChua p3 = phieuMau("59A-901.03", D13);
         boolean baoLoi = false;
         try {
-            dao.taoTiepNhan(khachMau("0911000103"), xeMau("59A-901.03"), p3,
+            controller.NghiepVuPhieu.tiepNhan(khachMau("0911000103"), xeMau("59A-901.03"), p3,
                     Arrays.asList(dichVu("DV0001", 250000), dichVu("KHONGCO", 1)));
         } catch (SQLException ex) {
             baoLoi = true;

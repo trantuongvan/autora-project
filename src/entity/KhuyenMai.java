@@ -121,6 +121,7 @@ public class KhuyenMai {
         this.phamViApDung = phamViApDung;
     }
 
+    /** Trả về null khi không giới hạn số lượt. */
     public Integer getSoLuotToiDa() {
         return soLuotToiDa;
     }
@@ -132,6 +133,7 @@ public class KhuyenMai {
         this.soLuotToiDa = soLuotToiDa;
     }
 
+    /** Đếm từ hóa đơn chưa hủy nên chỉ đọc, không lưu xuống CSDL. */
     public int getSoLuotDaDung() {
         return soLuotDaDung;
     }

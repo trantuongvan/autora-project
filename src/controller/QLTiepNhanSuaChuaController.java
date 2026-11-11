@@ -2,7 +2,6 @@ package controller;
 
 import dao.DichVu_Dao;
 import dao.KhachHang_Dao;
-import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.DichVu;
 import entity.KhachHang;
@@ -36,7 +35,6 @@ public class QLTiepNhanSuaChuaController {
     private final DieuHuongPhieu dieuHuong;
     private final PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
-    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private PhieuTiepNhanVaSuaChua phieuDangSua;
     private String maKhachDaCo;
     private boolean xeDaCo;
@@ -67,20 +65,10 @@ public class QLTiepNhanSuaChuaController {
             datTay = !view.getTxtDuKien().getText().trim().isEmpty();
             capNhatDuKienTuDong();
         });
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK), "phieuMoi", this::moFormMoi);
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "luu", () -> luuPhieu(false));
-        ganPhim(KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK), "phieuMoi", this::moFormMoi);
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK), "luu", () -> luuPhieu(false));
+        util.UIComponents.ganPhim(view, KeyStroke.getKeyStroke(KeyEvent.VK_F, KeyEvent.CTRL_DOWN_MASK), "tim",
                 () -> view.getTxtTraCuu().requestFocusInWindow());
-    }
-
-    private void ganPhim(KeyStroke phim, String ten, Runnable viec) {
-        view.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(phim, ten);
-        view.getActionMap().put(ten, new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                viec.run();
-            }
-        });
     }
 
     private void taiDichVu() {
@@ -101,7 +89,7 @@ public class QLTiepNhanSuaChuaController {
         }
         List<DichVu> dichVu = view.getLstDichVu().getSelectedValuesList();
         try {
-            LocalDateTime duKien = dichVu.isEmpty() ? null : phanCongDao.chon(LocalDateTime.now(), dichVu).getDuKien();
+            LocalDateTime duKien = dichVu.isEmpty() ? null : NghiepVuPhieu.chonKyThuatVien(LocalDateTime.now(), dichVu).getDuKien();
             view.getTxtDuKien().setText(duKien == null ? "" : duKien.format(DINH_DANG_GIO));
         } catch (SQLException ex) {
             hienLoiDuLieu("Không thể tính dự kiến hoàn thành.", ex);
@@ -322,6 +310,21 @@ public class QLTiepNhanSuaChuaController {
                 return false;
             }
             KhachHang khachCu = dao.findKhachTheoSdt(view.getTxtSoDienThoai().getText().trim());
+            if (khachCu != null && maKhachDaCo == null) {
+                // SĐT gõ tay trùng khách cũ: hỏi trước, vì gõ sai một số là gắn xe cho người lạ.
+                String tenGo = view.getTxtHoTen().getText().trim();
+                if (!khachCu.getHoTen().equalsIgnoreCase(tenGo)) {
+                    int chon = JOptionPane.showConfirmDialog(view,
+                            "Số điện thoại " + khachCu.getSoDienThoai() + " đã thuộc khách \"" + khachCu.getHoTen()
+                                    + "\" (" + khachCu.getMaKH() + "), không phải \"" + tenGo + "\".\n"
+                                    + "Gắn xe " + bienSo + " cho khách " + khachCu.getHoTen() + "?",
+                            "Số điện thoại đã có", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    if (chon != JOptionPane.YES_OPTION) {
+                        view.hienLoi("Kiểm tra lại số điện thoại, hoặc tra cứu khách trước khi lưu.");
+                        return false;
+                    }
+                }
+            }
             if (khachCu != null) {
                 maKhachDaCo = khachCu.getMaKH();
             }
@@ -338,7 +341,7 @@ public class QLTiepNhanSuaChuaController {
         p.setNhanVienLap(new NhanVien(PhienDangNhap.getHienTai().getMaNV()));
         p.setThoiGianTiepNhan(LocalDateTime.now());
         p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
-        ketQuaPhanCong = moTaPhanCong(dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu));
+        ketQuaPhanCong = moTaPhanCong(NghiepVuPhieu.tiepNhan(khachMoi, xeMoi, p, dichVu));
         return true;
     }
 

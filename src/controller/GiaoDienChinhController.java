@@ -81,6 +81,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         muc("QL_NHAN_VIEN", "Nhân viên", Loai.USER);
         muc("QL_TAI_KHOAN", "Tài khoản & Phân quyền", Loai.LOCK);
         muc("QL_NHAT_KY", "Nhật ký hệ thống", Loai.HISTORY);
+        muc("QL_DANH_MUC", "Dịch vụ & Nhà cung cấp", Loai.CHECK);
         muc("QL_TIEN_DO", "Tiến độ sửa chữa", Loai.WRENCH);
         muc(CARD_TRO_GIUP, "Trợ giúp", Loai.HELP);
         muc(CARD_GIOI_THIEU, "Giới thiệu", Loai.INFO);
@@ -88,10 +89,11 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         MENU_THEO_VAI_TRO.put(VaiTro.CHU_CUA_HANG, Arrays.asList(
                 "TRANG_CHU_QL", CARD_TIEP_NHAN, CARD_PHIEU, "QL_TIEN_DO", "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_PHU_TUNG",
                 "QL_NHAP_KHO", "QL_DUYET_XUAT", "QL_HOA_DON", "QL_BAN_GIAO", "QL_KHUYEN_MAI", "QL_THONG_KE",
-                "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
+                "QL_DANH_MUC", "QL_NHAN_VIEN", "QL_TAI_KHOAN", "QL_NHAT_KY"));
         MENU_THEO_VAI_TRO.put(VaiTro.LE_TAN, Arrays.asList(
-                "TRANG_CHU_LT", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_HOA_DON", "QL_BAN_GIAO"));
-        MENU_THEO_VAI_TRO.put(VaiTro.KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO"));
+                "TRANG_CHU_LT", CARD_TIEP_NHAN, CARD_PHIEU, "QL_KHACH_HANG", "QL_HO_SO_XE", "QL_HOA_DON", "QL_BAN_GIAO",
+                "QL_PHU_TUNG"));
+        MENU_THEO_VAI_TRO.put(VaiTro.KY_THUAT_VIEN, Arrays.asList("TRANG_CHU_KTV", "QL_TIEN_DO", "QL_PHU_TUNG"));
         MENU_THEO_VAI_TRO.put(VaiTro.THU_KHO, Arrays.asList(
                 "TRANG_CHU_KHO", "QL_PHU_TUNG", "QL_NHAP_KHO", "QL_DUYET_XUAT"));
     }
@@ -138,6 +140,7 @@ public class GiaoDienChinhController implements DieuHuongPhieu, DieuHuongHoaDon 
         nhaMay.put("QL_NHAN_VIEN", QLNhanVien::createPanel);
         nhaMay.put("QL_KHUYEN_MAI", QLKhuyenMai::createPanel);
         nhaMay.put("QL_NHAT_KY", QLNhatKy::createPanel);
+        nhaMay.put("QL_DANH_MUC", gui.QLDanhMuc::createPanel);
         nhaMay.put("QL_KHACH_HANG", QLKhachHang::createPanel);
         nhaMay.put("QL_TAI_KHOAN", QLTaiKhoan::createPanel);
         nhaMay.put("TRANG_CHU_KTV", TrangChuKyThuatVien::createPanel);

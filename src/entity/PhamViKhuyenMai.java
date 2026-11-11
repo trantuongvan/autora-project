@@ -1,5 +1,6 @@
 package entity;
 
+/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum PhamViKhuyenMai {
     TONG_HOA_DON("Tổng hóa đơn"),
     NHOM_DICH_VU("Nhóm dịch vụ"),
@@ -14,6 +15,7 @@ public enum PhamViKhuyenMai {
     public String getText() {
         return text;
     }
+
 
     public static PhamViKhuyenMai fromDb(String text) {
         for (PhamViKhuyenMai giaTri : values()) {

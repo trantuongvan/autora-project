@@ -56,7 +56,7 @@ public class PhieuYeuCauXuatKho_Dao {
         String k = keyword == null ? "" : keyword.trim();
         String tt = trangThai == null ? "" : trangThai.getText();
 
-        String sql = "SELECT yc.maPhieuYC, yc.ngayYeuCau, yc.ngayXuat, yc.trangThai, yc.maPhieuTNSC, yc.maNV_KyThuat, yc.maNV_ThuKho "
+        String sql = "SELECT yc.maPhieuYC, yc.ngayYeuCau, yc.ngayXuat, yc.trangThai, yc.maPhieuTNSC, yc.maNV_KyThuat, yc.maNV_ThuKho, nv.hoTen AS tenKTV "
                 + "FROM PhieuYeuCauXuatKho yc "
                 + "LEFT JOIN NhanVien nv ON nv.maNV = yc.maNV_KyThuat "
                 + "WHERE (? = '' OR yc.maPhieuYC LIKE ? OR yc.maPhieuTNSC LIKE ? OR nv.hoTen LIKE ? "
@@ -89,22 +89,15 @@ public class PhieuYeuCauXuatKho_Dao {
                             new NhanVien(rs.getString("maNV_KyThuat")),
                             rs.getString("maNV_ThuKho") == null ? null : new NhanVien(rs.getString("maNV_ThuKho"))
                     );
+                    String tenKTV = rs.getString("tenKTV");
+                    if (tenKTV != null && !tenKTV.trim().isEmpty()) {
+                        yc.getKyThuatVien().setHoTen(tenKTV);
+                    }
                     list.add(yc);
                 }
             }
         }
         return list;
-    }
-
-    public String getTenKTV(String maNV) throws SQLException {
-        String sql = "SELECT hoTen FROM NhanVien WHERE maNV = ?";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, maNV);
-            try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString(1) : maNV;
-            }
-        }
     }
 
     public String getThongTinXe(String maPhieuTNSC) throws SQLException {
@@ -277,12 +270,7 @@ public class PhieuYeuCauXuatKho_Dao {
                 }
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
-                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    if (phuTung.getSoLuongTon() < ct.getSoLuong()) {
-                        throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
-                    }
-                    phuTung.setSoLuongTon(phuTung.getSoLuongTon() - ct.getSoLuong());
-                    PhuTung_Dao.luuTon(c, phuTung);
+                    PhuTung_Dao.xuatTon(c, ct.getPhuTung().getMaSKU(), ct.getSoLuong());
 
                     psCTPT.setString(1, maPhieuTNSC);
                     psCTPT.setString(2, ct.getPhuTung().getMaSKU());

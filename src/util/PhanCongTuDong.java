@@ -20,48 +20,6 @@ public class PhanCongTuDong {
     // shortcut: ca chạy mọi ngày nên KTV nghỉ phép vẫn được giao việc, thêm bảng lịch trực/nghỉ khi chủ cửa hàng cần.
     // shortcut: việc đang sửa dở tính đủ thời lượng vào hàng đợi, trừ phần đã làm khi có giờ bắt đầu thực tế.
 
-    // ============================================================================
-    // HELPER - Tính toán ca làm việc
-    // ============================================================================
-
-    /** Kiểm tra giờ có nằm trong ca làm việc không (bao gồm giờ vào, không bao gồm giờ tan). */
-    public static boolean dangTrongCa(CaLamViec ca, LocalTime gio) {
-        if (ca == null || gio == null) return false;
-        return !gio.isBefore(ca.getGioBatDau()) && gio.isBefore(ca.getGioKetThuc());
-    }
-
-    /**
-     * Giờ xong khi bắt đầu lúc {@code tu} và chỉ tính thời gian nằm trong ca.
-     * Trước giờ vào ca thì bắt đầu từ giờ vào ca; từ giờ tan ca trở đi thì bắt đầu ca ngày hôm sau.
-     */
-    public static LocalDateTime congPhut(CaLamViec ca, LocalDateTime tu, int phut) {
-        if (ca == null || tu == null || phut <= 0) {
-            return tu;
-        }
-        long can = phut * 60L;
-        LocalDateTime t = tu;
-        while (true) {
-            LocalDateTime vao = t.toLocalDate().atTime(ca.getGioBatDau());
-            LocalDateTime ra = t.toLocalDate().atTime(ca.getGioKetThuc());
-            if (t.isBefore(vao)) {
-                t = vao;
-            } else if (!t.isBefore(ra)) {
-                t = vao.plusDays(1);
-                continue;
-            }
-            long con = Duration.between(t, ra).getSeconds();
-            if (can <= con) {
-                return t.plusSeconds(can);
-            }
-            can -= con;
-            t = vao.plusDays(1);
-        }
-    }
-
-    // ============================================================================
-    // LOGIC PHÂN CÔNG
-    // ============================================================================
-
     /** Kết quả chọn: KTV từng dịch vụ (null khi không ai làm được), ghi chú cần chú ý, người phụ trách và giờ dự kiến xong. */
     public static class KetQua {
         private final Map<DichVu, NhanVien> phanCong = new LinkedHashMap<>();
@@ -126,8 +84,8 @@ public class PhanCongTuDong {
             for (UngVien u : ungVienTheoDichVu.getOrDefault(dv.getMaDichVu(), new ArrayList<>())) {
                 CaLamViec ca = u.nhanVien.getCaLamViec();
                 HangDoi hang = hangDoiTheoNhanVien.computeIfAbsent(u.nhanVien.getMaNV(), k -> new HangDoi(0, 0));
-                LocalDateTime xong = PhanCongTuDong.congPhut(ca, PhanCongTuDong.congPhut(ca, hienTai, hang.phut), u.phut);
-                boolean ranh = hang.soViec == 0 && PhanCongTuDong.dangTrongCa(ca, hienTai.toLocalTime());
+                LocalDateTime xong = congPhut(ca, congPhut(ca, hienTai, hang.phut), u.phut);
+                boolean ranh = hang.soViec == 0 && dangTrongCa(ca, hienTai.toLocalTime());
                 boolean hon = tot == null || (ranh && !ranhTot) || (ranh == ranhTot && (xong.isBefore(xongTot)
                         || (xong.equals(xongTot) && (hang.soViec < hangTot.soViec || (hang.soViec == hangTot.soViec
                         && u.nhanVien.getMaNV().compareTo(tot.nhanVien.getMaNV()) < 0)))));
@@ -169,6 +127,38 @@ public class PhanCongTuDong {
         }
         ketQua.phuTrach = phuTrach == null ? null : phuTrach.nhanVien;
         return ketQua;
+    }
+
+    public static boolean dangTrongCa(CaLamViec ca, LocalTime gio) {
+        return !gio.isBefore(ca.getGioBatDau()) && gio.isBefore(ca.getGioKetThuc());
+    }
+
+    /**
+     * Giờ xong khi bắt đầu lúc {@code tu} và chỉ tính thời gian nằm trong ca.
+     * Trước giờ vào ca thì bắt đầu từ giờ vào ca; từ giờ tan ca trở đi thì bắt đầu ca ngày hôm sau.
+     */
+    public static LocalDateTime congPhut(CaLamViec ca, LocalDateTime tu, int phut) {
+        if (phut <= 0) {
+            return tu;
+        }
+        long can = phut * 60L;
+        LocalDateTime t = tu;
+        while (true) {
+            LocalDateTime vao = t.toLocalDate().atTime(ca.getGioBatDau());
+            LocalDateTime ra = t.toLocalDate().atTime(ca.getGioKetThuc());
+            if (t.isBefore(vao)) {
+                t = vao;
+            } else if (!t.isBefore(ra)) {
+                t = vao.plusDays(1);
+                continue;
+            }
+            long con = Duration.between(t, ra).getSeconds();
+            if (can <= con) {
+                return t.plusSeconds(can);
+            }
+            can -= con;
+            t = vao.plusDays(1);
+        }
     }
 
     private static String ten(DichVu dv) {

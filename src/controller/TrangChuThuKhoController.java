@@ -61,7 +61,7 @@ public class TrangChuThuKhoController {
                 view.getLblMoTaChao().setText("Xin chào " + tenGoi + ", đây là tình hình tồn kho và các yêu cầu xuất kho hôm nay.");
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -150,7 +150,7 @@ public class TrangChuThuKhoController {
 
             locDuLieuTheoTuKhoa();
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -173,7 +173,7 @@ public class TrangChuThuKhoController {
                 });
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
     }
 
@@ -186,7 +186,7 @@ public class TrangChuThuKhoController {
         dsYeuCauHienThi = new ArrayList<>(dsYeuCauTimDuoc.subList(0, limit));
         try {
             for (PhieuYeuCauXuatKho yc : dsYeuCauHienThi) {
-                String tenKTV = yeuCauDao.getTenKTV(yc.getKyThuatVien().getMaNV());
+                String tenKTV = yc.getTenKyThuatVien();
                 String tomTatPT = yeuCauDao.getTomTatPhuTungYeuCau(yc.getMaPhieuYC());
                 String thaoTac;
                 switch (yc.getTrangThai()) {
@@ -204,7 +204,7 @@ public class TrangChuThuKhoController {
                 });
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            util.UIComponents.baoLoiCsdl(view, ex);
         }
         view.getLblThongKeYeuCau().setText(dsYeuCauHienThi.size() + " yêu cầu • Ngày " + LocalDate.now().format(DATE_FMT));
     }

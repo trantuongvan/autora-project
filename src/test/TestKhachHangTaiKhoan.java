@@ -120,10 +120,11 @@ public class TestKhachHangTaiKhoan {
         dung("Lọc không được ghi nợ loại VIP", khDao.search("", LoaiKhachHang.VIP, false).isEmpty());
         dung("Từ khóa kết hợp bộ lọc", khDao.search("51H", LoaiKhachHang.VIP, null).isEmpty());
 
-        dung("Chặn xóa khách có xe", !khDao.delete("KH0001"));
+        dung("Chặn xóa khách có xe", !khDao.delete("KH0001", "admin"));
         dung("Khách có xe vẫn còn", dungMotKhach(khDao.search("0988111222", null, null), "KH0001"));
-        dung("Xóa khách không có xe", khDao.delete("KH0004"));
-        dung("Xóa lần hai trả về false", !khDao.delete("KH0004"));
+        dung("Xóa khách không có xe", khDao.delete("KH0004", "admin"));
+        dung("Xóa lần hai trả về false", !khDao.delete("KH0004", "admin"));
+        dung("Xóa khách được ghi nhật ký", "1".equals(mot("SELECT COUNT(*) FROM NhatKyHoatDong WHERE hanhDong = N'Xóa khách hàng' AND doiTuong = 'KH0004'")));
         dung("Xe liên kết", khDao.xeLienKet("KH0001").size() == 2 && "Honda".equals(khDao.xeLienKet("KH0001").get(0).getHangXe()));
         List<Xe> dsXe = new Xe_Dao().search("51H-123");
         dung("Xe_Dao.search trả về xe kèm chủ xe", dsXe.size() == 1 && "KH0001".equals(dsXe.get(0).getKhachHang().getMaKH())
@@ -332,6 +333,14 @@ public class TestKhachHangTaiKhoan {
             }
         }
         throw new IllegalStateException("Không thấy phiếu " + maPhieu);
+    }
+
+    private static String mot(String sql) throws SQLException {
+        try (java.sql.Connection c = connection.ConnectDB.getConnection();
+                java.sql.Statement s = c.createStatement();
+                java.sql.ResultSet r = s.executeQuery(sql)) {
+            return r.next() ? r.getString(1) : null;
+        }
     }
 
     private static void chay(String sql) throws SQLException {

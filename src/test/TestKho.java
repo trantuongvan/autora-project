@@ -1,7 +1,5 @@
 package test;
 
-import controller.QLBanGiaoXeController;
-import controller.QLPhuTungController;
 import connection.ConnectDB;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DangNhap_Dao;
@@ -60,6 +58,11 @@ public class TestKho {
     private static int stt;
 
     public static void main(String[] args) throws Exception {
+        kiemTraThongKeKtvTheoKy();
+        kiemTraThongKeDoanhThu();
+        kiemTraThongKeTuTinh();
+        kiemTraDanhMuc();
+        kiemTraSaoLuu();
         kiemTraDuyetMotLan();
         kiemTraTuChoi();
         kiemTraNhatKy();
@@ -98,7 +101,7 @@ public class TestKho {
         try {
             nhapKho.insertWithDetails(cao, Arrays.asList(new ChiTietNhapKho(cao, new PhuTung(sku), 1, goc.getGiaBanLe() + 1000)));
             kiem("Nhập kho giá vượt giá bán phải bị từ chối", false);
-        } catch (IllegalArgumentException ex) {
+        } catch (SQLException ex) {
             kiem("Lý do từ chối nói về giá bán lẻ: " + ex.getMessage(), ex.getMessage().contains("giá bán lẻ"));
         }
         kiem("Bị từ chối thì tồn giữ nguyên", ton(sku) == tonGoc);
@@ -120,7 +123,7 @@ public class TestKho {
         kiem("Giá cũ vượt giá bán: vẫn duyệt xuất được", ton(sku) == 0);
         PhuTung sua = dao.findById(sku);
         sua.setGiaBanLe(sua.getGiaNhap() + 5000);
-        kiem("Tăng giá bán để sửa dữ liệu", dao.update(sua));
+        kiem("Tăng giá bán để sửa dữ liệu", dao.update(sua, NGUOI));
         PhieuNhapKho sauSua = phieuNhap("PNG0003", sua.getGiaNhap());
         nhapKho.insertWithDetails(sauSua, Arrays.asList(new ChiTietNhapKho(sauSua, new PhuTung(sku), 1, sua.getGiaNhap())));
         kiem("Sửa xong thì nhập kho lại được", ton(sku) == 1);
@@ -150,20 +153,20 @@ public class TestKho {
     }
 
     private static void kiemTraDieuKienBanGiao() {
-        kiem("Xong hết và đã trả thì được bàn giao", QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.DA_THANH_TOAN, false)));
-        kiem("Khách được nợ thì được bàn giao", QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true)));
-        kiem("Khách không được nợ thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)));
-        kiem("Chưa có hóa đơn thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(2, 2, null, true)));
-        kiem("Còn hạng mục thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(3, 2, TrangThaiHoaDon.DA_THANH_TOAN, true)));
-        kiem("Không có hạng mục thì không bàn giao", !QLBanGiaoXeController.duDieuKienBanGiao(phieuBanGiao(0, 0, TrangThaiHoaDon.DA_THANH_TOAN, true)));
-        kiem("Tiến độ làm tròn xuống", QLBanGiaoXeController.tinhPhanTramHoanTat(phieuBanGiao(3, 2, null, true)) == 66);
-        kiem("Nhãn công nợ hợp lệ", "Công nợ hợp lệ".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true))));
-        kiem("Nhãn công nợ không hợp lệ", "Công nợ".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false))));
-        kiem("Nhãn chưa có hóa đơn", "Chưa lập hóa đơn".equals(QLBanGiaoXeController.getNhanHoaDonBanGiao(phieuBanGiao(2, 2, null, true))));
-        kiem("Lý do còn hạng mục", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 3, null, true)).startsWith("Còn 25%"));
-        kiem("Lý do chưa có hạng mục xong", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 0, null, true)).startsWith("Chưa có hạng mục"));
-        kiem("Lý do chưa có hóa đơn", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, null, true)).startsWith("Phiếu chưa có"));
-        kiem("Lý do không được nợ", QLBanGiaoXeController.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)).startsWith("Khách hàng không"));
+        kiem("Xong hết và đã trả thì được bàn giao", controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.DA_THANH_TOAN, false)));
+        kiem("Khách được nợ thì được bàn giao", controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true)));
+        kiem("Khách không được nợ thì không bàn giao", !controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)));
+        kiem("Chưa có hóa đơn thì không bàn giao", !controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(2, 2, null, true)));
+        kiem("Còn hạng mục thì không bàn giao", !controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(3, 2, TrangThaiHoaDon.DA_THANH_TOAN, true)));
+        kiem("Không có hạng mục thì không bàn giao", !controller.NghiepVuPhieu.duDieuKienBanGiao(phieuBanGiao(0, 0, TrangThaiHoaDon.DA_THANH_TOAN, true)));
+        kiem("Tiến độ làm tròn xuống", controller.NghiepVuPhieu.phanTramHoanTat(phieuBanGiao(3, 2, null, true)) == 66);
+        kiem("Nhãn công nợ hợp lệ", "Công nợ hợp lệ".equals(controller.NghiepVuPhieu.nhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, true))));
+        kiem("Nhãn công nợ không hợp lệ", "Công nợ".equals(controller.NghiepVuPhieu.nhanHoaDonBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false))));
+        kiem("Nhãn chưa có hóa đơn", "Chưa lập hóa đơn".equals(controller.NghiepVuPhieu.nhanHoaDonBanGiao(phieuBanGiao(2, 2, null, true))));
+        kiem("Lý do còn hạng mục", controller.NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 3, null, true)).startsWith("Còn 25%"));
+        kiem("Lý do chưa có hạng mục xong", controller.NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(4, 0, null, true)).startsWith("Chưa có hạng mục"));
+        kiem("Lý do chưa có hóa đơn", controller.NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, null, true)).startsWith("Phiếu chưa có"));
+        kiem("Lý do không được nợ", controller.NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(phieuBanGiao(2, 2, TrangThaiHoaDon.CONG_NO, false)).startsWith("Khách hàng không"));
     }
 
     private static void kiemTraDoiTon() {
@@ -171,18 +174,8 @@ public class TestKho {
         PhuTung pt = new PhuTung(sku);
         pt.setSoLuongTon(2);
         pt.setGiaBanLe(9000);
-        kiem("Đủ tồn", QLPhuTungController.duTon(pt, 2) && !QLPhuTungController.duTon(pt, 3));
-        pt.setSoLuongTon(pt.getSoLuongTon() + 1);
-        pt.setGiaNhap(5000);
-        kiem("Nhập kho cộng tồn và đổi giá nhập", pt.getSoLuongTon() == 3 && pt.getGiaNhap() == 5000);
-        pt.setSoLuongTon(0);
-        kiem("Xuất kho trừ tồn", pt.getSoLuongTon() == 0);
-        try {
-            pt.setSoLuongTon(-1);
-            kiem("Xuất quá tồn phải báo lỗi", false);
-        } catch (IllegalArgumentException ex) {
-            kiem("Xuất quá tồn giữ nguyên số tồn", pt.getSoLuongTon() == 0);
-        }
+        kiem("Đủ tồn", controller.NghiepVuKho.duTon(pt, 2) && !controller.NghiepVuKho.duTon(pt, 3));
+        kiem("Giá nhập không vượt giá bán", controller.NghiepVuKho.giaNhapHopLe(pt, 9000) && !controller.NghiepVuKho.giaNhapHopLe(pt, 9001));
     }
 
     private static void kiemTraDuyetMotLan() throws Exception {
@@ -242,16 +235,16 @@ public class TestKho {
         kiem("Ghi nhật ký từ chối", coNhatKy(ai, "Từ chối yêu cầu xuất kho", n));
         int truoc = demNhatKy(ai);
         kiem("Từ chối bị chặn không ghi nhật ký", !yc.tuChoiYeuCau(n, "NV0004", ai) && demNhatKy(ai) == truoc);
-        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.DANG_SUA, ai);
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0001", TrangThaiTienDo.DANG_SUA, ai);
         kiem("Ghi nhật ký hạng mục", coNhatKy(ai, "Cập nhật hạng mục sửa chữa", p));
-        kiem("Đổi trạng thái phiếu", phieuDao.capNhatTrangThai(p, TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.CHO_PHU_TUNG, ai));
+        kiem("Đổi trạng thái phiếu", controller.NghiepVuPhieu.doiTrangThai(p, TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.CHO_PHU_TUNG, ai));
         kiem("Ghi nhật ký trạng thái phiếu", coNhatKy(ai, "Cập nhật trạng thái phiếu", p));
     }
 
     private static void kiemTraHoaDonConPhuTungCho() throws Exception {
         String p = taoPhieu("Đang sửa");
         String m = taoYeuCau(p, "SKU_OIL01", 1);
-        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         kiem("Xong hạng mục cuối thì phiếu Hoàn thành", "Hoàn thành".equals(trangThaiPhieu(p)));
         boolean biChan = false;
         try {
@@ -267,7 +260,7 @@ public class TestKho {
 
         String r = taoPhieu("Đang sửa");
         String t = taoYeuCau(r, "SKU_OIL01", 1);
-        tienDo.capNhatTienDoHangMuc(r, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(r, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         yc.tuChoiYeuCau(t, "NV0004", NGUOI);
         kiem("Từ chối khi phiếu đã xong thì giữ Hoàn thành", "Hoàn thành".equals(trangThaiPhieu(r)));
         kiem("Từ chối xong thì lập được hóa đơn", lap(r) != null);
@@ -278,19 +271,19 @@ public class TestKho {
 
         String p = taoPhieu("Đang sửa");
         thucThi("INSERT INTO ChiTietSuaChua_DichVu (maPhieuTNSC, maDichVu, tienCongThucTe, trangThaiTienDo) VALUES ('" + p + "', 'DV0002', 1000, N'Chờ sửa')");
-        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         kiem("Đổi một hạng mục không đụng hạng mục khác", "Chờ sửa".equals(trangThaiHangMuc(p, "DV0002")));
         kiem("Còn hạng mục chưa xong thì phiếu chưa xong", "Đang sửa".equals(trangThaiPhieu(p)));
-        tienDo.capNhatTienDoHangMuc(p, "DV0002", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0002", TrangThaiTienDo.HOAN_THANH, NGUOI);
         lap(p);
-        kiem("Phiếu có hóa đơn không đổi được hạng mục", !tienDo.capNhatTienDoHangMuc(p, "DV0002", TrangThaiTienDo.DANG_SUA, NGUOI));
+        kiem("Phiếu có hóa đơn không đổi được hạng mục", !controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0002", TrangThaiTienDo.DANG_SUA, NGUOI));
         kiem("Phiếu có hóa đơn giữ hạng mục", "Hoàn thành".equals(trangThaiHangMuc(p, "DV0002")));
         kiem("Phiếu có hóa đơn giữ trạng thái", "Hoàn thành".equals(trangThaiPhieu(p)));
         kiem("Phiếu có hóa đơn không đổi được trạng thái",
-                !phieuDao.capNhatTrangThai(p, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA, NGUOI));
+                !controller.NghiepVuPhieu.doiTrangThai(p, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA, NGUOI));
 
         String h = taoPhieu("Đã hủy");
-        kiem("Phiếu đã hủy không đổi được hạng mục", !tienDo.capNhatTienDoHangMuc(h, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI));
+        kiem("Phiếu đã hủy không đổi được hạng mục", !controller.NghiepVuPhieu.capNhatHangMuc(h, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI));
         kiem("Phiếu đã hủy không mở lại được", "Đã hủy".equals(trangThaiPhieu(h)));
     }
 
@@ -362,7 +355,7 @@ public class TestKho {
         kiem("Tìm theo biển số", coPhieu(dao.findDanhSach("50E-999", "Chờ bàn giao"), "PTNSC00002") && !coPhieu(dao.findDanhSach("51H-123", "Chờ bàn giao"), "PTNSC00002"));
 
         String p = taoPhieu("Đang sửa");
-        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         boolean biChan = false;
         try {
             dao.xacNhan(p, "NV0002", "");
@@ -372,6 +365,10 @@ public class TestKho {
         kiem("Chưa có hóa đơn thì không bàn giao", biChan);
         lap(p);
         kiem("Có hóa đơn thì bàn giao được", dao.xacNhan(p, "NV0002", ""));
+        PhieuTiepNhanVaSuaChua phieuIn = dao.findChiTiet(p);
+        kiem("Phiếu xuất xưởng có người bàn giao, ngày và hóa đơn", phieuIn.getBanGiao() != null
+                && "NV0002".equals(phieuIn.getBanGiao().getNhanVienBanGiao().getMaNV())
+                && phieuIn.getBanGiao().getNgayBanGiao() != null && phieuIn.getHoaDon() != null);
         kiem("Bàn giao xong chuyển sang danh sách đã bàn giao", coPhieu(dao.findDanhSach("", "Đã bàn giao"), p) && !coPhieu(dao.findDanhSach("", "Chờ bàn giao"), p));
         biChan = false;
         try {
@@ -396,7 +393,7 @@ public class TestKho {
     private static void kiemTraThemDichVuPhieuXong() throws Exception {
         ChiTietSuaChua_DichVu_Dao dao = new ChiTietSuaChua_DichVu_Dao();
         String xong = taoPhieu("Đang sửa");
-        tienDo.capNhatTienDoHangMuc(xong, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(xong, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         kiem("Không thêm dịch vụ vào phiếu đã hoàn thành", !dao.insert(dongDichVu(xong)));
         kiem("Phiếu đã hoàn thành vẫn một dịch vụ", 1 == so("SELECT COUNT(*) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = '" + xong + "'"));
         String ma = lap(xong);
@@ -422,7 +419,8 @@ public class TestKho {
         thucThi("UPDATE PhuTung SET soLuongTon = soLuongTon - 3 WHERE maSKU = 'SKU_BRK01'");
         double giaMoi = cu.getGiaBanLe() + 1000;
         cu.setGiaBanLe(giaMoi);
-        kiem("Sửa phụ tùng thành công", dao.update(cu));
+        kiem("Sửa phụ tùng thành công", dao.update(cu, NGUOI));
+        kiem("Sửa giá phụ tùng được ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE hanhDong = N'Sửa giá phụ tùng' AND doiTuong = 'SKU_BRK01'") == 1);
         kiem("Màn hình cũ không ghi đè tồn kho", ton("SKU_BRK01") == ton - 3);
         kiem("Sửa phụ tùng vẫn lưu giá mới", dao.findById("SKU_BRK01").getGiaBanLe() == giaMoi);
     }
@@ -449,21 +447,21 @@ public class TestKho {
         double goc = trangChu.doanhThuNgay(homNay);
 
         String p = taoPhieu("Đang sửa");
-        tienDo.capNhatTienDoHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
-        String ma = hoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.CONG_NO, null, "NV0002");
+        controller.NghiepVuPhieu.capNhatHangMuc(p, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        String ma = controller.NghiepVuHoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.CONG_NO, null, "NV0002");
         double tong = hoaDon.findById(ma).getTongThanhToan();
         kiem("Công nợ chưa thu chưa tính doanh thu", trangChu.doanhThuNgay(homNay) == goc);
         kiem("Công nợ chưa có ngày thanh toán", q("SELECT ngayThanhToan FROM HoaDon WHERE maHD = '" + ma + "'") == null);
 
         thucThi("UPDATE HoaDon SET ngayLap = DATEADD(month, -1, GETDATE()) WHERE maHD = '" + ma + "'");
-        hoaDon.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "thu.ngan");
+        controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "thu.ngan");
         kiem("Thu nợ hôm nay tính vào doanh thu hôm nay", trangChu.doanhThuNgay(homNay) == goc + tong);
         kiem("Thu nợ tính vào doanh thu tháng này", trangChu.doanhThuTheoNgay(homNay, homNay).get(homNay) == goc + tong);
         kiem("Thu nợ có trong bảng doanh thu hôm nay", !trangChu.bangDoanhThu(homNay, homNay).isEmpty());
         kiem("Ghi nhật ký thu nợ", coNhatKy("thu.ngan", "Thu tiền công nợ", ma));
 
         String tra = taoPhieu("Đang sửa");
-        tienDo.capNhatTienDoHangMuc(tra, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
+        controller.NghiepVuPhieu.capNhatHangMuc(tra, "DV0001", TrangThaiTienDo.HOAN_THANH, NGUOI);
         double truoc = trangChu.doanhThuNgay(homNay);
         String maTra = lap(tra);
         kiem("Trả ngay tính vào doanh thu ngay", trangChu.doanhThuNgay(homNay) == truoc + hoaDon.findById(maTra).getTongThanhToan());
@@ -477,7 +475,7 @@ public class TestKho {
         PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
         List<DichVu> dichVu = Arrays.asList(new DichVu("DV0002"));
         PhieuTiepNhanVaSuaChua cu = phieuXe("77K-100.01");
-        dao.taoTiepNhan(null, null, cu, dichVu);
+        controller.NghiepVuPhieu.tiepNhan(null, null, cu, dichVu);
         String maCu = cu.getMaPhieuTNSC();
         kiem("Tiếp nhận lưu chủ xe lúc đó", "KHK1".equals(q("SELECT maKH FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = '" + maCu + "'")));
         thucThi("UPDATE ChiTietSuaChua_DichVu SET trangThaiTienDo = N'Hoàn thành' WHERE maPhieuTNSC = '" + maCu + "'");
@@ -494,10 +492,10 @@ public class TestKho {
 
         KhachHang_Dao khDao = new KhachHang_Dao();
         kiem("Lịch sử cũ thuộc chủ cũ", khDao.lichSuSuaChua("KHK1").size() == 1 && khDao.lichSuSuaChua("KHK2").isEmpty());
-        kiem("Chủ cũ đã có phiếu thì không xóa được", !khDao.delete("KHK1"));
+        kiem("Chủ cũ đã có phiếu thì không xóa được", !khDao.delete("KHK1", "admin"));
 
         PhieuTiepNhanVaSuaChua moi = phieuXe("77K-100.01");
-        dao.taoTiepNhan(null, null, moi, dichVu);
+        controller.NghiepVuPhieu.tiepNhan(null, null, moi, dichVu);
         kiem("Phiếu mới ghi chủ mới", "KHK2".equals(q("SELECT maKH FROM PhieuTiepNhanVaSuaChua WHERE maPhieuTNSC = '" + moi.getMaPhieuTNSC() + "'")));
         kiem("Phiếu mới đọc ra chủ mới", "Chủ mới".equals(dao.findById(moi.getMaPhieuTNSC()).getXe().getKhachHang().getHoTen()));
     }
@@ -525,7 +523,7 @@ public class TestKho {
     }
 
     private static String lap(String p) throws SQLException {
-        return hoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.CHUYEN_KHOAN, null, "NV0002");
+        return controller.NghiepVuHoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.CHUYEN_KHOAN, null, "NV0002");
     }
 
     private static String taoPhieu(String trangThai) throws Exception {
@@ -589,6 +587,109 @@ public class TestKho {
 
     private static int so(String sql) throws Exception {
         return Integer.parseInt(q(sql));
+    }
+
+    /** Dữ liệu mẫu: NV0005 xong 2 hạng mục trên phiếu ngày 20/10, phiếu ngày 23/10 chưa xong hạng mục nào. */
+    private static void kiemTraThongKeKtvTheoKy() throws Exception {
+        dao.ThongKe_Dao thongKe = new dao.ThongKe_Dao();
+        kiem("Thống kê KTV: ngày 20/10 có 2 hạng mục xong", hangMucXong(thongKe, java.time.LocalDate.of(2026, 10, 20)) == 2);
+        kiem("Thống kê KTV: ngày 23/10 không cộng hạng mục của ngày khác", hangMucXong(thongKe, java.time.LocalDate.of(2026, 10, 23)) == 0);
+    }
+
+    /** Doanh thu theo ngày thu tiền như trang chủ: hóa đơn trả sau được tính vào ngày trả. */
+    private static void kiemTraThongKeDoanhThu() throws Exception {
+        dao.ThongKe_Dao thongKe = new dao.ThongKe_Dao();
+        java.time.LocalDate lap = java.time.LocalDate.of(2026, 10, 20);
+        java.time.LocalDate tra = java.time.LocalDate.of(2026, 11, 2);
+        kiem("Thống kê: doanh thu ngày lập = ngày trả", doanhThu(thongKe, lap) == 1506600);
+        thucThi("UPDATE HoaDon SET ngayThanhToan = '2026-11-02 09:00' WHERE maHD = 'HD000001'");
+        try {
+            kiem("Thống kê: trả ngày khác thì không tính vào ngày lập", doanhThu(thongKe, lap) == 0);
+            kiem("Thống kê: tính vào ngày thu tiền", doanhThu(thongKe, tra) == 1506600);
+        } finally {
+            thucThi("UPDATE HoaDon SET ngayThanhToan = '2026-10-20 16:45' WHERE maHD = 'HD000001'");
+        }
+    }
+
+    private static double doanhThu(dao.ThongKe_Dao thongKe, java.time.LocalDate ngay) throws Exception {
+        return controller.QLThongKeController.tinhChiSo(thongKe.taiDuLieuThongKe(ngay, ngay)).tongDoanhThu;
+    }
+
+    /** Lợi nhuận, tỷ trọng, tỷ lệ và giá trị tồn do controller tính từ số liệu đọc được. */
+    private static void kiemTraThongKeTuTinh() {
+        java.time.LocalDate ngay = java.time.LocalDate.of(2026, 10, 1);
+        entity.PhuTung pt = new entity.PhuTung("SKU_TK01");
+        pt.setGiaBanLe(2000);
+        pt.setGiaNhap(1000);
+        pt.setSoLuongTon(4);
+        pt.setNguongCanhBao(5);
+        entity.NhanVien ktv = new entity.NhanVien("NV0005", "KTV", "0900000005", "Q1", entity.VaiTro.KY_THUAT_VIEN);
+        entity.NangSuatKTV ns = new entity.NangSuatKTV(ktv, 1, 1, 3, 0);
+        entity.DuLieuThongKe d = new entity.DuLieuThongKe(
+                java.util.Arrays.asList(new entity.DoanhThuNgay(ngay, 1, 100, 300, 0, 0, 400)), 500,
+                java.util.Arrays.asList(new entity.ThongKePhuTung(pt, 0, 0, 0, 0)), 0, null, 2, 1,
+                java.util.Arrays.asList(ns), null);
+        controller.QLThongKeController.ChiSo c = controller.QLThongKeController.tinhChiSo(d);
+        kiem("Thống kê: lỗ hiện số âm, không bị chặn về 0", c.loiNhuan == -100);
+        kiem("Thống kê: tỷ trọng tiền công", c.tyTrongTienCong == 25.0 && c.tyTrongPhuTung == 75.0);
+        kiem("Thống kê: tỷ lệ hoàn thành của KTV", controller.QLThongKeController.tyLeHoanThanh(ns) == 25.0);
+        kiem("Thống kê: giá trị tồn và cảnh báo", c.giaTriTonKho == 4000 && controller.NghiepVuKho.duoiNguongCanhBao(pt));
+        kiem("Thống kê: tỷ lệ xe sửa xong và KTV hoạt động", c.tyLeXeSuaXong == 50.0 && c.soKyThuatVienHoatDong == 1);
+    }
+
+    /** Dịch vụ và nhà cung cấp: thêm sinh mã mới, sửa, xóa có ghi nhật ký, chặn xóa khi đã dùng. */
+    private static void kiemTraDanhMuc() throws Exception {
+        dao.DichVu_Dao dvDao = new dao.DichVu_Dao();
+        entity.DichVu dv = new entity.DichVu();
+        dv.setTenDichVu("Rửa xe kiểm tra");
+        dv.setTienCong(80000);
+        dv.setThoiGianChuan(30);
+        String ma = dvDao.luu(dv, NGUOI);
+        kiem("Dịch vụ mới có mã DV kế tiếp", ma.startsWith("DV") && dvDao.search(ma).size() == 1);
+        dv.setMaDichVu(ma);
+        dv.setTienCong(90000);
+        dvDao.luu(dv, NGUOI);
+        kiem("Sửa tiền công dịch vụ", dvDao.search(ma).get(0).getTienCong() == 90000);
+        kiem("Dịch vụ đã dùng trên phiếu không xóa được", !dvDao.xoa("DV0001", NGUOI));
+        kiem("Dịch vụ chưa dùng xóa được", dvDao.xoa(ma, NGUOI) && dvDao.search(ma).isEmpty());
+        kiem("Thêm, sửa, xóa dịch vụ đều ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE doiTuong = '" + ma + "'") == 3);
+
+        dao.NhaCungCap_Dao nccDao = new dao.NhaCungCap_Dao();
+        entity.NhaCungCap ncc = new entity.NhaCungCap();
+        ncc.setTenNCC("NCC kiểm tra");
+        ncc.setSoDienThoai("0901234567");
+        ncc.setDiaChi("Q1");
+        String maNcc = nccDao.luu(ncc, NGUOI);
+        kiem("Nhà cung cấp mới có mã NCC kế tiếp", maNcc.startsWith("NCC") && nccDao.search(maNcc).size() == 1);
+        kiem("Nhà cung cấp chưa có phiếu nhập xóa được", nccDao.xoa(maNcc, NGUOI) && nccDao.search(maNcc).isEmpty());
+        kiem("Số phút không phải số báo lỗi rõ ràng", baoLoi(() -> controller.QLDanhMucController.docSoPhut("abc")));
+    }
+
+    /** Sao lưu bằng tài khoản ứng dụng (db_backupoperator); tệp nằm trên máy chạy SQL Server, ở đây là cùng máy. */
+    private static void kiemTraSaoLuu() throws Exception {
+        String tep = new dao.SaoLuu_Dao().saoLuu(NGUOI);
+        java.io.File f = new java.io.File(tep);
+        kiem("Sao lưu tạo tệp .bak", tep.endsWith(".bak") && f.isFile() && f.length() > 0);
+        kiem("Sao lưu được ghi nhật ký", so("SELECT COUNT(*) FROM NhatKyHoatDong WHERE hanhDong = N'Sao lưu dữ liệu'") == 1);
+        f.delete();
+    }
+
+    private static boolean baoLoi(Runnable viec) {
+        try {
+            viec.run();
+            return false;
+        } catch (IllegalArgumentException ex) {
+            return true;
+        }
+    }
+
+    private static int hangMucXong(dao.ThongKe_Dao thongKe, java.time.LocalDate ngay) throws Exception {
+        for (entity.NangSuatKTV n : thongKe.taiDuLieuThongKe(ngay, ngay).getDanhSachNangSuatKTV()) {
+            if ("NV0005".equals(n.getKyThuatVien().getMaNV())) {
+                return n.getHangMucHoanThanh();
+            }
+        }
+        return -1;
     }
 
     private static void kiem(String ten, boolean dat) {

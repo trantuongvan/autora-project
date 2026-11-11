@@ -46,4 +46,9 @@ public final class PhienDangNhap {
     public VaiTro getVaiTro() {
         return vaiTro;
     }
+
+    /** Mã KTV để lọc phiếu: kỹ thuật viên chỉ thấy phiếu của mình, chủ cửa hàng thấy tất cả (chuỗi rỗng). */
+    public static String maKyThuatVienDeLoc() {
+        return hienTai != null && hienTai.vaiTro == VaiTro.KY_THUAT_VIEN && hienTai.maNV != null ? hienTai.maNV : "";
+    }
 }

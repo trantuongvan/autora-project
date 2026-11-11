@@ -8,26 +8,31 @@ public class LuotXeNgay {
     private LocalDate ngay;
     private int soLuotXe;
 
-    public LuotXeNgay() {
-    }
-
     public LuotXeNgay(LocalDate ngay, int soLuotXe) {
-        if (ngay == null) {
-            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
-        }
-        if (soLuotXe < 0) {
-            throw new IllegalArgumentException("Số lượt xe không được âm.");
-        }
-        this.ngay = ngay;
-        this.soLuotXe = soLuotXe;
+        setNgay(ngay);
+        setSoLuotXe(soLuotXe);
     }
 
     public LocalDate getNgay() {
         return ngay;
     }
 
+    private void setNgay(LocalDate ngay) {
+        if (ngay == null) {
+            throw new IllegalArgumentException("Ngày thống kê không được để trống.");
+        }
+        this.ngay = ngay;
+    }
+
     public int getSoLuotXe() {
         return soLuotXe;
+    }
+
+    private void setSoLuotXe(int soLuotXe) {
+        if (soLuotXe < 0) {
+            throw new IllegalArgumentException("Số lượt xe không được âm.");
+        }
+        this.soLuotXe = soLuotXe;
     }
 
     @Override

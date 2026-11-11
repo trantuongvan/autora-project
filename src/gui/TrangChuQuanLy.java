@@ -151,7 +151,7 @@ public class TrangChuQuanLy extends JPanel {
         hang.add(taoThe(new JLabel("Doanh thu hôm nay"), Loai.RECEIPT, lblDoanhThuNgay, lblXuHuongNgay));
         hang.add(taoThe(lblTieuDeThang, Loai.CHART, lblDoanhThuThang, lblXuHuongThang));
         hang.add(taoThe(new JLabel("Lượt xe hôm nay"), Loai.CAR, lblLuotXe, lblChiTietLuotXe));
-        hang.add(taoThe(new JLabel("Hóa đơn chờ thanh toán"), Loai.CLIPBOARD, lblHoaDonCho, dongNo));
+        hang.add(taoThe(new JLabel("Chờ thanh toán"), Loai.CLIPBOARD, lblHoaDonCho, dongNo));
         return hang;
     }
 

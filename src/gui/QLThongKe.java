@@ -1,6 +1,5 @@
 package gui;
 
-import controller.QLThongKeController;
 import entity.DoanhThuNgay;
 import entity.DuLieuThongKe;
 import entity.LuotXeNgay;
@@ -15,8 +14,6 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -40,7 +37,6 @@ public class QLThongKe extends JPanel {
 
     private final DecimalFormat dfTien = new DecimalFormat("#,##0");
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private final DateTimeFormatter dtfNgan = DateTimeFormatter.ofPattern("dd/MM");
 
     private final UIComponents.Badge badgeKyBaoCao = new UIComponents.Badge("Kỳ báo cáo", UIConstants.ROLE_RECEPTION_LIGHT);
 
@@ -87,9 +83,8 @@ public class QLThongKe extends JPanel {
     );
     private final JTable tblKTV = new JTable(modelKTV);
 
-    private DuLieuThongKe duLieuHienTai;
-    private LocalDate tuNgayHienTai = LocalDate.now().withDayOfMonth(1);
-    private LocalDate denNgayHienTai = LocalDate.now();
+    private String[][][] kpiTheoTab;
+
     public QLThongKe() {
         setLayout(new BorderLayout());
         setBackground(UIConstants.APP_BG);
@@ -98,7 +93,7 @@ public class QLThongKe extends JPanel {
 
     public static JPanel createPanel() {
         QLThongKe panel = new QLThongKe();
-        new QLThongKeController(panel);
+        new controller.QLThongKeController(panel);
         return panel;
     }
 
@@ -177,7 +172,7 @@ public class QLThongKe extends JPanel {
         kpi1 = new ThongKeKpiCard("Tổng doanh thu", "0đ", "Sau giảm giá và VAT", RED_KPI);
         kpi2 = new ThongKeKpiCard("Tiền công dịch vụ", "0đ", "0% doanh thu", BLUE_KPI);
         kpi3 = new ThongKeKpiCard("Tiền phụ tùng", "0đ", "0% doanh thu", AMBER_KPI);
-        kpi4 = new ThongKeKpiCard("Lợi nhuận", "0đ", "Kỳ báo cáo", GREEN_KPI);
+        kpi4 = new ThongKeKpiCard("Lợi nhuận ước tính", "0đ", "Giá vốn theo giá nhập hiện tại", GREEN_KPI);
         pnlKpis.add(kpi1);
         pnlKpis.add(kpi2);
         pnlKpis.add(kpi3);
@@ -296,12 +291,10 @@ public class QLThongKe extends JPanel {
         return sp;
     }
 
-    public void capNhatGiaoDien(DuLieuThongKe dl, LocalDate tuNgay, LocalDate denNgay) {
-        this.duLieuHienTai = dl;
-        this.tuNgayHienTai = tuNgay;
-        this.denNgayHienTai = denNgay;
+    /** Vẽ biểu đồ và nhãn kỳ; tienCong, tienPhuTung và tỷ trọng do Controller tính. */
+    public void capNhatGiaoDien(DuLieuThongKe dl, double tienCong, double tienPhuTung, double pctCong, double pctPhuTung,
+            LocalDate tuNgay, LocalDate denNgay) {
 
-        String chuoiKyNgan = "Kỳ " + tuNgay.format(dtfNgan) + " – " + denNgay.format(dtfNgan);
         String chuoiKyDayDu = "Kỳ " + tuNgay.format(dtf) + " – " + denNgay.format(dtf);
 
         badgeKyBaoCao.setText(chuoiKyDayDu);
@@ -309,8 +302,7 @@ public class QLThongKe extends JPanel {
         lblKyBangPhuTung.setText(chuoiKyDayDu);
         lblKyBangKTV.setText(chuoiKyDayDu);
 
-        chartDonutDoanhThu.setData(dl.getTongTienCong(), dl.getTongTienPhuTung(),
-                dl.getTyTrongTienCong(), dl.getTyTrongPhuTung());
+        chartDonutDoanhThu.setData(tienCong, tienPhuTung, pctCong, pctPhuTung);
 
         List<String> nhanNgayDT = new ArrayList<>();
         List<Double> giaTriNgayDT = new ArrayList<>();
@@ -346,29 +338,65 @@ public class QLThongKe extends JPanel {
             slNgayXe.add((double) lx.getSoLuotXe());
         }
         chartCotLuotXe.setData(nhanNgayXe, slNgayXe);
-
-        capNhat4TheKPI(chuoiKyNgan);
         revalidate();
         repaint();
     }
 
-    private void capNhat4TheKPI(String chuoiKyNgan) {
-        if (duLieuHienTai == null) return;
-        if (tabHienTai == 0) {
-            kpi1.setValues("Tổng doanh thu", dfTien.format(duLieuHienTai.getTongDoanhThu()) + "đ", "Sau giảm giá và VAT");
-            kpi2.setValues("Tiền công dịch vụ", dfTien.format(duLieuHienTai.getTongTienCong()) + "đ", duLieuHienTai.getTyTrongTienCong() + "% doanh thu");
-            kpi3.setValues("Tiền phụ tùng", dfTien.format(duLieuHienTai.getTongTienPhuTung()) + "đ", duLieuHienTai.getTyTrongPhuTung() + "% doanh thu");
-            kpi4.setValues("Lợi nhuận", dfTien.format(duLieuHienTai.getTongLoiNhuan()) + "đ", chuoiKyNgan);
-        } else if (tabHienTai == 1) {
-            kpi1.setValues("Giá trị tồn kho hiện tại", dfTien.format(duLieuHienTai.getGiaTriTonKhoHienTai()) + "đ", duLieuHienTai.getSoMatHangQuanLy() + " mặt hàng đang quản lý");
-            kpi2.setValues("Số lượng nhập", String.valueOf(duLieuHienTai.getTongSoLuongNhap()), "Giá trị " + dfTien.format(duLieuHienTai.getTongGiaTriNhap()) + "đ");
-            kpi3.setValues("Số lượng xuất", String.valueOf(duLieuHienTai.getTongSoLuongXuat()), "Giá trị " + dfTien.format(duLieuHienTai.getTongGiaTriXuat()) + "đ");
-            kpi4.setValues("Phiếu nhập trong kỳ", String.valueOf(duLieuHienTai.getSoPhieuNhapTrongKy()), chuoiKyNgan);
-        } else {
-            kpi1.setValues("Lượt xe vào xưởng", String.valueOf(duLieuHienTai.getTongLuotXeVaoXuong()), "Tiếp nhận trong kỳ");
-            kpi2.setValues("Xe sửa xong", String.valueOf(duLieuHienTai.getTongXeSuaXong()), duLieuHienTai.getTyLeXeSuaXong() + "% lượt tiếp nhận");
-            kpi3.setValues("Hạng mục hoàn thành", String.valueOf(duLieuHienTai.getTongHangMucHoanThanh()), "Trung bình " + duLieuHienTai.getTrungBinhHangMucTrenXe() + " hạng mục/xe");
-            kpi4.setValues("Kỹ thuật viên hoạt động", String.valueOf(duLieuHienTai.getSoKyThuatVienHoatDong()), "Có phiếu trong kỳ");
+    public void setBangDoanhThu(List<Object[]> dong, String chanTrang) {
+        dienBang(modelDoanhThu, dong);
+        lblFooterDoanhThu.setText(chanTrang);
+    }
+
+    /** canhBao: từng dòng có tô đỏ cột tồn hay không, cùng thứ tự với dong. */
+    public void setBangPhuTung(List<Object[]> dong, List<Boolean> canhBao, String chanTrang) {
+        canhBaoPhuTungHienThi.clear();
+        canhBaoPhuTungHienThi.addAll(canhBao);
+        dienBang(modelPhuTung, dong);
+        lblFooterPhuTung.setText(chanTrang);
+    }
+
+    public void setBangKTV(List<Object[]> dong, String chanTrang) {
+        dienBang(modelKTV, dong);
+        lblFooterKTV.setText(chanTrang);
+    }
+
+    private static void dienBang(DefaultTableModel model, List<Object[]> dong) {
+        model.setRowCount(0);
+        for (Object[] d : dong) {
+            model.addRow(d);
+        }
+    }
+
+    /** Từ khóa người dùng gõ ở ô tìm của bảng 0 (doanh thu), 1 (phụ tùng) hoặc 2 (kỹ thuật viên), đã bỏ chữ gợi ý. */
+    public String getTuKhoa(int bang) {
+        return layTuKhoaTimKiem(bang == 0 ? fTimDoanhThu : bang == 1 ? fTimPhuTung : fTimKTV);
+    }
+
+    public JTextField getTxtTimKiem(int bang) {
+        return (bang == 0 ? fTimDoanhThu : bang == 1 ? fTimPhuTung : fTimKTV).getTextField();
+    }
+
+    private String layTuKhoaTimKiem(UIComponents.IconField field) {
+        if (field == null || field.getTextField() == null) return "";
+        String val = field.getTextField().getText().trim();
+        Object ph = field.getTextField().getClientProperty("placeholder");
+        if (ph != null && val.equalsIgnoreCase(ph.toString())) return "";
+        if (val.startsWith("Tìm ")) return "";
+        return val.toLowerCase();
+    }
+
+    /** kpi[tab][the] = {tiêu đề, giá trị, mô tả}, 3 tab x 4 thẻ. */
+    public void setKpi(String[][][] kpi) {
+        this.kpiTheoTab = kpi;
+        hienKpi();
+    }
+
+    private void hienKpi() {
+        if (kpiTheoTab == null) return;
+        ThongKeKpiCard[] the = {kpi1, kpi2, kpi3, kpi4};
+        for (int i = 0; i < the.length; i++) {
+            String[] k = kpiTheoTab[tabHienTai][i];
+            the[i].setValues(k[0], k[1], k[2]);
         }
     }
 
@@ -378,7 +406,7 @@ public class QLThongKe extends JPanel {
         capNhatStyleTab(btnTabPhuTung, index == 1);
         capNhatStyleTab(btnTabHieuSuat, index == 2);
         cardLayoutNoiDung.show(pnlNoiDungTab, "TAB_" + index);
-        capNhat4TheKPI("Kỳ " + tuNgayHienTai.format(dtfNgan) + " – " + denNgayHienTai.format(dtfNgan));
+        hienKpi();
     }
 
     public void setKhoangThoiGian(LocalDate tuNgay, LocalDate denNgay, String loaiActive) {
@@ -556,16 +584,6 @@ public class QLThongKe extends JPanel {
     public JTable getBangHienTai() {
         return tabHienTai == 0 ? tblDoanhThu : tabHienTai == 1 ? tblPhuTung : tblKTV;
     }
-    public DefaultTableModel getModelDoanhThu() { return modelDoanhThu; }
-    public DefaultTableModel getModelPhuTung() { return modelPhuTung; }
-    public DefaultTableModel getModelKTV() { return modelKTV; }
-    public UIComponents.IconField getFTimDoanhThu() { return fTimDoanhThu; }
-    public UIComponents.IconField getFTimPhuTung() { return fTimPhuTung; }
-    public UIComponents.IconField getFTimKTV() { return fTimKTV; }
-    public JLabel getLblFooterDoanhThu() { return lblFooterDoanhThu; }
-    public JLabel getLblFooterPhuTung() { return lblFooterPhuTung; }
-    public JLabel getLblFooterKTV() { return lblFooterKTV; }
-    public List<Boolean> getCanhBaoPhuTungHienThi() { return canhBaoPhuTungHienThi; }
 
     private static class ThongKeKpiCard extends JPanel {
         private final JLabel lblTitle;

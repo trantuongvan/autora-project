@@ -1,5 +1,6 @@
 package entity;
 
+/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum HinhThucKhuyenMai {
     PHAN_TRAM("Giảm %"),
     TIEN_MAT("Giảm tiền mặt");
@@ -13,6 +14,7 @@ public enum HinhThucKhuyenMai {
     public String getText() {
         return text;
     }
+
 
     public static HinhThucKhuyenMai fromDb(String text) {
         for (HinhThucKhuyenMai giaTri : values()) {

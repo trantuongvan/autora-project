@@ -1,14 +1,8 @@
 package controller;
 
-import dao.NhanVien_Dao;
 import dao.PhieuBanGiao_Dao;
-import entity.HinhThucThanhToan;
 import entity.HoaDon;
-import entity.KhachHang;
-import entity.NhanVien;
 import entity.PhieuTiepNhanVaSuaChua;
-import entity.TrangThaiHoaDon;
-import entity.VaiTro;
 import gui.InPhieuXuatXuongDialog;
 import gui.QLBanGiaoXe;
 
@@ -26,7 +20,6 @@ public class QLBanGiaoXeController {
 
     private final QLBanGiaoXe view;
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
-    private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
     private String selected;
     private int loadVersion;
     private boolean loadErrorShown;
@@ -113,64 +106,13 @@ public class QLBanGiaoXeController {
                     p.getXe().getBienSo(),
                     p.getXe().getKhachHang().getHoTen(),
                     p.getTenXe(),
-                    tinhPhanTramHoanTat(p) + "%",
-                    getNhanHoaDonBanGiao(p),
+                    NghiepVuPhieu.phanTramHoanTat(p) + "%",
+                    NghiepVuPhieu.nhanHoaDonBanGiao(p),
                     money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan()),
-                    duDieuKienBanGiao(p) ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
+                    NghiepVuPhieu.duDieuKienBanGiao(p) ? "Đủ điều kiện • Bàn giao" : "Chưa đủ điều kiện"
             });
         }
         return rows;
-    }
-
-    /** Làm tròn xuống: còn hạng mục chưa xong thì chưa đủ 100. */
-    public static int tinhPhanTramHoanTat(PhieuTiepNhanVaSuaChua p) {
-        return p.getTongSoHangMuc() == 0 ? 0 : p.getSoHangMucHoanThanh() * 100 / p.getTongSoHangMuc();
-    }
-
-    /** Đã trả đủ, hoặc còn nợ nhưng khách được phép ghi nợ. */
-    public static boolean daThanhToanHopLe(HoaDon hoaDon, KhachHang khachHang) {
-        return hoaDon.daThanhToan() || laCongNoHopLe(hoaDon, khachHang);
-    }
-
-    public static boolean laCongNoHopLe(HoaDon hoaDon, KhachHang khachHang) {
-        return hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO
-                && ChiTietHoaDonController.duocThanhToanBang(khachHang, HinhThucThanhToan.CONG_NO);
-    }
-
-    /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
-    public static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        HoaDon hoaDon = p.getHoaDon();
-        return tinhPhanTramHoanTat(p) == 100 && hoaDon != null && daThanhToanHopLe(hoaDon, p.getXe().getKhachHang());
-    }
-
-    public static String getTrangThaiHoaDonHienThi(PhieuTiepNhanVaSuaChua p) {
-        HoaDon hoaDon = p.getHoaDon();
-        return hoaDon == null ? "Chưa lập hóa đơn" : hoaDon.getTrangThaiThanhToan().getText();
-    }
-
-    public static String getNhanHoaDonBanGiao(PhieuTiepNhanVaSuaChua p) {
-        HoaDon hoaDon = p.getHoaDon();
-        return hoaDon != null && laCongNoHopLe(hoaDon, p.getXe().getKhachHang()) ? "Công nợ hợp lệ" : getTrangThaiHoaDonHienThi(p);
-    }
-
-    public static String lyDoChuaDuDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
-        int tienDo = tinhPhanTramHoanTat(p);
-        if (tienDo < 100) {
-            return tienDo == 0
-                    ? "Chưa có hạng mục sửa chữa hoàn tất."
-                    : "Còn " + (100 - tienDo) + "% hạng mục sửa chữa chưa hoàn tất.";
-        }
-        HoaDon hoaDon = p.getHoaDon();
-        if (hoaDon == null) {
-            return "Phiếu chưa có hóa đơn.";
-        }
-        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY) {
-            return "Hóa đơn đã bị hủy.";
-        }
-        if (hoaDon.getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO && !laCongNoHopLe(hoaDon, p.getXe().getKhachHang())) {
-            return "Khách hàng không được phép ghi nợ.";
-        }
-        return "Hóa đơn chưa được thanh toán hoặc ghi nhận công nợ hợp lệ.";
     }
 
     private void detail(String id) {
@@ -181,12 +123,11 @@ public class QLBanGiaoXeController {
             }
             HoaDon hoaDon = p.getHoaDon() == null ? new HoaDon() : p.getHoaDon();
             double taxRate = hoaDon.getThue() == null ? 0 : hoaDon.getThue().getThueSuat();
-            int tienDo = tinhPhanTramHoanTat(p);
             QLBanGiaoXe.ChiTietBanGiao detail = new QLBanGiaoXe.ChiTietBanGiao();
             detail.xe = p.getXe().getBienSo() + " • " + p.getTenXe();
             detail.chuXeVaPhieu = p.getXe().getKhachHang().getHoTen() + " • " + id;
-            detail.nhanTienDo = "Hoàn tất " + tienDo + "%";
-            detail.hoanTat100 = tienDo == 100;
+            detail.nhanTienDo = "Hoàn tất " + NghiepVuPhieu.phanTramHoanTat(p) + "%";
+            detail.hoanTat100 = NghiepVuPhieu.phanTramHoanTat(p) == 100;
             detail.tienCong = money(hoaDon.getTongTienCong());
             detail.phuTung = money(hoaDon.getTongTienPhuTung());
             detail.giamGia = "− " + money(hoaDon.getTongTienGiam());
@@ -194,14 +135,14 @@ public class QLBanGiaoXeController {
                     java.util.Locale.forLanguageTag("vi-VN"), "VAT (%.0f%%)", taxRate);
             detail.vat = money(hoaDon.getTongTienVAT());
             detail.tongThanhToan = money(hoaDon.getTongThanhToan());
-            detail.duDieuKien = duDieuKienBanGiao(p);
+            detail.duDieuKien = NghiepVuPhieu.duDieuKienBanGiao(p);
             detail.daBanGiao = p.getBanGiao() != null;
             if (detail.daBanGiao) {
                 detail.thongBao = "Phiếu đã bàn giao, có thể xem và in lại phiếu xuất xưởng.";
             } else if (detail.duDieuKien) {
                 detail.thongBao = hoaDon.getMaHD() + " đã xử lý. Đủ điều kiện bàn giao.";
             } else {
-                detail.thongBao = lyDoChuaDuDieuKienBanGiao(p);
+                detail.thongBao = NghiepVuPhieu.lyDoChuaDuDieuKienBanGiao(p);
             }
             view.hienChiTiet(detail);
         } catch (SQLException ex) {
@@ -222,11 +163,8 @@ public class QLBanGiaoXeController {
             return;
         }
         try {
-            List<NhanVien> receptionists = nhanVienDao.findByViTri(VaiTro.LE_TAN);
-            if (receptionists.isEmpty()) {
-                throw new SQLException("Không có nhân viên lễ tân để ghi nhận bàn giao.");
-            }
-            dao.xacNhan(selected, receptionists.get(0).getMaNV(), "");
+            // Ghi người đang đăng nhập, không phải lễ tân đầu tiên trong CSDL.
+            dao.xacNhan(selected, util.PhienDangNhap.getHienTai().getMaNV(), "");
             JOptionPane.showMessageDialog(view, "Đã ghi nhận bàn giao.",
                     "Thành công", JOptionPane.INFORMATION_MESSAGE);
             if (daTai) load();
@@ -255,7 +193,7 @@ public class QLBanGiaoXeController {
             receipt.tenKhach = p.getXe().getKhachHang().getHoTen();
             receipt.soDienThoai = p.getXe().getKhachHang().getSoDienThoai();
             receipt.tongThanhToan = money(p.getHoaDon() == null ? 0 : p.getHoaDon().getTongThanhToan());
-            receipt.trangThaiHoaDon = getTrangThaiHoaDonHienThi(p);
+            receipt.trangThaiHoaDon = NghiepVuPhieu.trangThaiHoaDonHienThi(p);
             receipt.ngayBanGiao = p.getBanGiao() == null || p.getBanGiao().getNgayBanGiao() == null
                     ? "Chưa xác nhận bàn giao"
                     : p.getBanGiao().getNgayBanGiao().format(

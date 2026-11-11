@@ -1,5 +1,6 @@
 package entity;
 
+/** Giá trị lưu trong CSDL chính là chuỗi tiếng Việt của từng hằng. */
 public enum HinhThucThanhToan {
     TIEN_MAT("Tiền mặt"),
     CHUYEN_KHOAN("Chuyển khoản"),

@@ -25,6 +25,18 @@ public class HoaDon {
         setMaHD(maHD);
     }
 
+    /** Hóa đơn mới chưa có mã, với các khoản tiền đã được tính ở tầng nghiệp vụ. */
+    public HoaDon(PhieuTiepNhanVaSuaChua phieu, KhuyenMai khuyenMai, Thue thue, HinhThucThanhToan hinhThucThanhToan,
+            TrangThaiHoaDon trangThaiThanhToan, double tongTienCong, double tongTienPhuTung, double tongTienGiam,
+            double tongTienVAT, double tongThanhToan) {
+        setPhieu(phieu);
+        this.khuyenMai = khuyenMai;
+        this.thue = thue;
+        setHinhThucThanhToan(hinhThucThanhToan);
+        setTrangThaiThanhToan(trangThaiThanhToan);
+        ghiSoTien(tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan);
+    }
+
     /** Hóa đơn đã lưu, đọc kèm phiếu bàn giao. */
     public HoaDon(String maHD, TrangThaiHoaDon trangThaiThanhToan, double tongTienCong, double tongTienPhuTung,
             double tongTienGiam, double tongTienVAT, double tongThanhToan, Thue thue) {
@@ -80,6 +92,7 @@ public class HoaDon {
         return ngayLap;
     }
 
+    // Không chặn ngày tương lai: ngày do máy chủ CSDL sinh, đồng hồ máy trạm lệch không được làm hỏng việc đọc danh sách.
     private void setNgayLap(LocalDateTime ngayLap) {
         this.ngayLap = ngayLap;
     }
@@ -157,24 +170,14 @@ public class HoaDon {
         return lyDoHuy == null ? null : lyDoHuy.trim();
     }
 
+    /** Null khi hóa đơn không áp dụng khuyến mãi. */
     public KhuyenMai getKhuyenMai() {
         return khuyenMai;
     }
 
-    public void setKhuyenMai(KhuyenMai khuyenMai) {
-        this.khuyenMai = khuyenMai;
-    }
-
+    /** Null khi hóa đơn không có loại thuế. */
     public Thue getThue() {
         return thue;
-    }
-
-    public void setThue(Thue thue) {
-        this.thue = thue;
-    }
-
-    public boolean daThanhToan() {
-        return trangThaiThanhToan == TrangThaiHoaDon.DA_THANH_TOAN;
     }
 
     @Override

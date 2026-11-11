@@ -8,31 +8,20 @@ import com.itextpdf.text.pdf.PdfWriter;
 import dao.ThongKe_Dao;
 import entity.DoanhThuNgay;
 import entity.DuLieuThongKe;
-import entity.LuotXeNgay;
 import entity.NangSuatKTV;
-import entity.NhapXuatNgay;
-import entity.PhuTung;
 import entity.ThongKePhuTung;
 import gui.QLThongKe;
-import util.UIComponents;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableModel;
 import java.awt.print.PrinterException;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +30,90 @@ public class QLThongKeController {
     private final ThongKe_Dao dao = new ThongKe_Dao();
     private DuLieuThongKe duLieuHienTai;
     private final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final DateTimeFormatter dtfNgan = DateTimeFormatter.ofPattern("dd/MM");
     private final DecimalFormat dfTien = new DecimalFormat("#,##0");
+    private ChiSo chiSo;
+    private String chuoiKyNgan = "";
+
+    /** Các con số báo cáo tính từ số liệu đã đọc của kỳ: tổng, tỷ trọng, lợi nhuận, tồn kho và năng suất. */
+    public static final class ChiSo {
+        public final int tongSoHoaDon;
+        public final double tongDoanhThu, tongTienCong, tongTienPhuTung, tongGiamGia, tongVAT;
+        public final double tyTrongTienCong, tyTrongPhuTung, loiNhuan;
+        public final int soMatHang, tongSoLuongNhap, tongSoLuongXuat;
+        public final double tongGiaTriNhap, tongGiaTriXuat, giaTriTonKho;
+        public final int tongHangMucXong, tongHangMucDangLam, soKyThuatVienHoatDong;
+        public final double tyLeXeSuaXong, trungBinhHangMucTrenXe, tyLeHoanThanhChung;
+
+        ChiSo(DuLieuThongKe dl) {
+            int soHD = 0;
+            double cong = 0, phuTung = 0, giam = 0, vat = 0, tong = 0;
+            for (DoanhThuNgay d : dl.getDanhSachDoanhThuNgay()) {
+                soHD += d.getSoHoaDon();
+                cong += d.getTienCong();
+                phuTung += d.getTienPhuTung();
+                giam += d.getGiamGia();
+                vat += d.getTienVAT();
+                tong += d.getTongThanhToan();
+            }
+            tongSoHoaDon = soHD;
+            tongTienCong = cong;
+            tongTienPhuTung = phuTung;
+            tongGiamGia = giam;
+            tongVAT = vat;
+            tongDoanhThu = tong;
+            tyTrongTienCong = phanTram(cong, cong + phuTung);
+            tyTrongPhuTung = cong + phuTung > 0 ? Math.round((100.0 - tyTrongTienCong) * 10.0) / 10.0 : 0;
+            // Lợi nhuận gộp có thể âm; giá vốn tính theo giá nhập hiện tại của phụ tùng.
+            loiNhuan = cong + phuTung - giam - dl.getTongGiaVonPhuTung();
+
+            int slNhap = 0, slXuat = 0;
+            double gtNhap = 0, gtXuat = 0, gtTon = 0;
+            for (ThongKePhuTung t : dl.getDanhSachPhuTung()) {
+                slNhap += t.getSoLuongNhap();
+                slXuat += t.getSoLuongXuat();
+                gtNhap += t.getGiaTriNhap();
+                gtXuat += t.getGiaTriXuat();
+                gtTon += NghiepVuKho.giaTriTon(t.getPhuTung());
+            }
+            soMatHang = dl.getDanhSachPhuTung().size();
+            tongSoLuongNhap = slNhap;
+            tongSoLuongXuat = slXuat;
+            tongGiaTriNhap = gtNhap;
+            tongGiaTriXuat = gtXuat;
+            giaTriTonKho = gtTon;
+
+            int xong = 0, dang = 0, hoatDong = 0;
+            for (NangSuatKTV k : dl.getDanhSachNangSuatKTV()) {
+                xong += k.getHangMucHoanThanh();
+                dang += k.getHangMucDangThucHien();
+                if (k.getSoXeThamGia() > 0) {
+                    hoatDong++;
+                }
+            }
+            tongHangMucXong = xong;
+            tongHangMucDangLam = dang;
+            soKyThuatVienHoatDong = hoatDong;
+            tyLeXeSuaXong = phanTram(dl.getTongXeSuaXong(), dl.getTongLuotXeVaoXuong());
+            trungBinhHangMucTrenXe = dl.getTongLuotXeVaoXuong() > 0
+                    ? Math.round(xong * 10.0 / dl.getTongLuotXeVaoXuong()) / 10.0 : 0;
+            tyLeHoanThanhChung = phanTram(xong, xong + dang);
+        }
+    }
+
+    public static ChiSo tinhChiSo(DuLieuThongKe dl) {
+        return new ChiSo(dl);
+    }
+
+    /** Phần trăm hạng mục đã xong trên tổng hạng mục được giao của một kỹ thuật viên. */
+    public static double tyLeHoanThanh(NangSuatKTV k) {
+        return phanTram(k.getHangMucHoanThanh(), k.getHangMucHoanThanh() + k.getHangMucDangThucHien());
+    }
+
+    /** Phần trăm làm tròn 1 chữ số; mẫu bằng 0 thì 0. */
+    static double phanTram(double tu, double mau) {
+        return mau > 0 ? Math.round(tu * 1000.0 / mau) / 10.0 : 0;
+    }
 
     public QLThongKeController(QLThongKe view) {
         this.view = view;
@@ -60,19 +132,9 @@ public class QLThongKeController {
         view.getBtnXuatPDF().addActionListener(e -> xuatPDF());
         view.getBtnXuatExcel().addActionListener(e -> xuatExcel());
         view.getBtnIn().addActionListener(e -> inBaoCao());
-
-        ganSuKienTimKiem(view.getFTimDoanhThu(), this::locBangDoanhThu);
-        ganSuKienTimKiem(view.getFTimPhuTung(), this::locBangPhuTung);
-        ganSuKienTimKiem(view.getFTimKTV(), this::locBangKTV);
-    }
-
-    private void ganSuKienTimKiem(UIComponents.IconField field, Runnable action) {
-        if (field == null || field.getTextField() == null) return;
-        field.getTextField().getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { action.run(); }
-            @Override public void removeUpdate(DocumentEvent e) { action.run(); }
-            @Override public void changedUpdate(DocumentEvent e) { action.run(); }
-        });
+        util.UIComponents.tuTaiLai(this::locBangDoanhThu, view.getTxtTimKiem(0));
+        util.UIComponents.tuTaiLai(this::locBangPhuTung, view.getTxtTimKiem(1));
+        util.UIComponents.tuTaiLai(this::locBangKTV, view.getTxtTimKiem(2));
     }
 
     private void chonKyNhanh(String loai) {
@@ -96,88 +158,6 @@ public class QLThongKeController {
         view.setKhoangThoiGian(tuNgay, homNay, loai);
     }
 
-    /** Tính toán toàn bộ chỉ số nghiệp vụ báo cáo thống kê từ dữ liệu thô của DAO. */
-    public DuLieuThongKe tinhToanDuLieuThongKe(LocalDate tuNgay, LocalDate denNgay) throws SQLException {
-        // 1. Doanh thu
-        List<DoanhThuNgay> dsNgay = dao.taiDoanhThuTheoNgay(tuNgay, denNgay);
-        int tongHD = 0;
-        double tongCong = 0, tongPT = 0, tongGiam = 0, tongVAT = 0, tongDT = 0;
-        for (DoanhThuNgay d : dsNgay) {
-            tongHD += d.getSoHoaDon();
-            tongCong += d.getTienCong();
-            tongPT += d.getTienPhuTung();
-            tongGiam += d.getGiamGia();
-            tongVAT += d.getTienVAT();
-            tongDT += d.getTongThanhToan();
-        }
-        double tongGiaVonPhuTung = dao.taiTongGiaVonPhuTung(tuNgay, denNgay);
-        double loiNhuan = (tongCong + tongPT - tongGiam) - tongGiaVonPhuTung;
-        if (loiNhuan < 0) loiNhuan = 0;
-
-        double tongTruocThue = tongCong + tongPT;
-        double tyTrongCong = tongTruocThue > 0 ? Math.round((tongCong * 1000.0) / tongTruocThue) / 10.0 : 0;
-        double tyTrongPT = tongTruocThue > 0 ? Math.round((100.0 - tyTrongCong) * 10.0) / 10.0 : 0;
-
-        // 2. Phụ tùng
-        double[] tongGTNhapXuat = new double[2];
-        List<ThongKePhuTung> dsPTTho = dao.taiDanhSachPhuTungTho(tuNgay, denNgay, tongGTNhapXuat);
-        List<ThongKePhuTung> dsPT = new ArrayList<>();
-        double tongGiaTriTon = 0;
-        int soMatHang = 0, tongSLNhap = 0, tongSLXuat = 0;
-
-        for (ThongKePhuTung raw : dsPTTho) {
-            PhuTung pt = raw.getPhuTung();
-            int ton = raw.getTonHienTai();
-            double gtTon = ton * pt.getGiaNhap();
-            boolean canhBao = QLPhuTungController.kiemTraCanhBaoTon(pt);
-            dsPT.add(new ThongKePhuTung(pt, raw.getSoLuongNhap(), raw.getSoLuongXuat(), ton, gtTon, canhBao));
-
-            soMatHang++;
-            tongGiaTriTon += gtTon;
-            tongSLNhap += raw.getSoLuongNhap();
-            tongSLXuat += raw.getSoLuongXuat();
-        }
-        int soPhieuNhap = dao.demSoPhieuNhap(tuNgay, denNgay);
-        List<NhapXuatNgay> dsNXNgay = dao.taiNhapXuatTheoNgay(tuNgay, denNgay);
-
-        // 3. Hiệu suất Kỹ thuật viên
-        int[] luotXe = dao.taiSoLuotXeVaoXuongVaSuaXong(tuNgay, denNgay);
-        int tongXe = luotXe[0];
-        int xeXong = luotXe[1];
-
-        List<NangSuatKTV> dsKTVTho = dao.taiDanhSachNangSuatKTVTho(tuNgay, denNgay);
-        List<NangSuatKTV> dsKTV = new ArrayList<>();
-        int tongHMXong = 0, tongHMDangLam = 0, ktvHoatDong = 0;
-
-        for (NangSuatKTV raw : dsKTVTho) {
-            if (raw.getSoXeThamGia() > 0) {
-                ktvHoatDong++;
-            }
-            int hmXong = raw.getHangMucHoanThanh();
-            int hmDang = raw.getHangMucDangThucHien();
-            int tongHM = hmXong + hmDang;
-            double tyLe = tongHM > 0 ? Math.round((hmXong * 1000.0) / tongHM) / 10.0 : 0.0;
-            dsKTV.add(new NangSuatKTV(raw.getKyThuatVien(), raw.getSoXeThamGia(), hmXong, hmDang, raw.getTienCongMangLai(), tyLe));
-            tongHMXong += hmXong;
-            tongHMDangLam += hmDang;
-        }
-        List<LuotXeNgay> dsLuotNgay = dao.taiLuotXeTheoNgay(tuNgay, denNgay);
-
-        double tyLeXeXong = tongXe > 0 ? Math.round((xeXong * 1000.0) / tongXe) / 10.0 : 0.0;
-        double tbHangMuc = tongXe > 0 ? Math.round((tongHMXong * 10.0) / tongXe) / 10.0 : 0.0;
-        int tongTatCaHM = tongHMXong + tongHMDangLam;
-        double tyLeChung = tongTatCaHM > 0 ? Math.round((tongHMXong * 1000.0) / tongTatCaHM) / 10.0 : 0.0;
-
-        return new DuLieuThongKe(
-                tongDT, tongCong, tongPT, tongGiam, tongVAT, loiNhuan,
-                tongHD, tyTrongCong, tyTrongPT, dsNgay,
-                tongGiaTriTon, soMatHang, tongSLNhap, tongGTNhapXuat[0],
-                tongSLXuat, tongGTNhapXuat[1], soPhieuNhap, dsPT, dsNXNgay,
-                tongXe, xeXong, tyLeXeXong, tongHMXong, tongHMDangLam,
-                tbHangMuc, ktvHoatDong, tyLeChung, dsKTV, dsLuotNgay
-        );
-    }
-
     public void taiVaHienThiBaoCao(boolean hienThongBaoRong) {
         LocalDate tuNgay;
         LocalDate denNgay;
@@ -197,11 +177,15 @@ public class QLThongKeController {
         }
 
         try {
-            duLieuHienTai = tinhToanDuLieuThongKe(tuNgay, denNgay);
-            view.capNhatGiaoDien(duLieuHienTai, tuNgay, denNgay);
+            duLieuHienTai = dao.taiDuLieuThongKe(tuNgay, denNgay);
+            chiSo = tinhChiSo(duLieuHienTai);
+            chuoiKyNgan = "Kỳ " + tuNgay.format(dtfNgan) + " – " + denNgay.format(dtfNgan);
+            view.capNhatGiaoDien(duLieuHienTai, chiSo.tongTienCong, chiSo.tongTienPhuTung, chiSo.tyTrongTienCong,
+                    chiSo.tyTrongPhuTung, tuNgay, denNgay);
             locBangDoanhThu();
             locBangPhuTung();
             locBangKTV();
+            view.setKpi(kpi());
 
             boolean khongCoGiaoDich = duLieuHienTai.getDanhSachDoanhThuNgay().isEmpty()
                     && duLieuHienTai.getTongLuotXeVaoXuong() == 0
@@ -217,35 +201,51 @@ public class QLThongKeController {
         }
     }
 
-    public void locBangDoanhThu() {
-        if (duLieuHienTai == null) return;
-        String kw = layTuKhoaTimKiem(view.getFTimDoanhThu());
-        DefaultTableModel model = view.getModelDoanhThu();
-        model.setRowCount(0);
+    private String tien(double soTien) {
+        return dfTien.format(soTien) + "đ";
+    }
 
+    /** 4 thẻ tóm tắt cho mỗi tab: doanh thu, phụ tùng, hiệu suất kỹ thuật viên. */
+    private String[][][] kpi() {
+        DuLieuThongKe dl = duLieuHienTai;
+        return new String[][][] {
+            {
+                {"Tổng doanh thu", tien(chiSo.tongDoanhThu), "Sau giảm giá và VAT"},
+                {"Tiền công dịch vụ", tien(chiSo.tongTienCong), chiSo.tyTrongTienCong + "% doanh thu"},
+                {"Tiền phụ tùng", tien(chiSo.tongTienPhuTung), chiSo.tyTrongPhuTung + "% doanh thu"},
+                {"Lợi nhuận ước tính", tien(chiSo.loiNhuan), chuoiKyNgan + " • giá vốn theo giá nhập hiện tại"}
+            },
+            {
+                {"Giá trị tồn kho hiện tại", tien(chiSo.giaTriTonKho), chiSo.soMatHang + " mặt hàng đang quản lý"},
+                {"Số lượng nhập", String.valueOf(chiSo.tongSoLuongNhap), "Giá trị " + tien(chiSo.tongGiaTriNhap)},
+                {"Số lượng xuất", String.valueOf(chiSo.tongSoLuongXuat), "Giá trị " + tien(chiSo.tongGiaTriXuat)},
+                {"Phiếu nhập trong kỳ", String.valueOf(dl.getSoPhieuNhapTrongKy()), chuoiKyNgan}
+            },
+            {
+                {"Lượt xe vào xưởng", String.valueOf(dl.getTongLuotXeVaoXuong()), "Tiếp nhận trong kỳ"},
+                {"Xe sửa xong", String.valueOf(dl.getTongXeSuaXong()), chiSo.tyLeXeSuaXong + "% lượt tiếp nhận"},
+                {"Hạng mục hoàn thành", String.valueOf(chiSo.tongHangMucXong), "Trung bình " + chiSo.trungBinhHangMucTrenXe + " hạng mục/xe"},
+                {"Kỹ thuật viên hoạt động", String.valueOf(chiSo.soKyThuatVienHoatDong), "Có phiếu trong kỳ"}
+            }
+        };
+    }
+
+    private void locBangDoanhThu() {
+        if (duLieuHienTai == null) return;
+        String kw = view.getTuKhoa(0);
         List<DoanhThuNgay> dsDT = duLieuHienTai.getDanhSachDoanhThuNgay();
-        int demNgay = 0;
+        List<Object[]> dong = new ArrayList<>();
         int tongHD = 0;
         double tongCong = 0, tongPT = 0, tongGiam = 0, tongVAT = 0, tongThanhToan = 0;
-
         for (DoanhThuNgay d : dsDT) {
             String chuoiNgay = d.getNgay().format(dtf);
             String chuoiTong = dfTien.format(d.getTongThanhToan());
             if (!kw.isEmpty() && !chuoiNgay.toLowerCase().contains(kw)
-                    && !String.valueOf(d.getSoHoaDon()).contains(kw)
-                    && !chuoiTong.contains(kw)) {
+                    && !String.valueOf(d.getSoHoaDon()).contains(kw) && !chuoiTong.contains(kw)) {
                 continue;
             }
-            model.addRow(new Object[]{
-                    chuoiNgay,
-                    d.getSoHoaDon(),
-                    dfTien.format(d.getTienCong()) + "đ",
-                    dfTien.format(d.getTienPhuTung()) + "đ",
-                    dfTien.format(d.getGiamGia()) + "đ",
-                    dfTien.format(d.getTienVAT()) + "đ",
-                    chuoiTong + "đ"
-            });
-            demNgay++;
+            dong.add(new Object[]{chuoiNgay, d.getSoHoaDon(), tien(d.getTienCong()), tien(d.getTienPhuTung()),
+                    tien(d.getGiamGia()), tien(d.getTienVAT()), chuoiTong + "đ"});
             tongHD += d.getSoHoaDon();
             tongCong += d.getTienCong();
             tongPT += d.getTienPhuTung();
@@ -253,123 +253,64 @@ public class QLThongKeController {
             tongVAT += d.getTienVAT();
             tongThanhToan += d.getTongThanhToan();
         }
-
-        model.addRow(new Object[]{
-                "Tổng kỳ (" + demNgay + " ngày)",
-                tongHD,
-                dfTien.format(tongCong) + "đ",
-                dfTien.format(tongPT) + "đ",
-                dfTien.format(tongGiam) + "đ",
-                dfTien.format(tongVAT) + "đ",
-                dfTien.format(tongThanhToan) + "đ"
-        });
-        view.getLblFooterDoanhThu().setText("Hiển thị " + demNgay + " / " + dsDT.size() + " ngày có giao dịch");
+        int soNgay = dong.size();
+        dong.add(new Object[]{"Tổng kỳ (" + soNgay + " ngày)", tongHD, tien(tongCong), tien(tongPT), tien(tongGiam),
+                tien(tongVAT), tien(tongThanhToan)});
+        view.setBangDoanhThu(dong, "Hiển thị " + soNgay + " / " + dsDT.size() + " ngày có giao dịch");
     }
 
-    public void locBangPhuTung() {
+    private void locBangPhuTung() {
         if (duLieuHienTai == null) return;
-        String kw = layTuKhoaTimKiem(view.getFTimPhuTung());
-        DefaultTableModel model = view.getModelPhuTung();
-        model.setRowCount(0);
-        List<Boolean> canhBao = view.getCanhBaoPhuTungHienThi();
-        canhBao.clear();
-
+        String kw = view.getTuKhoa(1);
         List<ThongKePhuTung> dsPT = duLieuHienTai.getDanhSachPhuTung();
-        int dem = 0;
+        List<Object[]> dong = new ArrayList<>();
+        List<Boolean> canhBao = new ArrayList<>();
         int tongNhap = 0, tongXuat = 0;
         double tongGiaTriTon = 0;
-
         for (ThongKePhuTung item : dsPT) {
             String ma = item.getPhuTung().getMaSKU() == null ? "" : item.getPhuTung().getMaSKU();
             String ten = item.getPhuTung().getTenPhuTung() == null ? "" : item.getPhuTung().getTenPhuTung();
             String hang = item.getPhuTung().getHangSanXuat() == null ? "" : item.getPhuTung().getHangSanXuat();
-
-            if (!kw.isEmpty() && !ma.toLowerCase().contains(kw)
-                    && !ten.toLowerCase().contains(kw)
+            if (!kw.isEmpty() && !ma.toLowerCase().contains(kw) && !ten.toLowerCase().contains(kw)
                     && !hang.toLowerCase().contains(kw)) {
                 continue;
             }
-
-            model.addRow(new Object[]{
-                    ma,
-                    ten,
-                    hang,
-                    item.getSoLuongNhap(),
-                    item.getSoLuongXuat(),
-                    item.getTonHienTai(),
-                    dfTien.format(item.getGiaTriTon()) + "đ"
-            });
-            canhBao.add(item.isDuoiNguongCanhBao());
-            dem++;
+            double giaTriTon = NghiepVuKho.giaTriTon(item.getPhuTung());
+            dong.add(new Object[]{ma, ten, hang, item.getSoLuongNhap(), item.getSoLuongXuat(),
+                    item.getPhuTung().getSoLuongTon(), tien(giaTriTon)});
+            canhBao.add(NghiepVuKho.duoiNguongCanhBao(item.getPhuTung()));
             tongNhap += item.getSoLuongNhap();
             tongXuat += item.getSoLuongXuat();
-            tongGiaTriTon += item.getGiaTriTon();
+            tongGiaTriTon += giaTriTon;
         }
-
-        model.addRow(new Object[]{
-                "Tổng kỳ báo cáo", "", "",
-                tongNhap,
-                tongXuat,
-                "",
-                dfTien.format(tongGiaTriTon) + "đ"
-        });
-        view.getLblFooterPhuTung().setText("Hiển thị " + dem + " / " + dsPT.size() + " mặt hàng");
+        int soDong = dong.size();
+        dong.add(new Object[]{"Tổng kỳ báo cáo", "", "", tongNhap, tongXuat, "", tien(tongGiaTriTon)});
+        view.setBangPhuTung(dong, canhBao, "Hiển thị " + soDong + " / " + dsPT.size() + " mặt hàng");
     }
 
-    public void locBangKTV() {
+    private void locBangKTV() {
         if (duLieuHienTai == null) return;
-        String kw = layTuKhoaTimKiem(view.getFTimKTV());
-        DefaultTableModel model = view.getModelKTV();
-        model.setRowCount(0);
-
+        String kw = view.getTuKhoa(2);
         List<NangSuatKTV> dsKTV = duLieuHienTai.getDanhSachNangSuatKTV();
-        int dem = 0;
+        List<Object[]> dong = new ArrayList<>();
         int tongHMXong = 0, tongHMDangLam = 0;
         double tongTienCong = 0;
-
         for (NangSuatKTV k : dsKTV) {
             String ten = k.getKyThuatVien().getHoTen() == null ? "" : k.getKyThuatVien().getHoTen();
             String ma = k.getKyThuatVien().getMaNV() == null ? "" : k.getKyThuatVien().getMaNV();
-
             if (!kw.isEmpty() && !ten.toLowerCase().contains(kw) && !ma.toLowerCase().contains(kw)) {
                 continue;
             }
-
-            model.addRow(new Object[]{
-                    ten,
-                    k.getSoXeThamGia(),
-                    k.getHangMucHoanThanh(),
-                    k.getHangMucDangThucHien(),
-                    dfTien.format(k.getTienCongMangLai()) + "đ",
-                    k.getTyLeHoanThanh() + "%"
-            });
-            dem++;
+            dong.add(new Object[]{ten, k.getSoXeThamGia(), k.getHangMucHoanThanh(), k.getHangMucDangThucHien(),
+                    tien(k.getTienCongMangLai()), tyLeHoanThanh(k) + "%"});
             tongHMXong += k.getHangMucHoanThanh();
             tongHMDangLam += k.getHangMucDangThucHien();
             tongTienCong += k.getTienCongMangLai();
         }
-
-        int tongHM = tongHMXong + tongHMDangLam;
-        double tyLeChung = tongHM > 0 ? Math.round((tongHMXong * 1000.0) / tongHM) / 10.0 : 0.0;
-
-        model.addRow(new Object[]{
-                "Tổng kỳ báo cáo",
-                kw.isEmpty() ? duLieuHienTai.getTongXeSuaXong() : "-",
-                tongHMXong,
-                tongHMDangLam,
-                dfTien.format(tongTienCong) + "đ",
-                tyLeChung + "%"
-        });
-        view.getLblFooterKTV().setText("Hiển thị " + dem + " / " + dsKTV.size() + " kỹ thuật viên");
-    }
-
-    private String layTuKhoaTimKiem(UIComponents.IconField field) {
-        if (field == null || field.getTextField() == null) return "";
-        String val = field.getTextField().getText().trim();
-        Object ph = field.getTextField().getClientProperty("placeholder");
-        if (ph != null && val.equalsIgnoreCase(ph.toString())) return "";
-        if (val.startsWith("Tìm ")) return "";
-        return val.toLowerCase();
+        int soDong = dong.size();
+        dong.add(new Object[]{"Tổng kỳ báo cáo", kw.isEmpty() ? duLieuHienTai.getTongXeSuaXong() : "-", tongHMXong,
+                tongHMDangLam, tien(tongTienCong), phanTram(tongHMXong, tongHMXong + tongHMDangLam) + "%"});
+        view.setBangKTV(dong, "Hiển thị " + soDong + " / " + dsKTV.size() + " kỹ thuật viên");
     }
 
     private void xuatPDF() {
@@ -442,36 +383,20 @@ public class QLThongKeController {
 
     private void xuatExcel() {
         if (duLieuHienTai == null) return;
-        JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Lưu báo cáo Excel");
-        chooser.setFileFilter(new FileNameExtensionFilter("Excel Files (*.xls, *.csv)", "xls", "csv"));
-        chooser.setSelectedFile(new File("BaoCaoThongKe_AUTORA.xls"));
-
-        if (chooser.showSaveDialog(view) != JFileChooser.APPROVE_OPTION) return;
-        File file = chooser.getSelectedFile();
-        if (!file.getName().toLowerCase().endsWith(".xls") && !file.getName().toLowerCase().endsWith(".csv")) {
-            file = new File(file.getAbsolutePath() + ".xls");
+        JTable table = view.getBangHienTai();
+        String[] cot = new String[table.getColumnCount()];
+        for (int c = 0; c < cot.length; c++) {
+            cot[c] = table.getColumnName(c);
         }
-
-        try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
-            out.write('\ufeff');
-            JTable table = view.getBangHienTai();
-            for (int c = 0; c < table.getColumnCount(); c++) {
-                out.print(table.getColumnName(c) + (c == table.getColumnCount() - 1 ? "" : "\t"));
+        java.util.List<Object[]> dong = new java.util.ArrayList<>();
+        for (int r = 0; r < table.getRowCount(); r++) {
+            Object[] hang = new Object[cot.length];
+            for (int c = 0; c < cot.length; c++) {
+                hang[c] = table.getValueAt(r, c);
             }
-            out.println();
-            for (int r = 0; r < table.getRowCount(); r++) {
-                for (int c = 0; c < table.getColumnCount(); c++) {
-                    Object val = table.getValueAt(r, c);
-                    out.print((val == null ? "" : val.toString()) + (c == table.getColumnCount() - 1 ? "" : "\t"));
-                }
-                out.println();
-            }
-            JOptionPane.showMessageDialog(view, "Đã xuất báo cáo Excel thành công:\n" + file.getAbsolutePath());
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Không thể xuất file Excel: " + ex.getMessage(),
-                    "Lỗi xuất Excel", JOptionPane.ERROR_MESSAGE);
+            dong.add(hang);
         }
+        util.XuatFile.xuatExcel(view, "bao-cao-thong-ke", cot, dong);
     }
 
     private void inBaoCao() {
