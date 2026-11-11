@@ -233,7 +233,7 @@ public class QLTaiKhoanController {
         }
         try {
             String goc = taoTenDangNhap(nv.getHoTen());
-            tenGoiY = goc.isEmpty() ? "" : dao.tenDangNhapConTrong(goc);
+            tenGoiY = goc.isEmpty() ? "" : tenDangNhapConTrong(goc);
             view.getTxtTenDangNhap().setText(tenGoiY);
         } catch (SQLException ex) {
             baoLoi("Không thể gợi ý tên đăng nhập.", ex);
@@ -241,6 +241,17 @@ public class QLTaiKhoanController {
     }
 
     /** "Nguyễn Tuấn Vũ" -> "vunt": tên gọi cộng chữ cái đầu các từ còn lại, chữ thường, không dấu. */
+    /** Tên gốc nếu còn trống, nếu không thì thêm số nhỏ nhất từ 2; cắt gốc để không vượt VARCHAR(50). */
+    public static String tenDangNhapConTrong(String goc) throws java.sql.SQLException {
+        java.util.Set<String> daCo = new TaiKhoan_Dao().tenDangNhapBatDauBang(goc);
+        String ung = goc;
+        for (int n = 2; daCo.contains(ung.toLowerCase(Locale.ROOT)); n++) {
+            String duoi = String.valueOf(n);
+            ung = goc.substring(0, Math.min(goc.length(), 50 - duoi.length())) + duoi;
+        }
+        return ung;
+    }
+
     public static String taoTenDangNhap(String hoTen) {
         if (hoTen == null) {
             return "";

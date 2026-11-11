@@ -75,8 +75,8 @@ public class TaiKhoan_Dao {
         return ketQua;
     }
 
-    /** Tên gốc nếu còn trống, nếu không thì thêm số nhỏ nhất từ 2; một truy vấn, cắt gốc để không vượt VARCHAR(50). */
-    public String tenDangNhapConTrong(String goc) throws SQLException {
+    /** Các tên đăng nhập (chữ thường) bắt đầu bằng goc, đọc trong một truy vấn. */
+    public Set<String> tenDangNhapBatDauBang(String goc) throws SQLException {
         Set<String> daCo = new HashSet<>();
         try (Connection connection = ConnectDB.getConnection();
                 PreparedStatement statement = connection.prepareStatement("SELECT tenDangNhap FROM TaiKhoan WHERE tenDangNhap LIKE ?")) {
@@ -87,12 +87,7 @@ public class TaiKhoan_Dao {
                 }
             }
         }
-        String ung = goc;
-        for (int n = 2; daCo.contains(ung.toLowerCase(Locale.ROOT)); n++) {
-            String duoi = String.valueOf(n);
-            ung = goc.substring(0, Math.min(goc.length(), 50 - duoi.length())) + duoi;
-        }
-        return ung;
+        return daCo;
     }
 
     public boolean exists(String tenDangNhap) throws SQLException {

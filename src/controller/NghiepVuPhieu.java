@@ -68,6 +68,34 @@ public final class NghiepVuPhieu {
         return true;
     }
 
+    /** Đếm hạng mục, số hạng mục xong và ghi tóm tắt tên dịch vụ của phiếu từ danh sách dịch vụ đã đọc. */
+    public static void tomTatTienDo(PhieuTiepNhanVaSuaChua p) {
+        int xong = 0;
+        StringBuilder ten = new StringBuilder();
+        for (ChiTietSuaChua_DichVu ct : p.getDanhSachDichVu()) {
+            if (ct.getTrangThaiTienDo() == TrangThaiTienDo.HOAN_THANH) {
+                xong++;
+            }
+            if (ten.length() > 0) {
+                ten.append(", ");
+            }
+            ten.append(ct.getDichVu().getTenDichVu());
+        }
+        p.setTongSoHangMuc(p.getDanhSachDichVu().size());
+        p.setSoHangMucHoanThanh(xong);
+        p.setTomTatHangMuc(ten.length() > 0 ? ten.toString() : p.getYeuCauBanDau());
+    }
+
+    /** Phiếu được giao cho kỹ thuật viên (chuỗi rỗng: mọi phiếu), kèm tiến độ đã tóm tắt. */
+    public static List<PhieuTiepNhanVaSuaChua> timPhieuDuocGiao(String maKyThuatVien, String tuKhoa, String trangThai)
+            throws SQLException {
+        List<PhieuTiepNhanVaSuaChua> ds = new TienDoSuaChua_Dao().searchPhieuĐượcGiao(maKyThuatVien, tuKhoa, trangThai);
+        for (PhieuTiepNhanVaSuaChua p : ds) {
+            tomTatTienDo(p);
+        }
+        return ds;
+    }
+
     /** Phần trăm tiến độ của phiếu theo trạng thái và số hạng mục đã xong, dùng ở màn hình kỹ thuật viên. */
     public static int phanTramTienDo(PhieuTiepNhanVaSuaChua p) {
         int tong = p.getTongSoHangMuc();
