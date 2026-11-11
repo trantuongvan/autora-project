@@ -192,9 +192,7 @@ public class PhieuNhapKho_Dao {
                  PreparedStatement psCT = c.prepareStatement(sqlCT)) {
 
                 for (ChiTietNhapKho ct : chiTietList) {
-                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    phuTung.nhapKho(ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
-                    PhuTung_Dao.luuTon(c, phuTung);
+                    PhuTung_Dao.nhapTon(c, ct.getPhuTung().getMaSKU(), ct.getSoLuongNhap(), ct.getGiaNhapThucTe());
                 }
 
                 psPhieu.setString(1, phieu.getMaPhieuNhap());

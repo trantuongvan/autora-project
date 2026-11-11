@@ -83,7 +83,7 @@ public class TestNghiepVuTiepNhan {
         vongDoiEnum("TrangThaiYeuCauXuat", TrangThaiYeuCauXuat.class, TrangThaiYeuCauXuat::fromDb);
         dung("Chờ sửa không phải trạng thái phiếu", !Arrays.asList(TrangThaiPhieu.values()).toString().contains("Chờ sửa"));
         dung("Phiếu Chờ kiểm tra hiện là Chờ sửa cho kỹ thuật viên",
-                "Chờ sửa".equals(new PhieuTiepNhanVaSuaChua().getTrangThaiHienThiKTV()));
+                "Chờ sửa".equals(controller.NghiepVuPhieu.trangThaiHienThiKTV(new PhieuTiepNhanVaSuaChua())));
     }
 
     private static void kiemTraKhuyenMai() {
@@ -97,12 +97,12 @@ public class TestNghiepVuTiepNhan {
         loi("KM thiếu tên", () -> new KhuyenMai("KM1", " ", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true));
 
         KhuyenMai km = new KhuyenMai("KM1", "A", HinhThucKhuyenMai.TIEN_MAT, 5, d1, d2, true);
-        dung("Sắp diễn ra", "Sắp diễn ra".equals(km.getTinhTrang(d1.minusDays(1))));
-        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(km.getTinhTrang(d1)));
-        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(km.getTinhTrang(d2)));
-        dung("Hết hạn", "Hết hạn".equals(km.getTinhTrang(d2.plusDays(1))));
+        dung("Sắp diễn ra", "Sắp diễn ra".equals(controller.NghiepVuHoaDon.tinhTrangKhuyenMai(km, d1.minusDays(1))));
+        dung("Đang áp dụng ngày đầu", "Đang áp dụng".equals(controller.NghiepVuHoaDon.tinhTrangKhuyenMai(km, d1)));
+        dung("Đang áp dụng ngày cuối", "Đang áp dụng".equals(controller.NghiepVuHoaDon.tinhTrangKhuyenMai(km, d2)));
+        dung("Hết hạn", "Hết hạn".equals(controller.NghiepVuHoaDon.tinhTrangKhuyenMai(km, d2.plusDays(1))));
         km.setTrangThai(false);
-        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(km.getTinhTrang(d1)));
+        dung("Ngừng áp dụng ưu tiên", "Ngừng áp dụng".equals(controller.NghiepVuHoaDon.tinhTrangKhuyenMai(km, d1)));
     }
 
     private static void kiemTraPhieu() {
@@ -122,7 +122,7 @@ public class TestNghiepVuTiepNhan {
     private static boolean coTheHoanThanh(List<ChiTietSuaChua_DichVu> dong) {
         PhieuTiepNhanVaSuaChua p = new PhieuTiepNhanVaSuaChua();
         p.setDanhSachDichVu(dong);
-        return p.coTheHoanThanh();
+        return controller.NghiepVuPhieu.coTheHoanThanh(p);
     }
 
     private static int tienDo(TrangThaiPhieu trangThai, int tong, int xong) {
@@ -130,7 +130,7 @@ public class TestNghiepVuTiepNhan {
         p.setTrangThai(trangThai);
         p.setTongSoHangMuc(tong);
         p.setSoHangMucHoanThanh(xong);
-        return p.phanTramTienDo();
+        return controller.NghiepVuPhieu.phanTramTienDo(p);
     }
 
     private static void kiemTraDieuKienHoanThanh() {
@@ -160,15 +160,15 @@ public class TestNghiepVuTiepNhan {
         dung("Giá trị băm hỏng", !MatKhauUtil.kiemTra("a", "pbkdf2$x$y$z") && !MatKhauUtil.kiemTra("a", null));
 
         dung("Còn việc và còn yêu cầu phụ tùng chờ xuất thì vẫn Chờ phụ tùng",
-                TrangThaiPhieu.theoTienDo(1, true) == TrangThaiPhieu.CHO_PHU_TUNG
-                && TrangThaiPhieu.theoTienDo(1, false) == TrangThaiPhieu.DANG_SUA
-                && TrangThaiPhieu.theoTienDo(0, true) == TrangThaiPhieu.HOAN_THANH);
-        dung("Luồng hợp lệ", TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
-                && TrangThaiPhieu.DANG_SUA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
-                && TrangThaiPhieu.CHO_PHU_TUNG.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
-        dung("Luồng không hợp lệ", !TrangThaiPhieu.CHO_KIEM_TRA.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH)
-                && !TrangThaiPhieu.HOAN_THANH.coTheChuyenSang(TrangThaiPhieu.DANG_SUA)
-                && !TrangThaiPhieu.DA_HUY.coTheChuyenSang(TrangThaiPhieu.DANG_SUA));
+                controller.NghiepVuPhieu.trangThaiTheoTienDo(1, true) == TrangThaiPhieu.CHO_PHU_TUNG
+                && controller.NghiepVuPhieu.trangThaiTheoTienDo(1, false) == TrangThaiPhieu.DANG_SUA
+                && controller.NghiepVuPhieu.trangThaiTheoTienDo(0, true) == TrangThaiPhieu.HOAN_THANH);
+        dung("Luồng hợp lệ", controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA)
+                && controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.DANG_SUA, TrangThaiPhieu.HOAN_THANH)
+                && controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.CHO_PHU_TUNG, TrangThaiPhieu.DANG_SUA));
+        dung("Luồng không hợp lệ", !controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH)
+                && !controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA)
+                && !controller.NghiepVuPhieu.coTheChuyenSang(TrangThaiPhieu.DA_HUY, TrangThaiPhieu.DANG_SUA));
         loi("Tiếp nhận ở tương lai", () -> new PhieuTiepNhanVaSuaChua().setThoiGianTiepNhan(LocalDateTime.now().plusDays(1)));
 
         dung("VIN đúng", QLTiepNhanSuaChuaController.soVinHopLe("1HGCR2F83HA001234"));
@@ -222,7 +222,7 @@ public class TestNghiepVuTiepNhan {
         KhachHang kh = khachMau("0911000001");
         Xe xe = xeMau("59A-111.11");
         PhieuTiepNhanVaSuaChua p = phieuMau("59A-111.11");
-        dao.taoTiepNhan(kh, xe, p, Arrays.asList(dv));
+        controller.NghiepVuPhieu.tiepNhan(kh, xe, p, Arrays.asList(dv));
         dung("Tạo khách, xe, phiếu cùng lúc", dao.findById(p.getMaPhieuTNSC()) != null
                 && dao.findXeDayDu("59A-111.11") != null && dao.findKhachTheoSdt("0911000001") != null);
         dung("Có dòng dịch vụ", new ChiTietSuaChua_DichVu_Dao().findByPhieu(p.getMaPhieuTNSC()).size() == 1);
@@ -235,7 +235,7 @@ public class TestNghiepVuTiepNhan {
         PhieuTiepNhanVaSuaChua p2 = phieuMau("59A-222.22");
         boolean baoLoi = false;
         try {
-            dao.taoTiepNhan(trung, xe2, p2, Arrays.asList(dv));
+            controller.NghiepVuPhieu.tiepNhan(trung, xe2, p2, Arrays.asList(dv));
         } catch (java.sql.SQLException ex) {
             baoLoi = true;
         }
@@ -247,7 +247,7 @@ public class TestNghiepVuTiepNhan {
         Xe xe3 = xeMau("59A-333.33");
         PhieuTiepNhanVaSuaChua p3 = phieuMau("59A-333.33");
         try {
-            dao.taoTiepNhan(kh3, xe3, p3, Arrays.asList(new DichVu("KHONGCO")));
+            controller.NghiepVuPhieu.tiepNhan(kh3, xe3, p3, Arrays.asList(new DichVu("KHONGCO")));
         } catch (java.sql.SQLException ex) {
             baoLoi = true;
         }
@@ -391,7 +391,7 @@ public class TestNghiepVuTiepNhan {
         // Phiếu mẫu 1 đã có hóa đơn nên phải bị khóa.
         String maKhoa = "PTNSC00001";
         dung("Phiếu có hóa đơn bị khóa", dao.isKhoa(maKhoa));
-        dung("Không đổi trạng thái phiếu khóa", !dao.capNhatTrangThai(maKhoa, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA, "admin"));
+        dung("Không đổi trạng thái phiếu khóa", !controller.NghiepVuPhieu.doiTrangThai(maKhoa, TrangThaiPhieu.HOAN_THANH, TrangThaiPhieu.DANG_SUA, "admin"));
         dung("Không xóa phiếu có hóa đơn", !dao.huy(maKhoa, "admin"));
         ChiTietSuaChua_DichVu dongKhoa = dong(TrangThaiTienDo.CHO_SUA);
         dongKhoa.setPhieu(new PhieuTiepNhanVaSuaChua(maKhoa));
@@ -432,9 +432,9 @@ public class TestNghiepVuTiepNhan {
         List<ChiTietSuaChua_DichVu> ds = chiTietDao.findByPhieu(ma);
         dung("Đọc dòng dịch vụ", ds.size() == 1 && ds.get(0).getKyThuatVien() == null && ds.get(0).getTienCongThucTe() == 200000
                 && ds.get(0).getDichVu().getTenDichVu() != null);
-        dung("Đổi trạng thái phiếu", dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA, "admin"));
-        dung("Không bỏ qua luồng trạng thái", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH, "admin"));
-        dung("Trạng thái cũ phải khớp", !dao.capNhatTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.CHO_PHU_TUNG, "admin"));
+        dung("Đổi trạng thái phiếu", controller.NghiepVuPhieu.doiTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.DANG_SUA, "admin"));
+        dung("Không bỏ qua luồng trạng thái", !controller.NghiepVuPhieu.doiTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.HOAN_THANH, "admin"));
+        dung("Trạng thái cũ phải khớp", !controller.NghiepVuPhieu.doiTrangThai(ma, TrangThaiPhieu.CHO_KIEM_TRA, TrangThaiPhieu.CHO_PHU_TUNG, "admin"));
         d.setTienCongThucTe(300000);
         dung("Lưu phân công một lần", chiTietDao.luuPhanCong(ma, Arrays.asList(d), "NV0006", "Ghi chú", "letan02"));
         dung("Sửa tiền công có nhật ký", tonTaiNhatKy("Sửa tiền công", ma + " / DV0002", "200000", "300000", "letan02"));

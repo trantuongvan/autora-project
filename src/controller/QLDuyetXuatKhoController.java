@@ -116,7 +116,7 @@ public class QLDuyetXuatKhoController {
                 setBorder(new EmptyBorder(0, 12, 0, 12));
 
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !danhSachChiTiet.get(r).getPhuTung().duTon(danhSachChiTiet.get(r).getSoLuong());
+                        && !NghiepVuKho.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 if (c == 0 || c == 4) {
                     setFont(UIConstants.FONT_FORM_LABEL.deriveFont(13.5f));
@@ -150,7 +150,7 @@ public class QLDuyetXuatKhoController {
             @Override
             public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 boolean thieuTon = r < danhSachChiTiet.size()
-                        && !danhSachChiTiet.get(r).getPhuTung().duTon(danhSachChiTiet.get(r).getSoLuong());
+                        && !NghiepVuKho.duTon(danhSachChiTiet.get(r).getPhuTung(), danhSachChiTiet.get(r).getSoLuong());
 
                 area.setText(v == null ? "" : v.toString());
                 area.setBackground(sel ? t.getSelectionBackground() : (thieuTon ? bgInsufficient : UIConstants.CARD_BG));
@@ -287,7 +287,7 @@ public class QLDuyetXuatKhoController {
             danhSachChiTiet = yeuCauDao.getChiTietByMaPhieuYC(yeuCauDangChon.getMaPhieuYC());
             for (ChiTietYeuCauXuatKho ct : danhSachChiTiet) {
                 PhuTung pt = ct.getPhuTung();
-                if (!pt.duTon(ct.getSoLuong())) {
+                if (!NghiepVuKho.duTon(pt, ct.getSoLuong())) {
                     duTonKho = false;
                 }
 

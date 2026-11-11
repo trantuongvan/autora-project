@@ -14,23 +14,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Đọc ứng viên và hàng đợi cho {@link PhanCongTuDong}, nơi quyết định chọn ai. */
+/** Đọc ứng viên và hàng đợi; việc chọn ai do NghiepVuPhieu.chonKyThuatVien quyết định. */
 public class PhanCong_Dao {
 
-    public PhanCongTuDong.KetQua chon(LocalDateTime hienTai, List<DichVu> dichVu) throws SQLException {
+    /** Người làm được từng dịch vụ, kèm số phút của riêng họ, theo mã dịch vụ. */
+    public Map<String, List<PhanCongTuDong.UngVien>> docUngVien(List<DichVu> dichVu) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
-            return chon(connection, hienTai, dichVu);
+            return docUngVien(connection, dichVu);
         }
     }
 
-    public PhanCongTuDong.KetQua chon(Connection connection, LocalDateTime hienTai, List<DichVu> dichVu) throws SQLException {
-        if (dichVu.isEmpty()) {
-            return new PhanCongTuDong.KetQua();
+    /** Việc chưa xong của từng kỹ thuật viên, theo mã nhân viên. */
+    public Map<String, PhanCongTuDong.HangDoi> docHangDoi() throws SQLException {
+        try (Connection connection = ConnectDB.getConnection()) {
+            return docHangDoi(connection);
         }
-        return new PhanCongTuDong(docUngVien(connection, dichVu), docHangDoi(connection)).chon(hienTai, dichVu);
     }
 
-    /** Một câu SQL: KTV có kỹ năng và có ca, kèm số phút riêng của họ cho từng dịch vụ. */
     private Map<String, List<PhanCongTuDong.UngVien>> docUngVien(Connection connection, List<DichVu> dichVu) throws SQLException {
         StringBuilder in = new StringBuilder();
         for (int i = 0; i < dichVu.size(); i++) {

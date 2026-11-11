@@ -168,10 +168,10 @@ public class TrangChuKyThuatVienController {
         danhSachHienThi = new ArrayList<>(danhSachTimDuoc.subList(0, gioiHan));
 
         for (PhieuTiepNhanVaSuaChua p : danhSachHienThi) {
-            String tt = p.getTrangThaiHienThiKTV();
+            String tt = NghiepVuPhieu.trangThaiHienThiKTV(p);
             String nhanTrangThai = tt;
             if (p.getTrangThai() == TrangThaiPhieu.DANG_SUA) {
-                nhanTrangThai = "Đang sửa • " + p.phanTramTienDo() + "%";
+                nhanTrangThai = "Đang sửa • " + NghiepVuPhieu.phanTramTienDo(p) + "%";
             }
 
             String thaoTac;

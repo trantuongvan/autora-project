@@ -128,15 +128,12 @@ public class PhieuTiepNhanVaSuaChua_Dao {
     /**
      * Lưu một lần tiếp nhận trong cùng transaction: khách mới (nếu có), xe mới (nếu có), phiếu và các dòng dịch vụ.
      * Lỗi ở bất kỳ bước nào sẽ hủy toàn bộ để không còn khách hoặc xe mồ côi.
-     * Kỹ thuật viên từng dòng, người phụ trách và giờ dự kiến (khi lễ tân không tự chọn) do PhanCong_Dao tính
-     * tại thời điểm tiếp nhận; trả về kết quả đó để báo lại cho lễ tân.
+     * Kỹ thuật viên từng dòng lấy từ kết quả phân công đã tính ở tầng nghiệp vụ.
      */
-    public PhanCongTuDong.KetQua taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
-            List<DichVu> dichVu) throws SQLException {
+    public void taoTiepNhan(KhachHang khachMoi, Xe xeMoi, PhieuTiepNhanVaSuaChua phieu,
+            List<DichVu> dichVu, PhanCongTuDong.KetQua phanCong) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
-            LocalDateTime duKienGoc = phieu.getThoiGianDuKien();
-            NhanVien phuTrachGoc = phieu.getNhanVienPhuTrach();
             try {
                 phieu.setMaPhieuTNSC(nextId(connection));
                 if (khachMoi != null) {
@@ -147,24 +144,12 @@ public class PhieuTiepNhanVaSuaChua_Dao {
                 if (xeMoi != null) {
                     insertXe(connection, xeMoi);
                 }
-                LocalDateTime hienTai = phieu.getThoiGianTiepNhan() != null
-                        ? phieu.getThoiGianTiepNhan() : LocalDateTime.now();
-                PhanCongTuDong.KetQua phanCong = new PhanCong_Dao().chon(connection, hienTai, dichVu);
-                if (duKienGoc == null) {
-                    phieu.setThoiGianDuKien(phanCong.getDuKien());
-                }
-                if (phanCong.getPhuTrach() != null) {
-                    phieu.setNhanVienPhuTrach(phanCong.getPhuTrach());
-                }
                 insert(connection, phieu);
                 LichHen_Dao.danhDauDaDen(connection, phieu.getXe().getBienSo());
                 insertDichVu(connection, phieu.getMaPhieuTNSC(), dichVu, phanCong);
                 connection.commit();
-                return phanCong;
             } catch (SQLException | RuntimeException ex) {
                 connection.rollback();
-                phieu.setThoiGianDuKien(duKienGoc);
-                phieu.setNhanVienPhuTrach(phuTrachGoc);
                 throw ex;
             }
         }
@@ -361,11 +346,8 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và bước chuyển hợp lệ. */
+    /** Chỉ đổi khi phiếu còn ở trạng thái cũ và chưa khóa; luồng hợp lệ do NghiepVuPhieu.doiTrangThai kiểm tra. */
     public boolean capNhatTrangThai(String ma, TrangThaiPhieu cu, TrangThaiPhieu moi, String tenDangNhap) throws SQLException {
-        if (!cu.coTheChuyenSang(moi)) {
-            return false;
-        }
         String sql = "UPDATE p SET trangThai = ? "
                 + "FROM PhieuTiepNhanVaSuaChua p "
                 + "WHERE p.maPhieuTNSC = ? AND p.trangThai = ? AND " + NOT_LOCKED;

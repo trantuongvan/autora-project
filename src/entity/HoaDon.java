@@ -1,7 +1,5 @@
 package entity;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -25,6 +23,18 @@ public class HoaDon {
 
     public HoaDon(String maHD) {
         setMaHD(maHD);
+    }
+
+    /** Hóa đơn mới chưa có mã, với các khoản tiền đã được tính ở tầng nghiệp vụ. */
+    public HoaDon(PhieuTiepNhanVaSuaChua phieu, KhuyenMai khuyenMai, Thue thue, HinhThucThanhToan hinhThucThanhToan,
+            TrangThaiHoaDon trangThaiThanhToan, double tongTienCong, double tongTienPhuTung, double tongTienGiam,
+            double tongTienVAT, double tongThanhToan) {
+        setPhieu(phieu);
+        this.khuyenMai = khuyenMai;
+        this.thue = thue;
+        setHinhThucThanhToan(hinhThucThanhToan);
+        setTrangThaiThanhToan(trangThaiThanhToan);
+        ghiSoTien(tongTienCong, tongTienPhuTung, tongTienGiam, tongTienVAT, tongThanhToan);
     }
 
     /** Hóa đơn đã lưu, đọc kèm phiếu bàn giao. */
@@ -107,7 +117,7 @@ public class HoaDon {
         return tongThanhToan;
     }
 
-    /** Số tiền chỉ vào hóa đơn qua constructor hoặc tinhTongThanhToan(), không có setter. */
+    /** Số tiền chỉ vào hóa đơn qua constructor, không có setter. */
     private void ghiSoTien(double cong, double phuTung, double giam, double vat, double tong) {
         this.tongTienCong = khongAm(cong, "Tổng tiền công không được âm");
         this.tongTienPhuTung = khongAm(phuTung, "Tổng tiền phụ tùng không được âm");
@@ -165,52 +175,9 @@ public class HoaDon {
         return khuyenMai;
     }
 
-    public void setKhuyenMai(KhuyenMai khuyenMai) {
-        this.khuyenMai = khuyenMai;
-    }
-
     /** Null khi hóa đơn không có loại thuế. */
     public Thue getThue() {
         return thue;
-    }
-
-    public void setThue(Thue thue) {
-        this.thue = thue;
-    }
-
-    /**
-     * Tính lại mọi khoản từ tiền công, tiền phụ tùng, khuyến mãi và thuế của hóa đơn, làm tròn tới đồng.
-     * Chưa có khuyến mãi hoặc thuế thì khoản đó bằng 0. Màn hình xem trước và lúc lưu dùng cùng công thức này.
-     */
-    public void tinhTongThanhToan(double tienCong, double tienPhuTung) {
-        if (tienCong < 0 || tienPhuTung < 0) {
-            throw new IllegalArgumentException("Số tiền không được âm.");
-        }
-        double cong = Math.round(tienCong);
-        double phuTung = Math.round(tienPhuTung);
-        double giam = khuyenMai == null ? 0 : khuyenMai.tinhTienGiam(cong, phuTung);
-        double sauGiam = cong + phuTung - giam;
-        double vat = thue == null ? 0 : thue.tinhTienThue(sauGiam);
-        ghiSoTien(cong, phuTung, giam, vat, sauGiam + vat);
-    }
-
-    public boolean daThanhToan() {
-        return trangThaiThanhToan == TrangThaiHoaDon.DA_THANH_TOAN;
-    }
-
-    /** Đã trả đủ, hoặc còn nợ nhưng khách được phép ghi nợ. */
-    public boolean daThanhToanHopLe(KhachHang khachHang) {
-        return daThanhToan() || laCongNoHopLe(khachHang);
-    }
-
-    public boolean laCongNoHopLe(KhachHang khachHang) {
-        return trangThaiThanhToan == TrangThaiHoaDon.CONG_NO && khachHang.duocThanhToanBang(HinhThucThanhToan.CONG_NO);
-    }
-
-    /** Dùng BigDecimal để số kiểu 80,5 không bị double làm tròn xuống. */
-    static double phanTram(double coSo, double tyLe) {
-        return BigDecimal.valueOf(coSo).multiply(BigDecimal.valueOf(tyLe))
-                .divide(BigDecimal.valueOf(100), 0, RoundingMode.HALF_UP).doubleValue();
     }
 
     @Override

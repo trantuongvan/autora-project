@@ -87,7 +87,7 @@ public class TestHoaDon {
         loi("Hình thức null", () -> new HoaDon().setHinhThucThanhToan(null));
         loi("Tổng âm", () -> new HoaDon(TrangThaiHoaDon.DA_THANH_TOAN, -1));
         loi("Thuế suất trên 100", () -> new Thue("X", "A", 100.5));
-        kiem("Thuế tính tiền", new Thue("X", "A", 8).tinhTienThue(1395000) == 111600);
+        kiem("Thuế tính tiền", controller.NghiepVuHoaDon.tienThue(new Thue("X", "A", 8), 1395000) == 111600);
         kiem("Tiền có dấu chấm", ChiTietHoaDonController.docTien("1.500.000") == 1500000);
         kiem("Tiền không dấu", ChiTietHoaDonController.docTien("1500000") == 1500000);
         loi("Tiền có chữ", () -> ChiTietHoaDonController.docTien("15a"));
@@ -140,11 +140,11 @@ public class TestHoaDon {
 
         String p = taoPhieu(XE_KHONG_NO, TrangThaiPhieu.HOAN_THANH, 100000);
         kiem("Phiếu hoàn thành nằm trong danh sách chờ", choLap(p));
-        bi("Thiếu thuế", "chọn loại thuế", () -> dao.lapHoaDon(p, null, null, HinhThucThanhToan.CHUYEN_KHOAN, null, "NV0002"));
-        bi("Tiền mặt thiếu", "chưa đủ", () -> dao.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, 107999.0, "NV0002"));
-        bi("Tiền mặt không nhập", "chưa đủ", () -> dao.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, null, "NV0002"));
+        bi("Thiếu thuế", "chọn loại thuế", () -> controller.NghiepVuHoaDon.lapHoaDon(p, null, null, HinhThucThanhToan.CHUYEN_KHOAN, null, "NV0002"));
+        bi("Tiền mặt thiếu", "chưa đủ", () -> controller.NghiepVuHoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, 107999.0, "NV0002"));
+        bi("Tiền mặt không nhập", "chưa đủ", () -> controller.NghiepVuHoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, null, "NV0002"));
         kiem("Từ chối không để lại hóa đơn", !dao.coHoaDonHieuLuc(p));
-        String ma = dao.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, 108000.0, "NV0002");
+        String ma = controller.NghiepVuHoaDon.lapHoaDon(p, null, "VAT08", HinhThucThanhToan.TIEN_MAT, 108000.0, "NV0002");
         kiem("Tiền mặt vừa đủ được nhận", ma.matches("HD\\d{6}"));
         kiem("Tiền mặt thành Đã thanh toán", dao.findById(ma).getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN);
         kiem("Hóa đơn không khuyến mãi có khuyến mãi null", dao.findById(ma).getKhuyenMai() == null
@@ -210,15 +210,15 @@ public class TestHoaDon {
                 && hd.getHinhThucThanhToan() == HinhThucThanhToan.CONG_NO);
         kiem("Ghi nợ không đổi tồn", ton(b) == 10);
 
-        bi("Thu nợ không chọn Công nợ lần nữa", "không hợp lệ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CONG_NO, null, "admin"));
-        bi("Thu nợ tiền mặt thiếu", "chưa đủ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 1.0, "admin"));
+        bi("Thu nợ không chọn Công nợ lần nữa", "không hợp lệ", () -> controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.CONG_NO, null, "admin"));
+        bi("Thu nợ tiền mặt thiếu", "chưa đủ", () -> controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.TIEN_MAT, 1.0, "admin"));
         kiem("Thu nợ lỗi giữ nguyên trạng thái", dao.findById(ma).getTrangThaiThanhToan() == TrangThaiHoaDon.CONG_NO);
-        dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin");
+        controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin");
         hd = dao.findById(ma);
         kiem("Thu nợ xong đổi trạng thái và hình thức", hd.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN
                 && hd.getHinhThucThanhToan() == HinhThucThanhToan.CHUYEN_KHOAN);
         kiem("Thu nợ không đổi tồn", ton(b) == 10);
-        bi("Không thu nợ hai lần", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "admin"));
+        bi("Không thu nợ hai lần", "Công nợ", () -> controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.TIEN_MAT, 999999999.0, "admin"));
     }
 
     private static void kiemTraHuy() throws Exception {
@@ -242,7 +242,7 @@ public class TestHoaDon {
         kiem("Hủy ghi nhật ký", demNhatKy(ma, TrangThaiHoaDon.DA_THANH_TOAN.getText(), "%Đã hủy%Khách đổi ý%") == 1);
         bi("Không hủy hai lần", "hủy trước đó", () -> dao.huy(ma, "Lần hai", "admin"));
         kiem("Hủy lần hai không ghi thêm nhật ký", demNhatKy(ma, "%", "%") == 1);
-        bi("Không thu nợ hóa đơn đã hủy", "Công nợ", () -> dao.thanhToanCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin"));
+        bi("Không thu nợ hóa đơn đã hủy", "Công nợ", () -> controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin"));
 
         String b = taoPhuTung(10);
         String q = taoPhieu(XE_CO_NO, TrangThaiPhieu.HOAN_THANH, 100000);
@@ -356,7 +356,7 @@ public class TestHoaDon {
     }
 
     private static String lap(String maPhieu, String maKM, HinhThucThanhToan hinhThuc) throws SQLException {
-        return dao.lapHoaDon(maPhieu, maKM, "VAT08", hinhThuc, null, "NV0002");
+        return controller.NghiepVuHoaDon.lapHoaDon(maPhieu, maKM, "VAT08", hinhThuc, null, "NV0002");
     }
 
     private static boolean choLap(String maPhieu) throws SQLException {
@@ -473,17 +473,15 @@ public class TestHoaDon {
     /** hinhThuc null là hóa đơn không có khuyến mãi. */
     private static HoaDon tinh(double cong, double phuTung, HinhThucKhuyenMai hinhThuc, double giaTri,
             PhamViKhuyenMai phamVi, double thueSuat) {
-        HoaDon hd = new HoaDon();
+        KhuyenMai km = null;
         if (hinhThuc != null) {
-            KhuyenMai km = new KhuyenMai("KMX");
+            km = new KhuyenMai("KMX");
             km.setHinhThuc(hinhThuc);
             km.setGiaTri(giaTri);
             km.setPhamViApDung(phamVi);
-            hd.setKhuyenMai(km);
         }
-        hd.setThue(new Thue("X", "A", thueSuat));
-        hd.tinhTongThanhToan(cong, phuTung);
-        return hd;
+        return controller.NghiepVuHoaDon.tinhHoaDon(new PhieuTiepNhanVaSuaChua("P1"), km, new Thue("X", "A", thueSuat),
+                HinhThucThanhToan.TIEN_MAT, cong, phuTung);
     }
 
     private static void tien(String ten, HoaDon t, double giam, double vat, double tong) {

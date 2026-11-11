@@ -180,24 +180,20 @@ public class TienDoSuaChua_Dao {
     }
 
     /**
-     * Cập nhật tiến độ cho từng hạng mục dịch vụ; nếu tất cả hạng mục đều Hoàn thành
-     * thì tự động cập nhật Phiếu sang đúng chữ "Hoàn thành".
+     * Ghi tiến độ một hạng mục và trạng thái phiếu đã tính ở tầng nghiệp vụ, trong cùng một transaction.
      * Trả về false khi phiếu đã có hóa đơn hoặc đã hủy (màn hình có thể đang hiện dữ liệu cũ).
      */
     public boolean capNhatTienDoHangMuc(String maPhieuTNSC, String maDichVu, TrangThaiTienDo trangThaiHangMucMoi,
-            String tenDangNhap) throws SQLException {
+            TrangThaiPhieu trangThaiPhieuMoi, String tenDangNhap) throws SQLException {
         String sqlUpdateDV = "UPDATE d SET trangThaiTienDo = ? FROM ChiTietSuaChua_DichVu d "
                 + "JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = d.maPhieuTNSC "
                 + "WHERE d.maPhieuTNSC = ? AND d.maDichVu = ? AND " + PhieuTiepNhanVaSuaChua_Dao.NOT_LOCKED;
-        String sqlCheckNotDone = "SELECT (SELECT COUNT(*) FROM ChiTietSuaChua_DichVu WHERE maPhieuTNSC = ? AND trangThaiTienDo <> N'Hoàn thành'), "
-                + "(SELECT COUNT(*) FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ? AND trangThai = N'Chờ xuất')";
         String sqlUpdatePhieu = "UPDATE PhieuTiepNhanVaSuaChua SET trangThai = ? WHERE maPhieuTNSC = ?";
 
         try (Connection c = ConnectDB.getConnection()) {
             boolean oldAuto = c.getAutoCommit();
             c.setAutoCommit(false);
             try (PreparedStatement psDV = c.prepareStatement(sqlUpdateDV);
-                 PreparedStatement psCheck = c.prepareStatement(sqlCheckNotDone);
                  PreparedStatement psPhieu = c.prepareStatement(sqlUpdatePhieu)) {
 
                 psDV.setString(1, trangThaiHangMucMoi.getText());
@@ -209,18 +205,6 @@ public class TienDoSuaChua_Dao {
                     return false;
                 }
 
-                psCheck.setString(1, maPhieuTNSC);
-                psCheck.setString(2, maPhieuTNSC);
-                int notDoneCount = 0;
-                int soYeuCauCho = 0;
-                try (ResultSet rs = psCheck.executeQuery()) {
-                    if (rs.next()) {
-                        notDoneCount = rs.getInt(1);
-                        soYeuCauCho = rs.getInt(2);
-                    }
-                }
-
-                TrangThaiPhieu trangThaiPhieuMoi = TrangThaiPhieu.theoTienDo(notDoneCount, soYeuCauCho > 0);
                 psPhieu.setString(1, trangThaiPhieuMoi.getText());
                 psPhieu.setString(2, maPhieuTNSC);
                 psPhieu.executeUpdate();
@@ -235,6 +219,18 @@ public class TienDoSuaChua_Dao {
                 c.rollback();
                 c.setAutoCommit(oldAuto);
                 throw ex;
+            }
+        }
+    }
+
+    /** Phiếu còn yêu cầu phụ tùng chờ thủ kho duyệt. */
+    public boolean coYeuCauPhuTungCho(String maPhieuTNSC) throws SQLException {
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ? AND trangThai = N'Chờ xuất'")) {
+            ps.setString(1, maPhieuTNSC);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
             }
         }
     }

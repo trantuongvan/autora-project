@@ -4,7 +4,6 @@ import com.itextpdf.text.DocumentException;
 import dao.ChiTietSuaChua_DichVu_Dao;
 import dao.DichVu_Dao;
 import dao.NhanVien_Dao;
-import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.ChiTietSuaChua_DichVu;
 import entity.DichVu;
@@ -43,7 +42,6 @@ public class ChiTietPhieuSuaChuaController {
     private final ChiTietSuaChua_DichVu_Dao chiTietDao = new ChiTietSuaChua_DichVu_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
     private final NhanVien_Dao nhanVienDao = new NhanVien_Dao();
-    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private final NumberFormat dinhDangTien = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"));
     private List<ChiTietSuaChua_DichVu> danhSach = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieu;
@@ -200,7 +198,7 @@ public class ChiTietPhieuSuaChuaController {
             dichVu.add(danhSach.get(i).getDichVu());
         }
         try {
-            PhanCongTuDong.KetQua ketQua = phanCongDao.chon(LocalDateTime.now(), dichVu);
+            PhanCongTuDong.KetQua ketQua = NghiepVuPhieu.chonKyThuatVien(LocalDateTime.now(), dichVu);
             for (int i : dong) {
                 NhanVien tho = ketQua.getPhanCong().get(danhSach.get(i).getDichVu());
                 if (tho != null) {
@@ -281,16 +279,16 @@ public class ChiTietPhieuSuaChuaController {
             view.hienLoi(null);
             return;
         }
-        if (!hienTai.coTheChuyenSang(trangThai)) {
+        if (!NghiepVuPhieu.coTheChuyenSang(hienTai, trangThai)) {
             view.hienLoi("Không thể chuyển trạng thái từ " + hienTai + " sang " + trangThai + ".");
             return;
         }
         phieu.setDanhSachDichVu(danhSach);
-        if (trangThai == TrangThaiPhieu.HOAN_THANH && !phieu.coTheHoanThanh()) {
+        if (trangThai == TrangThaiPhieu.HOAN_THANH && !NghiepVuPhieu.coTheHoanThanh(phieu)) {
             view.hienLoi("Chỉ hoàn thành được phiếu khi mọi dịch vụ đã hoàn thành.");
             return;
         }
-        ghi(() -> phieuDao.capNhatTrangThai(maPhieu, hienTai, trangThai, PhienDangNhap.getHienTai().getTenDangNhap()));
+        ghi(() -> NghiepVuPhieu.doiTrangThai(maPhieu, hienTai, trangThai, PhienDangNhap.getHienTai().getTenDangNhap()));
     }
 
     private void huyPhieu() {

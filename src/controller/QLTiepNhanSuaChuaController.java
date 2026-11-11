@@ -2,7 +2,6 @@ package controller;
 
 import dao.DichVu_Dao;
 import dao.KhachHang_Dao;
-import dao.PhanCong_Dao;
 import dao.PhieuTiepNhanVaSuaChua_Dao;
 import entity.DichVu;
 import entity.KhachHang;
@@ -36,7 +35,6 @@ public class QLTiepNhanSuaChuaController {
     private final DieuHuongPhieu dieuHuong;
     private final PhieuTiepNhanVaSuaChua_Dao dao = new PhieuTiepNhanVaSuaChua_Dao();
     private final DichVu_Dao dichVuDao = new DichVu_Dao();
-    private final PhanCong_Dao phanCongDao = new PhanCong_Dao();
     private PhieuTiepNhanVaSuaChua phieuDangSua;
     private String maKhachDaCo;
     private boolean xeDaCo;
@@ -91,7 +89,7 @@ public class QLTiepNhanSuaChuaController {
         }
         List<DichVu> dichVu = view.getLstDichVu().getSelectedValuesList();
         try {
-            LocalDateTime duKien = dichVu.isEmpty() ? null : phanCongDao.chon(LocalDateTime.now(), dichVu).getDuKien();
+            LocalDateTime duKien = dichVu.isEmpty() ? null : NghiepVuPhieu.chonKyThuatVien(LocalDateTime.now(), dichVu).getDuKien();
             view.getTxtDuKien().setText(duKien == null ? "" : duKien.format(DINH_DANG_GIO));
         } catch (SQLException ex) {
             hienLoiDuLieu("Không thể tính dự kiến hoàn thành.", ex);
@@ -343,7 +341,7 @@ public class QLTiepNhanSuaChuaController {
         p.setNhanVienLap(new NhanVien(PhienDangNhap.getHienTai().getMaNV()));
         p.setThoiGianTiepNhan(LocalDateTime.now());
         p.setTrangThai(TrangThaiPhieu.CHO_KIEM_TRA);
-        ketQuaPhanCong = moTaPhanCong(dao.taoTiepNhan(khachMoi, xeMoi, p, dichVu));
+        ketQuaPhanCong = moTaPhanCong(NghiepVuPhieu.tiepNhan(khachMoi, xeMoi, p, dichVu));
         return true;
     }
 

@@ -10,23 +10,23 @@ public class NangSuatKTV {
     private int hangMucDangThucHien;
     private double tienCongMangLai;
 
-    public NangSuatKTV() {
-    }
-
     public NangSuatKTV(NhanVien kyThuatVien, int soXeThamGia, int hangMucHoanThanh,
                        int hangMucDangThucHien, double tienCongMangLai) {
         setKyThuatVien(kyThuatVien);
         setSoXeThamGia(soXeThamGia);
         setHangMucHoanThanh(hangMucHoanThanh);
         setHangMucDangThucHien(hangMucDangThucHien);
-        setTienCongMangLai(tienCongMangLai);
+        if (tienCongMangLai < 0) {
+            throw new IllegalArgumentException("Tiền công mang lại không được âm.");
+        }
+        this.tienCongMangLai = tienCongMangLai;
     }
 
     public NhanVien getKyThuatVien() {
         return kyThuatVien;
     }
 
-    public void setKyThuatVien(NhanVien kyThuatVien) {
+    private void setKyThuatVien(NhanVien kyThuatVien) {
         if (kyThuatVien == null) {
             throw new IllegalArgumentException("Kỹ thuật viên không được để trống.");
         }
@@ -37,7 +37,7 @@ public class NangSuatKTV {
         return soXeThamGia;
     }
 
-    public void setSoXeThamGia(int soXeThamGia) {
+    private void setSoXeThamGia(int soXeThamGia) {
         if (soXeThamGia < 0) {
             throw new IllegalArgumentException("Số xe tham gia không được âm.");
         }
@@ -48,7 +48,7 @@ public class NangSuatKTV {
         return hangMucHoanThanh;
     }
 
-    public void setHangMucHoanThanh(int hangMucHoanThanh) {
+    private void setHangMucHoanThanh(int hangMucHoanThanh) {
         if (hangMucHoanThanh < 0) {
             throw new IllegalArgumentException("Số hạng mục hoàn thành không được âm.");
         }
@@ -59,7 +59,7 @@ public class NangSuatKTV {
         return hangMucDangThucHien;
     }
 
-    public void setHangMucDangThucHien(int hangMucDangThucHien) {
+    private void setHangMucDangThucHien(int hangMucDangThucHien) {
         if (hangMucDangThucHien < 0) {
             throw new IllegalArgumentException("Số hạng mục đang thực hiện không được âm.");
         }
@@ -70,17 +70,6 @@ public class NangSuatKTV {
         return tienCongMangLai;
     }
 
-    public void setTienCongMangLai(double tienCongMangLai) {
-        if (tienCongMangLai < 0) {
-            throw new IllegalArgumentException("Tiền công mang lại không được âm.");
-        }
-        this.tienCongMangLai = tienCongMangLai;
-    }
-
-    /** Phần trăm hạng mục đã xong trên tổng hạng mục được giao, làm tròn 1 chữ số. */
-    public double getTyLeHoanThanh() {
-        return DuLieuThongKe.phanTram(hangMucHoanThanh, hangMucHoanThanh + hangMucDangThucHien);
-    }
 
     @Override
     public boolean equals(Object o) {

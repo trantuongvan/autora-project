@@ -18,31 +18,6 @@ public enum TrangThaiPhieu {
         return text;
     }
 
-    /** Bước chuyển hợp lệ theo tiến trình thực tế; phiếu đã xong hoặc đã hủy không chuyển được nữa. */
-    public boolean coTheChuyenSang(TrangThaiPhieu moi) {
-        switch (this) {
-            case CHO_KIEM_TRA:
-                return moi == DANG_SUA || moi == CHO_PHU_TUNG;
-            case DANG_SUA:
-                return moi == CHO_PHU_TUNG || moi == HOAN_THANH;
-            case CHO_PHU_TUNG:
-                return moi == DANG_SUA;
-            default:
-                return false;
-        }
-    }
-
-    /**
-     * Trạng thái phiếu sau khi cập nhật hạng mục: xong hết thì Hoàn thành; còn việc và còn yêu cầu
-     * phụ tùng chờ xuất thì vẫn Chờ phụ tùng; còn lại là Đang sửa.
-     */
-    public static TrangThaiPhieu theoTienDo(int soHangMucChuaXong, boolean conChoPhuTung) {
-        if (soHangMucChuaXong == 0) {
-            return HOAN_THANH;
-        }
-        return conChoPhuTung ? CHO_PHU_TUNG : DANG_SUA;
-    }
-
     /** Nhãn "Chờ sửa" chỉ để hiển thị; trong CSDL phiếu đó là "Chờ kiểm tra". */
     public static TrangThaiPhieu tuNhan(String nhan) {
         if (nhan == null) {

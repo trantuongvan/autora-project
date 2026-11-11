@@ -9,9 +9,6 @@ public class NhapXuatNgay {
     private int soLuongNhap;
     private int soLuongXuat;
 
-    public NhapXuatNgay() {
-    }
-
     public NhapXuatNgay(LocalDate ngay, int soLuongNhap, int soLuongXuat) {
         setNgay(ngay);
         setSoLuongNhap(soLuongNhap);
@@ -22,7 +19,7 @@ public class NhapXuatNgay {
         return ngay;
     }
 
-    public void setNgay(LocalDate ngay) {
+    private void setNgay(LocalDate ngay) {
         if (ngay == null) {
             throw new IllegalArgumentException("Ngày thống kê không được để trống.");
         }
@@ -33,7 +30,7 @@ public class NhapXuatNgay {
         return soLuongNhap;
     }
 
-    public void setSoLuongNhap(int soLuongNhap) {
+    private void setSoLuongNhap(int soLuongNhap) {
         if (soLuongNhap < 0) {
             throw new IllegalArgumentException("Số lượng nhập không được âm.");
         }
@@ -44,7 +41,7 @@ public class NhapXuatNgay {
         return soLuongXuat;
     }
 
-    public void setSoLuongXuat(int soLuongXuat) {
+    private void setSoLuongXuat(int soLuongXuat) {
         if (soLuongXuat < 0) {
             throw new IllegalArgumentException("Số lượng xuất không được âm.");
         }

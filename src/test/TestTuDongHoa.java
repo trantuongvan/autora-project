@@ -54,24 +54,24 @@ public class TestTuDongHoa {
         KhuyenMai chiPhuTung = km("KM05", HinhThucKhuyenMai.PHAN_TRAM, 50, PhamViKhuyenMai.PHU_TUNG);
         KhuyenMai chiCong = km("KM06", HinhThucKhuyenMai.PHAN_TRAM, 5, PhamViKhuyenMai.NHOM_DICH_VU);
 
-        dung("Giảm nhiều nhất thắng", KhuyenMai.totNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
+        dung("Giảm nhiều nhất thắng", controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(pt10, tien50, tien200), 600000, 400000) == tien200);
         dung("Phần trăm và tiền mặt so theo số tiền thật",
-                KhuyenMai.totNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
-                && KhuyenMai.totNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
-        dung("Hòa thì lấy cái đứng trước", KhuyenMai.totNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
-                && KhuyenMai.totNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
-        dung("Danh sách rỗng cho null", KhuyenMai.totNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
-        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", KhuyenMai.totNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
-        dung("Phạm vi công khi không có công cho null", KhuyenMai.totNhat(Arrays.asList(chiCong), 0, 500000) == null);
+                controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(tien50, pt10), 600000, 400000) == pt10
+                && controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(pt10, tien50), 100000, 0) == tien50);
+        dung("Hòa thì lấy cái đứng trước", controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(pt10, tien100, tien50), 600000, 400000) == pt10
+                && controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(tien100, pt10), 600000, 400000) == tien100);
+        dung("Danh sách rỗng cho null", controller.NghiepVuHoaDon.khuyenMaiTotNhat(Collections.<KhuyenMai>emptyList(), 600000, 400000) == null);
+        dung("Phạm vi phụ tùng khi không có phụ tùng cho null", controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(chiPhuTung), 600000, 0) == null);
+        dung("Phạm vi công khi không có công cho null", controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(chiCong), 0, 500000) == null);
         dung("Bỏ qua khuyến mãi không giảm, chọn cái có giảm",
-                KhuyenMai.totNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
+                controller.NghiepVuHoaDon.khuyenMaiTotNhat(Arrays.asList(chiPhuTung, chiCong), 600000, 0) == chiCong);
     }
 
     private static int deXuat(int nguong, int ton) {
         PhuTung pt = new PhuTung("SKU_X");
         pt.setNguongCanhBao(nguong);
         pt.setSoLuongTon(ton);
-        return pt.soLuongNhapDeXuat();
+        return controller.NghiepVuKho.soLuongNhapDeXuat(pt);
     }
 
     private static void kiemTraSoLuongNhap() {
@@ -148,7 +148,7 @@ public class TestTuDongHoa {
         p.setPhuTungDuKien("");
         DichVu dv = new DichVu("DV0001");
         dv.setTienCong(250000);
-        dao.taoTiepNhan(kh, xe, p, Arrays.asList(dv));
+        controller.NghiepVuPhieu.tiepNhan(kh, xe, p, Arrays.asList(dv));
         PhieuTiepNhanVaSuaChua doc = dao.findById(p.getMaPhieuTNSC());
         dung("Phiếu không có phụ tùng dự kiến lưu và đọc lại", doc != null && doc.getPhuTungDuKien() != null
                 && doc.getPhuTungDuKien().isEmpty() && "BMW".equals(doc.getXe().getHangXe()));

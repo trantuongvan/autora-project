@@ -270,12 +270,7 @@ public class PhieuYeuCauXuatKho_Dao {
                 }
 
                 for (ChiTietYeuCauXuatKho ct : chiTietList) {
-                    PhuTung phuTung = PhuTung_Dao.docDeDoiTon(c, ct.getPhuTung().getMaSKU());
-                    if (!phuTung.duTon(ct.getSoLuong())) {
-                        throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + ct.getPhuTung().getMaSKU());
-                    }
-                    phuTung.xuatKho(ct.getSoLuong());
-                    PhuTung_Dao.luuTon(c, phuTung);
+                    PhuTung_Dao.xuatTon(c, ct.getPhuTung().getMaSKU(), ct.getSoLuong());
 
                     psCTPT.setString(1, maPhieuTNSC);
                     psCTPT.setString(2, ct.getPhuTung().getMaSKU());

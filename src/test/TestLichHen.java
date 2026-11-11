@@ -227,7 +227,7 @@ public class TestLichHen {
         PhieuTiepNhanVaSuaChua loiPhieu = phieuMau("77L-030.01");
         boolean baoLoi = false;
         try {
-            pdao.taoTiepNhan(null, null, loiPhieu, Arrays.asList(dichVu("DV0001", 250000), dichVu("KHONGCO", 1)));
+            controller.NghiepVuPhieu.tiepNhan(null, null, loiPhieu, Arrays.asList(dichVu("DV0001", 250000), dichVu("KHONGCO", 1)));
         } catch (SQLException ex) {
             baoLoi = true;
         }
@@ -235,7 +235,7 @@ public class TestLichHen {
         dung("Lưu phiếu lỗi hoàn tác việc đóng lịch", trangThai(xeHomNay).equals("Đang hẹn")
                 && trangThai(khachHomNay).equals("Đang hẹn") && trangThai(xeQuaHan).equals("Đang hẹn"));
 
-        pdao.taoTiepNhan(null, null, phieuMau("77L-030.01"), dv);
+        controller.NghiepVuPhieu.tiepNhan(null, null, phieuMau("77L-030.01"), dv);
         dung("Đóng lịch hôm nay của xe", trangThai(xeHomNay).equals("Đã đến"));
         dung("Đóng lịch quá hẹn của xe", trangThai(xeQuaHan).equals("Đã đến"));
         dung("Đóng lịch hôm nay của khách chưa gắn xe", trangThai(khachHomNay).equals("Đã đến"));

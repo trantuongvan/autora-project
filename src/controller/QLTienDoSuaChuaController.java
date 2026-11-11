@@ -211,7 +211,7 @@ public class QLTienDoSuaChuaController {
         } else {
             for (PhieuTiepNhanVaSuaChua p : danhSachPhieu) {
                 boolean isSelected = phieuDangChon != null && p.getMaPhieuTNSC().equals(phieuDangChon.getMaPhieuTNSC());
-                JPanel cardItem = view.taoThePhieuItem(p, isSelected);
+                JPanel cardItem = view.taoThePhieuItem(p, NghiepVuPhieu.trangThaiHienThiKTV(p), isSelected);
                 cardItem.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
@@ -252,8 +252,8 @@ public class QLTienDoSuaChuaController {
 
         view.getLblMaPhieuChiTiet().setText(p.getMaPhieuTNSC());
 
-        String tt = p.getTrangThaiHienThiKTV();
-        int pct = p.phanTramTienDo();
+        String tt = NghiepVuPhieu.trangThaiHienThiKTV(p);
+        int pct = NghiepVuPhieu.phanTramTienDo(p);
         String badgeText = p.getTrangThai() == TrangThaiPhieu.DANG_SUA ? (tt + " • " + pct + "%") : tt;
         view.getBadgeTrangThaiPhieu().set(badgeText, view.mauTrangThai(tt));
         view.getThanhTienDo().setPercent(pct);
@@ -298,18 +298,18 @@ public class QLTienDoSuaChuaController {
         view.getPnlHopLoiTrangThai().setVisible(false);
         if (moi == cu) return;
 
-        if (!cu.coTheChuyenSang(moi)) {
-            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + phieuDangChon.getTrangThaiHienThiKTV()
+        if (!NghiepVuPhieu.coTheChuyenSang(cu, moi)) {
+            hienLoiTrangThai("Trạng thái không hợp lệ: không thể chuyển từ '" + NghiepVuPhieu.trangThaiHienThiKTV(phieuDangChon)
                     + "' sang '" + nhanMoi + "'. Vui lòng chọn lại.");
             return;
         }
-        if (moi == TrangThaiPhieu.HOAN_THANH && !phieuDangChon.coTheHoanThanh()) {
+        if (moi == TrangThaiPhieu.HOAN_THANH && !NghiepVuPhieu.coTheHoanThanh(phieuDangChon)) {
             hienLoiTrangThai("Chỉ hoàn thành được phiếu khi mọi hạng mục đã hoàn thành.");
             return;
         }
         String ma = phieuDangChon.getMaPhieuTNSC();
         try {
-            if (phieuDao.capNhatTrangThai(ma, cu, moi, PhienDangNhap.getHienTai().getTenDangNhap())) {
+            if (NghiepVuPhieu.doiTrangThai(ma, cu, moi, PhienDangNhap.getHienTai().getTenDangNhap())) {
                 JOptionPane.showMessageDialog(view, "Đã cập nhật trạng thái phiếu " + ma + " sang '" + nhanMoi + "'.",
                         "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } else {
@@ -354,7 +354,7 @@ public class QLTienDoSuaChuaController {
                     view.getPnlHopLoiTrangThai().setVisible(true);
                     return;
                 }
-                if (!tienDoDao.capNhatTienDoHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi,
+                if (!NghiepVuPhieu.capNhatHangMuc(ct.getPhieu().getMaPhieuTNSC(), ct.getDichVu().getMaDichVu(), moi,
                         PhienDangNhap.getHienTai().getTenDangNhap())) {
                     JOptionPane.showMessageDialog(view, "Phiếu đã có hóa đơn hoặc đã hủy nên không thể cập nhật hạng mục.",
                             "Cảnh báo", JOptionPane.WARNING_MESSAGE);
@@ -459,7 +459,7 @@ public class QLTienDoSuaChuaController {
         JPanel pnlTon = UIComponents.trong(new FlowLayout(FlowLayout.LEFT, 6, 0));
         JLabel lblTon = UIComponents.label(String.valueOf(item.getPhuTung().getSoLuongTon()), UIConstants.FONT_FORM_LABEL.deriveFont(13.5f), UIConstants.TEXT_DARK);
         pnlTon.add(lblTon);
-        if (item.getPhuTung().kiemTraCanhBaoTon()) {
+        if (NghiepVuKho.duoiNguongCanhBao(item.getPhuTung())) {
             pnlTon.add(new JLabel(new UIComponents.LineIcon(UIComponents.Loai.ALERT, UIConstants.STATUS_WARNING, 16)));
         }
         row.add(pnlTon, QLTienDoSuaChua.cotGrid(3, 0.12));

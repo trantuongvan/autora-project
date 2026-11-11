@@ -236,13 +236,31 @@ public class PhuTung_Dao {
         }
     }
 
-    static void luuTon(Connection c, PhuTung pt) throws SQLException {
-        String sql = "UPDATE PhuTung SET soLuongTon = ?, giaNhap = ? WHERE maSKU = ?";
+    /** Cộng tồn và lấy giá nhập mới trong transaction của người gọi; từ chối khi giá nhập cao hơn giá bán lẻ. */
+    static void nhapTon(Connection c, String maSKU, int soLuong, double giaNhap) throws SQLException {
+        String sql = "UPDATE PhuTung SET soLuongTon = soLuongTon + ?, giaNhap = ? WHERE maSKU = ? AND giaBanLe >= ?";
         try (PreparedStatement p = c.prepareStatement(sql)) {
-            p.setInt(1, pt.getSoLuongTon());
-            p.setDouble(2, pt.getGiaNhap());
-            p.setString(3, pt.getMaSKU());
-            p.executeUpdate();
+            p.setInt(1, soLuong);
+            p.setDouble(2, giaNhap);
+            p.setString(3, maSKU);
+            p.setDouble(4, giaNhap);
+            if (p.executeUpdate() != 1) {
+                throw new SQLException("Giá nhập của mã " + maSKU
+                        + " cao hơn giá bán lẻ. Hãy tăng giá bán lẻ ở Phụ tùng & Kho trước khi nhập.");
+            }
+        }
+    }
+
+    /** Trừ tồn trong transaction của người gọi; từ chối khi tồn không đủ, nên kho không bao giờ âm. */
+    static void xuatTon(Connection c, String maSKU, int soLuong) throws SQLException {
+        String sql = "UPDATE PhuTung SET soLuongTon = soLuongTon - ? WHERE maSKU = ? AND soLuongTon >= ?";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, soLuong);
+            p.setString(2, maSKU);
+            p.setInt(3, soLuong);
+            if (p.executeUpdate() != 1) {
+                throw new SQLException("Tồn kho trên hệ thống không đủ cho mã " + maSKU);
+            }
         }
     }
 
