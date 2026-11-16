@@ -91,6 +91,7 @@ public class QLNhapKhoController {
         initHeaderAndNCC();
         initController();
         UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimPhieu(), () -> view.getTxtTuNgay().setText(""));
         UIComponents.tuTaiLai(this::loadData, view.getTxtTimPhieu(), view.getCboLocNCC(), view.getTxtTuNgay(),
                 view.getTxtDenNgay());
         loadData();
@@ -98,7 +99,7 @@ public class QLNhapKhoController {
 
     private void initHeaderAndNCC() {
         try {
-            thuKhoHienTai = nhapKhoDao.findDefaultThuKho();
+            thuKhoHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (thuKhoHienTai != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), thuKhoHienTai.getHoTen());
                 view.getLblThuKhoModal().setText(thuKhoHienTai.getHoTen());

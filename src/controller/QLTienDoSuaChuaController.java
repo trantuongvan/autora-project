@@ -38,7 +38,7 @@ public class QLTienDoSuaChuaController {
     private final PhieuYeuCauXuatKho_Dao yeuCauDao;
 
     private NhanVien kyThuatVienHienTai;
-    private String tabTrangThaiDangChon = "Tất cả";
+    private String tabTrangThaiDangChon = "Chưa xong";
     private List<PhieuTiepNhanVaSuaChua> danhSachPhieu = new ArrayList<>();
     private PhieuTiepNhanVaSuaChua phieuDangChon;
     private boolean daTai;
@@ -58,6 +58,7 @@ public class QLTienDoSuaChuaController {
 
         initKyThuatVien();
         initController();
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimPhieu(), () -> view.getBtnLocTrangThai()[1].doClick());
         UIComponents.tuTaiLai(() -> loadDanhSachPhieu(null), view.getTxtTimPhieu());
         UIComponents.tuTaiLai(() -> loadDanhSachPhieu(null), view.getBtnLocTrangThai());
         loadDanhSachPhieu(null);
@@ -65,11 +66,10 @@ public class QLTienDoSuaChuaController {
 
     private void initKyThuatVien() {
         try {
-            kyThuatVienHienTai = tienDoDao.findDefaultKyThuatVien();
+            kyThuatVienHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (kyThuatVienHienTai != null) {
                 view.capNhatThongTinKTVHeader(kyThuatVienHienTai.getHoTen());
-                NhanVien dayDu = new dao.NhanVien_Dao().findById(kyThuatVienHienTai.getMaNV());
-                view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
+                view.setCaLamViec(kyThuatVienHienTai.getCaLamViec());
             }
         } catch (SQLException ex) {
             util.UIComponents.baoLoiCsdl(view, ex);
@@ -371,7 +371,7 @@ public class QLTienDoSuaChuaController {
             tabTrangThaiDangChon = "Tất cả";
             JButton[] pills = view.getBtnLocTrangThai();
             for (int i = 0; i < pills.length; i++) {
-                view.capNhatStyleNutPill(pills[i], i == 0);
+                view.capNhatStyleNutPill(pills[i], i == 1);
             }
             loadDanhSachPhieu(maPhieuTNSC);
         }

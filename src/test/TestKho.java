@@ -544,8 +544,8 @@ public class TestKho {
                 new PhieuTiepNhanVaSuaChua(p), new NhanVien("NV0005"), null);
     }
 
-    private static List<ChiTietYeuCauXuatKho> dong(String m, String sku, int soLuong) {
-        return Arrays.asList(new ChiTietYeuCauXuatKho(new PhieuYeuCauXuatKho(m), new PhuTung(sku), soLuong));
+    private static List<ChiTietYeuCauXuatKho> dong(String m, String sku, int soLuong) throws Exception {
+        return Arrays.asList(new ChiTietYeuCauXuatKho(new PhieuYeuCauXuatKho(m), new dao.PhuTung_Dao().findById(sku), soLuong));
     }
 
     private static int ton(String sku) throws Exception {

@@ -27,6 +27,7 @@ public class QLNhatKyController {
         this.view = view;
         initController();
         UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(), () -> view.getTxtTuNgay().setText(""));
         UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getTxtTuNgay(), view.getTxtDenNgay());
         taiDuLieu();
     }

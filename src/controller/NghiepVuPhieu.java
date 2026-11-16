@@ -124,6 +124,11 @@ public final class NghiepVuPhieu {
         return tt == null || tt == TrangThaiPhieu.CHO_KIEM_TRA ? "Chờ sửa" : tt.getText();
     }
 
+    /** Bước của thanh tiến trình: 4 Thanh toán khi đã có hóa đơn, 3 Xuất kho khi đã yêu cầu phụ tùng, còn lại 2 Chỉ định. */
+    public static int buocTienTrinh(boolean coHoaDonHopLe, boolean coYeuCauXuatKho) {
+        return coHoaDonHopLe ? 4 : coYeuCauXuatKho ? 3 : 2;
+    }
+
     /** Xe chỉ được bàn giao khi xong mọi hạng mục và hóa đơn đã trả hoặc được ghi nợ. */
     public static boolean duDieuKienBanGiao(PhieuTiepNhanVaSuaChua p) {
         return phanTramHoanTat(p) == 100 && p.getHoaDon() != null

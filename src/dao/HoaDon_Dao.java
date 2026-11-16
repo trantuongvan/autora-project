@@ -379,11 +379,7 @@ public class HoaDon_Dao {
     }
 
     /** Hủy hóa đơn và ghi nhật ký trong một transaction. Phụ tùng vẫn nằm trên phiếu nên không hoàn kho. */
-    public void huy(String maHD, String lyDoHuy, String tenDangNhap) throws SQLException {
-        if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
-            throw new IllegalArgumentException("Vui lòng nhập lý do hủy.");
-        }
-        String lyDo = HoaDon.chuanHoaLyDoHuy(lyDoHuy);
+    public void huy(String maHD, String lyDo, String tenDangNhap) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {

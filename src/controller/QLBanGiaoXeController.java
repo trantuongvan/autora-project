@@ -28,6 +28,7 @@ public class QLBanGiaoXeController {
     public QLBanGiaoXeController(QLBanGiaoXe view) {
         this.view = view;
         initController();
+        util.UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(), () -> view.getCboLoc().setSelectedItem("Tất cả"));
         util.UIComponents.tuTaiLai(this::load, view.getTxtTimKiem(), view.getCboLoc());
         load();
     }

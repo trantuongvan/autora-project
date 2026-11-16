@@ -41,6 +41,7 @@ public class QLHoaDonController {
         this.dieuHuong = dieuHuong;
         initController();
         UIComponents.tuNgayGanDay(view.getTxtTuNgay());
+        UIComponents.boLocMacDinhKhiTim(view.getTxtTimKiem(), () -> view.getTxtTuNgay().setText(""));
         UIComponents.tuTaiLai(this::taiDuLieu, view.getTxtTimKiem(), view.getCboTrangThai(), view.getCboHinhThuc(),
                 view.getTxtTuNgay(), view.getTxtDenNgay());
         taiDuLieu();
@@ -73,7 +74,7 @@ public class QLHoaDonController {
         if (icon < 0 && e.getClickCount() == 2) {
             dieuHuong.moChiTietHoaDon(ma);
         } else if (icon == QLHoaDon.ICON_IN) {
-            ChiTietHoaDonController.inHoaDon(view, ma);
+            NghiepVuHoaDon.inHoaDon(view, ma);
         } else if (icon == QLHoaDon.ICON_HUY) {
             huyHoaDon(ma, (TrangThaiHoaDon) view.getTableModel().getValueAt(dongModel, QLHoaDon.COT_TRANG_THAI));
         }
@@ -197,7 +198,7 @@ public class QLHoaDonController {
             return;
         }
         try {
-            dao.huy(ma, lyDo, PhienDangNhap.getHienTai().getTenDangNhap());
+            NghiepVuHoaDon.huyHoaDon(ma, lyDo, PhienDangNhap.getHienTai().getTenDangNhap());
             taiLai();
         } catch (IllegalArgumentException | SQLException ex) {
             JOptionPane.showMessageDialog(view, ex.getMessage(), "Không thể hủy hóa đơn", JOptionPane.WARNING_MESSAGE);

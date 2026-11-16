@@ -30,7 +30,7 @@ import java.util.Set;
 
 /**
  * Kiểm thử lịch hẹn trên CSDL mẫu mới tạo. Dữ liệu thử dùng khách KHL.. và xe 77L-... để không đụng dữ liệu mẫu;
- * lịch thử ghi thẳng bằng SQL (mã LH9....) khi cần giờ trong quá khứ mà LichHen_Dao.insert từ chối.
+ * lịch thử ghi thẳng bằng SQL (mã LH9....) khi cần giờ trong quá khứ mà QLKhachHangController.datLichHen từ chối.
  */
 public class TestLichHen {
     private static final LichHen_Dao dao = new LichHen_Dao();
@@ -104,8 +104,8 @@ public class TestLichHen {
 
     private static void kiemTraGioQuaKhu() throws Exception {
         int truoc = dem("SELECT COUNT(*) FROM LichHen");
-        loi("Giờ hẹn trong quá khứ (1 giờ trước)", () -> dao.insert(lichMoi("KHL01", null, LocalDateTime.now().minusHours(1), "")));
-        loi("Giờ hẹn hôm qua", () -> dao.insert(lichMoi("KHL01", null, HOM_NAY.minusDays(1).withHour(10), "")));
+        loi("Giờ hẹn trong quá khứ (1 giờ trước)", () -> controller.QLKhachHangController.datLichHen(lichMoi("KHL01", null, LocalDateTime.now().minusHours(1), "")));
+        loi("Giờ hẹn hôm qua", () -> controller.QLKhachHangController.datLichHen(lichMoi("KHL01", null, HOM_NAY.minusDays(1).withHour(10), "")));
         dung("Giờ quá khứ không tạo dòng", dem("SELECT COUNT(*) FROM LichHen") == truoc);
         LichHen ganDay = lichMoi("KHL01", null, LocalDateTime.now().plusMinutes(5), "");
         dao.insert(ganDay);
@@ -310,7 +310,7 @@ public class TestLichHen {
         }
     }
 
-    /** Ghi thẳng một lịch hẹn, bỏ qua kiểm tra giờ quá khứ của DAO; trả về mã. */
+    /** Ghi thẳng một lịch hẹn, bỏ qua kiểm tra giờ quá khứ của controller; trả về mã. */
     private static String lichSql(String maKH, LocalDateTime gio, String bienSo, String trangThai) throws SQLException {
         String ma = String.format("LH9%04d", ++stt);
         try (Connection c = ConnectDB.getConnection();

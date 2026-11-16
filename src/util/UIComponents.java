@@ -520,6 +520,22 @@ public final class UIComponents {
         }
     }
 
+    /**
+     * Tiêu chí tải mặc định chỉ áp dụng trước khi tìm: khi ô tìm kiếm chuyển từ rỗng sang có chữ,
+     * chạy boLoc để đưa bộ lọc về "tất cả", nhờ vậy gõ mã hay số điện thoại vẫn tìm được mọi bản ghi.
+     */
+    public static void boLocMacDinhKhiTim(javax.swing.text.JTextComponent oTim, Runnable boLoc) {
+        oTim.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                if (e.getDocument().getLength() == e.getLength()) {
+                    boLoc.run();
+                }
+            }
+            @Override public void removeUpdate(javax.swing.event.DocumentEvent e) { }
+            @Override public void changedUpdate(javax.swing.event.DocumentEvent e) { }
+        });
+    }
+
     /** Ô "Từ ngày" mặc định 30 ngày trước, để danh sách tăng hằng ngày chỉ tải phần gần đây. */
     public static void tuNgayGanDay(javax.swing.text.JTextComponent o) {
         o.setText(java.time.LocalDate.now().minusDays(30).format(ChonNgay.NGAY));
