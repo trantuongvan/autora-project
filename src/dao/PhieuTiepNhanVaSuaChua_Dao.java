@@ -241,21 +241,6 @@ public class PhieuTiepNhanVaSuaChua_Dao {
         }
     }
 
-    /** Bước hiện tại của thanh tiến trình: 2 Chỉ định, 3 Xuất kho, 4 Thanh toán. */
-    public int buocHienTai(String ma) throws SQLException {
-        String sql = "SELECT CASE WHEN EXISTS (SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy') THEN 4 "
-                + "WHEN EXISTS (SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ?) THEN 3 ELSE 2 END";
-        try (Connection connection = ConnectDB.getConnection();
-                PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setString(1, ma);
-            statement.setString(2, ma);
-            try (ResultSet rs = statement.executeQuery()) {
-                rs.next();
-                return rs.getInt(1);
-            }
-        }
-    }
-
     /** Lưu KTV phụ trách và ghi chú kỹ thuật; trả về false khi phiếu đã bị khóa bởi hóa đơn. */
     public boolean capNhatPhanCong(String ma, String maNVPhuTrach, String ghiChuKyThuat) throws SQLException {
         try (Connection connection = ConnectDB.getConnection()) {

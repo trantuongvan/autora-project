@@ -45,12 +45,11 @@ public class TrangChuKyThuatVienController {
 
     private void initKyThuatVien() {
         try {
-            kyThuatVienHienTai = tienDoDao.findDefaultKyThuatVien();
+            kyThuatVienHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (kyThuatVienHienTai != null) {
                 String ten = kyThuatVienHienTai.getHoTen();
                 view.capNhatThongTinKTVHeader(ten);
-                NhanVien dayDu = new dao.NhanVien_Dao().findById(kyThuatVienHienTai.getMaNV());
-                view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
+                view.setCaLamViec(kyThuatVienHienTai.getCaLamViec());
                 String tenGoi = ten.contains(" ") ? ten.substring(ten.lastIndexOf(' ') + 1) : ten;
                 view.getLblMoTaChao().setText("Xin chào " + tenGoi + ", đây là các hạng mục sửa chữa được giao cho bạn hôm nay.");
             }

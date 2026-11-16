@@ -189,7 +189,7 @@ public class TestHoaDon {
         kiem("Hết lượt thì không được chọn", !coTrongDanhSach(mot));
         String p2 = taoPhieu(XE_KHONG_NO, TrangThaiPhieu.HOAN_THANH, 100000);
         bi("Hết lượt bị từ chối", mot, () -> lap(p2, mot, HinhThucThanhToan.CHUYEN_KHOAN));
-        dao.huy(ma, "Trả lượt", "admin");
+        controller.NghiepVuHoaDon.huyHoaDon(ma, "Trả lượt", "admin");
         kiem("Hủy hóa đơn trả lại lượt", coTrongDanhSach(mot));
         kiem("Lập được với khuyến mãi vừa trả lượt", lap(p2, mot, HinhThucThanhToan.CHUYEN_KHOAN) != null);
     }
@@ -226,21 +226,21 @@ public class TestHoaDon {
         String p = taoPhieu(XE_KHONG_NO, TrangThaiPhieu.HOAN_THANH, 100000);
         themPhuTung(p, a, 4, 1000);
         String ma = lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN);
-        bi("Hủy thiếu lý do", "lý do", () -> dao.huy(ma, "  ", "admin"));
-        bi("Hủy lý do null", "lý do", () -> dao.huy(ma, null, "admin"));
+        bi("Hủy thiếu lý do", "lý do", () -> controller.NghiepVuHoaDon.huyHoaDon(ma, "  ", "admin"));
+        bi("Hủy lý do null", "lý do", () -> controller.NghiepVuHoaDon.huyHoaDon(ma, null, "admin"));
         StringBuilder dai = new StringBuilder();
         for (int i = 0; i < 256; i++) {
             dai.append('x');
         }
-        bi("Hủy lý do quá dài", "255", () -> dao.huy(ma, dai.toString(), "admin"));
+        bi("Hủy lý do quá dài", "255", () -> controller.NghiepVuHoaDon.huyHoaDon(ma, dai.toString(), "admin"));
 
-        dao.huy(ma, "Khách đổi ý", "admin");
+        controller.NghiepVuHoaDon.huyHoaDon(ma, "Khách đổi ý", "admin");
         HoaDon hd = dao.findById(ma);
         kiem("Hủy đổi trạng thái và lưu lý do", hd.getTrangThaiThanhToan() == TrangThaiHoaDon.DA_HUY
                 && "Khách đổi ý".equals(hd.getLyDoHuy()));
         kiem("Hủy không đổi tồn", ton(a) == 10);
         kiem("Hủy ghi nhật ký", demNhatKy(ma, TrangThaiHoaDon.DA_THANH_TOAN.getText(), "%Đã hủy%Khách đổi ý%") == 1);
-        bi("Không hủy hai lần", "hủy trước đó", () -> dao.huy(ma, "Lần hai", "admin"));
+        bi("Không hủy hai lần", "hủy trước đó", () -> controller.NghiepVuHoaDon.huyHoaDon(ma, "Lần hai", "admin"));
         kiem("Hủy lần hai không ghi thêm nhật ký", demNhatKy(ma, "%", "%") == 1);
         bi("Không thu nợ hóa đơn đã hủy", "Công nợ", () -> controller.NghiepVuHoaDon.thuCongNo(ma, HinhThucThanhToan.CHUYEN_KHOAN, null, "admin"));
 
@@ -248,7 +248,7 @@ public class TestHoaDon {
         String q = taoPhieu(XE_CO_NO, TrangThaiPhieu.HOAN_THANH, 100000);
         themPhuTung(q, b, 1, 1000);
         String maNo = lap(q, null, HinhThucThanhToan.CONG_NO);
-        dao.huy(maNo, "Sai khách", "admin");
+        controller.NghiepVuHoaDon.huyHoaDon(maNo, "Sai khách", "admin");
         kiem("Hủy hóa đơn công nợ không đổi tồn", ton(b) == 10);
         kiem("Nhật ký ghi trạng thái cũ Công nợ", demNhatKy(maNo, TrangThaiHoaDon.CONG_NO.getText(), "%") == 1);
 
@@ -257,12 +257,12 @@ public class TestHoaDon {
         themPhuTung(r, c, 1, 1000);
         String maBG = lap(r, null, HinhThucThanhToan.CHUYEN_KHOAN);
         thucThi("INSERT INTO PhieuBanGiao (maPhieuBG, maPhieuTNSC, maNV_BanGiao) VALUES (?, ?, 'NV0002')", "BG" + maBG, r);
-        bi("Có bàn giao thì không hủy", "bàn giao", () -> dao.huy(maBG, "Muộn", "admin"));
+        bi("Có bàn giao thì không hủy", "bàn giao", () -> controller.NghiepVuHoaDon.huyHoaDon(maBG, "Muộn", "admin"));
         kiem("Có bàn giao giữ nguyên hóa đơn", dao.findById(maBG).getTrangThaiThanhToan() == TrangThaiHoaDon.DA_THANH_TOAN);
         kiem("Có bàn giao không đổi tồn", ton(c) == 10);
         kiem("Có bàn giao không ghi nhật ký", demNhatKy(maBG, "%", "%") == 0);
-        bi("Hóa đơn mẫu đã bàn giao", "bàn giao", () -> dao.huy("HD000001", "Thử", "admin"));
-        bi("Hủy hóa đơn không tồn tại", "không tồn tại", () -> dao.huy("HD999999", "Thử", "admin"));
+        bi("Hóa đơn mẫu đã bàn giao", "bàn giao", () -> controller.NghiepVuHoaDon.huyHoaDon("HD000001", "Thử", "admin"));
+        bi("Hủy hóa đơn không tồn tại", "không tồn tại", () -> controller.NghiepVuHoaDon.huyHoaDon("HD999999", "Thử", "admin"));
     }
 
     private static void kiemTraLapLai() throws Exception {
@@ -271,7 +271,7 @@ public class TestHoaDon {
         themPhuTung(p, a, 3, 1000);
         String lan1 = lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN);
         bi("Hóa đơn hiệu lực thứ hai bị từ chối", "còn hiệu lực", () -> lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN));
-        dao.huy(lan1, "Lập sai", "admin");
+        controller.NghiepVuHoaDon.huyHoaDon(lan1, "Lập sai", "admin");
         kiem("Hủy xong phiếu lại chờ lập", choLap(p));
         String lan2 = lap(p, null, HinhThucThanhToan.CHUYEN_KHOAN);
         kiem("Lập lại có mã mới", !lan1.equals(lan2));
@@ -349,7 +349,7 @@ public class TestHoaDon {
         ThongKeChoThanhToan coNo = trangChu.hoaDonChoThanhToan();
         kiem("Công nợ được tính một lần", coNo.getSoLuong() == so + 1);
         kiem("Công nợ cộng tiền", coNo.getTongTien() > tien);
-        dao.huy(maNo, "Lập sai", "admin");
+        controller.NghiepVuHoaDon.huyHoaDon(maNo, "Lập sai", "admin");
         ThongKeChoThanhToan daHuy = trangChu.hoaDonChoThanhToan();
         kiem("Hủy hóa đơn nợ thì phiếu lại chờ", daHuy.getSoLuong() == so + 1);
         kiem("Hủy hóa đơn nợ thì hết tiền nợ", daHuy.getTongTien() == tien);

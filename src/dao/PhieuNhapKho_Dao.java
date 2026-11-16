@@ -16,54 +16,20 @@ import java.util.List;
 
 public class PhieuNhapKho_Dao {
 
-    /** Lấy Thủ kho mặc định từ DB (ưu tiên NV0004 - Bùi Thái Vy trong dữ liệu mẫu SQL). */
-    public NhanVien findDefaultThuKho() throws SQLException {
-        util.PhienDangNhap phien = util.PhienDangNhap.getHienTai();
-        if (phien != null && phien.getMaNV() != null && !phien.getMaNV().trim().isEmpty()) {
-            String sqlPhien = "SELECT maNV, hoTen, soDienThoai, diaChi, viTriLamViec FROM NhanVien WHERE maNV = ?";
-            try (Connection c = ConnectDB.getConnection();
-                 PreparedStatement p = c.prepareStatement(sqlPhien)) {
-                p.setString(1, phien.getMaNV().trim());
-                try (ResultSet r = p.executeQuery()) {
-                    if (r.next()) {
-                        return new NhanVien(
-                                r.getString("maNV"),
-                                r.getString("hoTen"),
-                                r.getString("soDienThoai"),
-                                r.getString("diaChi"),
-                                VaiTro.fromDb(r.getString("viTriLamViec"))
-                        );
-                    }
-                }
-            }
-        }
-        String sql = "SELECT TOP 1 maNV, hoTen, soDienThoai, diaChi, viTriLamViec "
-                + "FROM NhanVien WHERE viTriLamViec = N'Thủ kho' ORDER BY maNV ASC";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement p = c.prepareStatement(sql);
-             ResultSet r = p.executeQuery()) {
-            if (r.next()) {
-                return new NhanVien(
-                        r.getString("maNV"),
-                        r.getString("hoTen"),
-                        r.getString("soDienThoai"),
-                        r.getString("diaChi"),
-                        VaiTro.fromDb(r.getString("viTriLamViec"))
-                );
-            }
-        }
-        return null;
-    }
-
     /** Phát sinh mã phiếu nhập tự động: PN + ddMMyyyy + 4 chữ số (VD: PN031120260001) theo Bảng 28 báo cáo. */
     public String nextId() throws SQLException {
         String prefix = "PN" + LocalDate.now().format(DateTimeFormatter.ofPattern("ddMMyyyy"));
-        String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, RIGHT(maPhieuNhap, 4))), 0) + 1 FROM PhieuNhapKho";
+        // Đếm lại từ 0001 mỗi ngày: chỉ xét mã có tiền tố của hôm nay.
+        String sql = "SELECT COALESCE(MAX(TRY_CONVERT(INT, RIGHT(maPhieuNhap, 4))), 0) + 1 FROM PhieuNhapKho "
+                + "WHERE maPhieuNhap LIKE ? AND LEN(maPhieuNhap) = ?";
         try (Connection c = ConnectDB.getConnection();
-             Statement s = c.createStatement();
-             ResultSet r = s.executeQuery(sql)) {
-            int nextNum = r.next() ? r.getInt(1) : 1;
-            return prefix + String.format("%04d", nextNum);
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setString(1, prefix + "%");
+            ps.setInt(2, prefix.length() + 4);
+            try (ResultSet r = ps.executeQuery()) {
+                int nextNum = r.next() ? r.getInt(1) : 1;
+                return prefix + String.format("%04d", nextNum);
+            }
         }
     }
 
@@ -122,7 +88,7 @@ public class PhieuNhapKho_Dao {
                     thuKho.setHoTen(rs.getString("tenThuKho"));
                     PhieuNhapKho pn = new PhieuNhapKho(
                             rs.getString("maPhieuNhap"),
-                            ts != null ? ts.toLocalDateTime() : LocalDateTime.now(),
+                            ts.toLocalDateTime(),
                             rs.getDouble("tongTienNhap"),
                             nhaCungCap,
                             thuKho

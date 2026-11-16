@@ -1,6 +1,5 @@
 package gui;
 
-import connection.ConnectDB;
 import util.UIComponents;
 import util.UIConstants;
 
@@ -13,7 +12,6 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import java.awt.BorderLayout;
-import java.sql.Connection;
 import java.util.concurrent.ExecutionException;
 
 /** Màn hình chờ khi mở ứng dụng: kiểm tra kết nối CSDL rồi mở đăng nhập. Phụ trách: Nguyễn Xuân Việt Anh. */
@@ -45,9 +43,8 @@ public class ManHinhCho extends JWindow {
         new SwingWorker<Void, Void>() {
             @Override
             protected Void doInBackground() throws Exception {
-                try (Connection ketNoi = ConnectDB.getConnection()) {
-                    return null;
-                }
+                controller.DangNhapController.kiemTraKetNoi();
+                return null;
             }
 
             @Override

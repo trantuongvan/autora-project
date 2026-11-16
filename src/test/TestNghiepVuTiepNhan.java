@@ -263,8 +263,11 @@ public class TestNghiepVuTiepNhan {
                 && "NV0005".equals(dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach().getMaNV())
                 && dao.findById(p.getMaPhieuTNSC()).getNhanVienPhuTrach().getHoTen() != null);
         dung("Phiếu khóa không lưu phân công", !dao.capNhatPhanCong("PTNSC00001", "NV0005", "x"));
-        dung("Bước phiếu đã có hóa đơn", dao.buocHienTai("PTNSC00001") == 4);
-        dung("Bước phiếu mới", dao.buocHienTai(p.getMaPhieuTNSC()) == 2);
+        dao.PhieuYeuCauXuatKho_Dao yc = new dao.PhieuYeuCauXuatKho_Dao();
+        dung("Bước phiếu đã có hóa đơn", controller.NghiepVuPhieu.buocTienTrinh(
+                yc.kiemTraTonTaiHoaDonHopLe("PTNSC00001"), yc.coYeuCauXuatKho("PTNSC00001")) == 4);
+        dung("Bước phiếu mới", controller.NghiepVuPhieu.buocTienTrinh(
+                yc.kiemTraTonTaiHoaDonHopLe(p.getMaPhieuTNSC()), yc.coYeuCauXuatKho(p.getMaPhieuTNSC())) == 2);
         dao.huy(p.getMaPhieuTNSC(), "letan02");
     }
 

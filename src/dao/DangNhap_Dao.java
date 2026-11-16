@@ -56,4 +56,11 @@ public class DangNhap_Dao {
             }
         }
     }
+
+    /** Mở rồi đóng một kết nối; ném SQLException khi CSDL không sẵn sàng. */
+    public void kiemTraKetNoi() throws SQLException {
+        try (Connection ketNoi = ConnectDB.getConnection()) {
+            ketNoi.isValid(2);
+        }
+    }
 }

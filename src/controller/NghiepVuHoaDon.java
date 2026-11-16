@@ -14,6 +14,15 @@ import entity.PhieuTiepNhanVaSuaChua;
 import entity.Thue;
 import entity.TrangThaiHoaDon;
 
+import com.itextpdf.text.DocumentException;
+import util.PdfExporter;
+
+import java.awt.Component;
+import java.awt.Desktop;
+import java.io.File;
+import java.io.IOException;
+import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.SQLException;
@@ -211,5 +220,40 @@ public final class NghiepVuHoaDon {
             throw new IllegalArgumentException("Tiền khách đưa chưa đủ tổng thanh toán.");
         }
         dao.thanhToanCongNo(maHD, hinhThuc, tenDangNhap);
+    }
+
+    /** Kiểm tra và chuẩn hóa lý do rồi hủy hóa đơn. */
+    public static void huyHoaDon(String maHD, String lyDoHuy, String tenDangNhap) throws SQLException {
+        if (lyDoHuy == null || lyDoHuy.trim().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng nhập lý do hủy.");
+        }
+        new HoaDon_Dao().huy(maHD, HoaDon.chuanHoaLyDoHuy(lyDoHuy), tenDangNhap);
+    }
+
+    /** In hóa đơn ra PDF: dùng chung cho danh sách hóa đơn và màn hình chi tiết. */
+    public static void inHoaDon(Component cha, String maHD) {
+        HoaDon_Dao dao = new HoaDon_Dao();
+        JFileChooser chon = new JFileChooser();
+        chon.setSelectedFile(new File("hoa-don-" + maHD + ".pdf"));
+        if (chon.showSaveDialog(cha) != JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        try {
+            HoaDon hd = dao.findById(maHD);
+            if (hd == null) {
+                JOptionPane.showMessageDialog(cha, "Hóa đơn " + maHD + " không còn tồn tại.");
+                return;
+            }
+            File tep = chon.getSelectedFile();
+            String maPhieu = hd.getPhieu().getMaPhieuTNSC();
+            PdfExporter.xuatHoaDon(tep, hd, dao.findThongTinPhieu(maPhieu),
+                    dao.findDichVu(maPhieu), dao.findPhuTung(maPhieu));
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().open(tep);
+            }
+        } catch (SQLException | IOException | DocumentException ex) {
+            JOptionPane.showMessageDialog(cha, "Không thể xuất hóa đơn.\n" + ex.getMessage(), "Lỗi xuất PDF",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

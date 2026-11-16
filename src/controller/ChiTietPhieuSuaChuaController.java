@@ -98,7 +98,9 @@ public class ChiTietPhieuSuaChuaController {
             }
             view.getCboTrangThai().setSelectedItem(phieu.getTrangThai());
             view.getCboKtvPhuTrach().setSelectedItem(thoHienThi(phieu.getNhanVienPhuTrach()));
-            view.getThanhTienTrinh().setHienTai(phieuDao.buocHienTai(maPhieu));
+            dao.PhieuYeuCauXuatKho_Dao yeuCauDao = new dao.PhieuYeuCauXuatKho_Dao();
+            view.getThanhTienTrinh().setHienTai(NghiepVuPhieu.buocTienTrinh(
+                    yeuCauDao.kiemTraTonTaiHoaDonHopLe(maPhieu), yeuCauDao.coYeuCauXuatKho(maPhieu)));
             hienDanhSach();
             view.setKhoa(phieuDao.isKhoa(maPhieu));
         } catch (SQLException ex) {

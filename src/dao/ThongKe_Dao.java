@@ -36,6 +36,11 @@ public class ThongKe_Dao {
 
     private static final String DA_THU_TIEN = "h.trangThaiThanhToan = N'Đã thanh toán' AND h.ngayThanhToan >= ? AND h.ngayThanhToan < ? ";
     private static final String PHIEU_TRONG_KY = "p.trangThai <> N'Đã hủy' AND p.thoiGianTiepNhan >= ? AND p.thoiGianTiepNhan < ? ";
+    /** Dòng phụ tùng đã xuất trong kỳ: theo ngày thủ kho duyệt xuất, giá lấy từ dòng phụ tùng của phiếu sửa chữa. */
+    private static final String XUAT_TRONG_KY = "FROM ChiTietYeuCauXuatKho cy "
+            + "JOIN PhieuYeuCauXuatKho y ON y.maPhieuYC = cy.maPhieuYC "
+            + "JOIN ChiTietSuaChua_PhuTung ct ON ct.maPhieuTNSC = y.maPhieuTNSC AND ct.maSKU = cy.maSKU "
+            + "WHERE y.trangThai = N'Đã xuất' AND y.ngayXuat >= ? AND y.ngayXuat < ? ";
     private static final String SQL_DEM_PHIEU_NHAP = "SELECT COUNT(*) FROM PhieuNhapKho WHERE ngayNhap >= ? AND ngayNhap < ?";
     private static final String SQL_DEM_LUOT_XE = "SELECT COUNT(*) FROM PhieuTiepNhanVaSuaChua p WHERE " + PHIEU_TRONG_KY;
     private static final String SQL_DEM_XE_XONG = SQL_DEM_LUOT_XE + "AND p.trangThai = N'Hoàn thành'";
@@ -94,9 +99,8 @@ public class ThongKe_Dao {
                 + "    WHERE pn.ngayNhap >= ? AND pn.ngayNhap < ? GROUP BY ct.maSKU "
                 + ") nhap ON nhap.maSKU = pt.maSKU "
                 + "LEFT JOIN ( "
-                + "    SELECT ct.maSKU, SUM(ct.soLuongSuDung) AS slXuat, SUM(ct.soLuongSuDung * ct.giaBanThucTe) AS gtXuat "
-                + "    FROM ChiTietSuaChua_PhuTung ct JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = ct.maPhieuTNSC "
-                + "    WHERE " + PHIEU_TRONG_KY + "GROUP BY ct.maSKU "
+                + "    SELECT cy.maSKU, SUM(cy.soLuong) AS slXuat, SUM(cy.soLuong * ct.giaBanThucTe) AS gtXuat "
+                + "    " + XUAT_TRONG_KY + "GROUP BY cy.maSKU "
                 + ") xuat ON xuat.maSKU = pt.maSKU "
                 + "ORDER BY COALESCE(xuat.slXuat, 0) DESC, pt.maSKU ASC";
         List<ThongKePhuTung> ds = new ArrayList<>();
@@ -122,9 +126,8 @@ public class ThongKe_Dao {
                 + "    FROM ChiTietNhapKho ct JOIN PhieuNhapKho pn ON pn.maPhieuNhap = ct.maPhieuNhap "
                 + "    WHERE pn.ngayNhap >= ? AND pn.ngayNhap < ? GROUP BY CAST(pn.ngayNhap AS DATE) "
                 + "    UNION ALL "
-                + "    SELECT CAST(p.thoiGianTiepNhan AS DATE) AS ngay, 0 AS slNhap, SUM(ct.soLuongSuDung) AS slXuat "
-                + "    FROM ChiTietSuaChua_PhuTung ct JOIN PhieuTiepNhanVaSuaChua p ON p.maPhieuTNSC = ct.maPhieuTNSC "
-                + "    WHERE " + PHIEU_TRONG_KY + "GROUP BY CAST(p.thoiGianTiepNhan AS DATE) "
+                + "    SELECT CAST(y.ngayXuat AS DATE) AS ngay, 0 AS slNhap, SUM(cy.soLuong) AS slXuat "
+                + "    " + XUAT_TRONG_KY + "GROUP BY CAST(y.ngayXuat AS DATE) "
                 + ") t GROUP BY ngay ORDER BY ngay ASC";
         List<NhapXuatNgay> ds = new ArrayList<>();
         try (PreparedStatement ps = chuanBi(c, sql, tu, den, 2); ResultSet rs = ps.executeQuery()) {

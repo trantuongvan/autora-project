@@ -1,6 +1,5 @@
 package controller;
 
-import dao.PhieuNhapKho_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import entity.NhanVien;
@@ -28,7 +27,6 @@ public class QLPhuTungController {
     private final QLPhuTung view;
     private final PhuTung_Dao phuTungDao;
     private final PhieuYeuCauXuatKho_Dao yeuCauDao;
-    private final PhieuNhapKho_Dao nhapKhoDao;
 
     private List<PhuTung> danhSachHienThi = new ArrayList<>();
     private boolean cheDoSua = false;
@@ -43,7 +41,6 @@ public class QLPhuTungController {
         this.view = view;
         this.phuTungDao = new PhuTung_Dao();
         this.yeuCauDao = new PhieuYeuCauXuatKho_Dao();
-        this.nhapKhoDao = new PhieuNhapKho_Dao();
 
         initHeaderAndFilters();
         initController();
@@ -59,7 +56,7 @@ public class QLPhuTungController {
 
     private void initHeaderAndFilters() {
         try {
-            NhanVien tk = nhapKhoDao.findDefaultThuKho();
+            NhanVien tk = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (tk != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), tk.getHoTen());
             }

@@ -75,6 +75,8 @@ public class QLHoSoXeController {
                     view.setDanhSachChuSoHuu(get());
                 } catch (Exception ex) {
                     view.setDanhSachChuSoHuu(Collections.emptyList());
+                    JOptionPane.showMessageDialog(view, "Không tải được danh sách chủ xe: " + rootMessage(ex),
+                            "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
                 }
             }
         }.execute();

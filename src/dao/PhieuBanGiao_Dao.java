@@ -21,7 +21,7 @@ import java.util.List;
 public class PhieuBanGiao_Dao {
 
     private static final String LIST_SQL = "SELECT p.maPhieuTNSC, " + PhieuTiepNhanVaSuaChua_Dao.COT_XE + ", "
-            + "COALESCE(ti.leHoanTat, 0) AS tienDo, ti.soHangMuc, ti.soHangMucXong, "
+            + "ti.soHangMuc, ti.soHangMucXong, "
             + "COALESCE(h.trangThaiThanhToan, N'Chưa lập hóa đơn') AS thanhToan, "
             + "COALESCE(h.tongThanhToan, 0) AS tong, COALESCE(h.maHD, '') AS maHD, "
             + "COALESCE(h.tongTienCong, 0) AS tienCong, "
@@ -38,10 +38,7 @@ public class PhieuBanGiao_Dao {
             + "LEFT JOIN Thue th ON th.maThue = h.maThue "
             + "LEFT JOIN PhieuBanGiao bg ON bg.maPhieuTNSC = p.maPhieuTNSC "
             + "LEFT JOIN NhanVien nv ON nv.maNV = bg.maNV_BanGiao "
-            + "OUTER APPLY (SELECT CASE WHEN COUNT(*) = 0 THEN 0 "
-            + "ELSE CONVERT(INT, FLOOR(100.0 * SUM(CASE "
-            + "WHEN d.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END) / COUNT(*))) "
-            + "END AS leHoanTat, COUNT(*) AS soHangMuc, "
+            + "OUTER APPLY (SELECT COUNT(*) AS soHangMuc, "
             + "COALESCE(SUM(CASE WHEN d.trangThaiTienDo = N'Hoàn thành' THEN 1 ELSE 0 END), 0) AS soHangMucXong "
             + "FROM ChiTietSuaChua_DichVu d "
             + "WHERE d.maPhieuTNSC = p.maPhieuTNSC) ti";
@@ -179,8 +176,9 @@ public class PhieuBanGiao_Dao {
         }
     }
 
-    public List<PhieuTiepNhanVaSuaChua> findDashboardJobs() throws SQLException {
-        String sql = LIST_SQL.replaceFirst("SELECT ", "SELECT TOP 7 ")
+    /** Mọi phiếu chưa hủy, chưa bàn giao, mới nhất trước. */
+    public List<PhieuTiepNhanVaSuaChua> findChuaBanGiao() throws SQLException {
+        String sql = LIST_SQL
                 + " WHERE p.trangThai <> N'Đã hủy' AND bg.maPhieuBG IS NULL "
                 + "ORDER BY p.thoiGianTiepNhan DESC";
         List<PhieuTiepNhanVaSuaChua> rows = new ArrayList<>();
@@ -192,23 +190,6 @@ public class PhieuBanGiao_Dao {
             }
         }
         return rows;
-    }
-
-    /** Thống kê toàn gara; tách khỏi 7 dòng gần nhất đang hiển thị ở dashboard. */
-    public int[] findDashboardStats() throws SQLException {
-        String sql = "SELECT SUM(CASE WHEN trangThai = N'Chờ kiểm tra' THEN 1 ELSE 0 END) AS choTiepNhan, "
-                + "SUM(CASE WHEN trangThai <> N'Chờ kiểm tra' AND tienDo < 100 THEN 1 ELSE 0 END) AS dangSua, "
-                + "SUM(CASE WHEN tienDo = 100 AND (thanhToan = N'Đã thanh toán' "
-                + "OR (thanhToan = N'Công nợ' AND duocGhiNo = 1)) THEN 1 ELSE 0 END) AS choBanGiao "
-                + "FROM (" + LIST_SQL + ") q WHERE maPhieuBG = '' "
-                + "AND trangThai <> N'Đã hủy'";
-        try (Connection connection = ConnectDB.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
-             ResultSet result = statement.executeQuery()) {
-            result.next();
-            return new int[]{result.getInt("choTiepNhan"), result.getInt("dangSua"),
-                    result.getInt("choBanGiao"), countDeliveredToday()};
-        }
     }
 
     public int countDeliveredToday() throws SQLException {

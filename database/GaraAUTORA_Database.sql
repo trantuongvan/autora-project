@@ -196,7 +196,7 @@ GO
 -- 3.2. Bảng Phiếu Yêu Cầu Xuất Kho (KTV xin phụ tùng)
 CREATE TABLE PhieuYeuCauXuatKho (
     maPhieuYC VARCHAR(30) PRIMARY KEY,
-    ngayYeuCau DATETIME DEFAULT GETDATE(),
+    ngayYeuCau DATETIME NOT NULL DEFAULT GETDATE(),
     ngayXuat DATETIME,
     trangThai NVARCHAR(50) DEFAULT N'Chờ xuất', -- 'Chờ xuất', 'Đã xuất', 'Từ chối'
     maPhieuTNSC VARCHAR(30) NOT NULL,
@@ -211,7 +211,7 @@ GO
 -- 3.3. Bảng Phiếu Nhập Kho
 CREATE TABLE PhieuNhapKho (
     maPhieuNhap VARCHAR(30) PRIMARY KEY,
-    ngayNhap DATETIME DEFAULT GETDATE(),
+    ngayNhap DATETIME NOT NULL DEFAULT GETDATE(),
     tongTienNhap FLOAT DEFAULT 0,
     maNCC VARCHAR(20) NOT NULL,
     maNV_ThuKho VARCHAR(20) NOT NULL,

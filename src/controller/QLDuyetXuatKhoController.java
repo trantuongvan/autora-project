@@ -1,6 +1,5 @@
 package controller;
 
-import dao.PhieuNhapKho_Dao;
 import dao.PhieuYeuCauXuatKho_Dao;
 import dao.PhuTung_Dao;
 import util.PhienDangNhap;
@@ -32,7 +31,6 @@ public class QLDuyetXuatKhoController {
     private final QLDuyetXuatKho view;
     private final PhieuYeuCauXuatKho_Dao yeuCauDao;
     private final PhuTung_Dao phuTungDao;
-    private final PhieuNhapKho_Dao nhapKhoDao;
 
     private NhanVien thuKhoHienTai;
     private TrangThaiYeuCauXuat tabDangChon = TrangThaiYeuCauXuat.CHO_XUAT;
@@ -48,7 +46,6 @@ public class QLDuyetXuatKhoController {
         this.view = view;
         this.yeuCauDao = new PhieuYeuCauXuatKho_Dao();
         this.phuTungDao = new PhuTung_Dao();
-        this.nhapKhoDao = new PhieuNhapKho_Dao();
 
         initThuKhoInfo();
         initController();
@@ -59,7 +56,7 @@ public class QLDuyetXuatKhoController {
 
     private void initThuKhoInfo() {
         try {
-            thuKhoHienTai = nhapKhoDao.findDefaultThuKho();
+            thuKhoHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (thuKhoHienTai != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), thuKhoHienTai.getHoTen());
             }

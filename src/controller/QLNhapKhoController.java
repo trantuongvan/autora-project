@@ -99,7 +99,7 @@ public class QLNhapKhoController {
 
     private void initHeaderAndNCC() {
         try {
-            thuKhoHienTai = nhapKhoDao.findDefaultThuKho();
+            thuKhoHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (thuKhoHienTai != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), thuKhoHienTai.getHoTen());
                 view.getLblThuKhoModal().setText(thuKhoHienTai.getHoTen());

@@ -16,44 +16,6 @@ import java.util.List;
  */
 public class TienDoSuaChua_Dao {
 
-    public NhanVien findDefaultKyThuatVien() throws SQLException {
-        util.PhienDangNhap phien = util.PhienDangNhap.getHienTai();
-        if (phien != null && phien.getMaNV() != null && !phien.getMaNV().trim().isEmpty()) {
-            String sqlPhien = "SELECT maNV, hoTen, soDienThoai, diaChi, viTriLamViec FROM NhanVien WHERE maNV = ?";
-            try (Connection c = ConnectDB.getConnection();
-                 PreparedStatement p = c.prepareStatement(sqlPhien)) {
-                p.setString(1, phien.getMaNV().trim());
-                try (ResultSet r = p.executeQuery()) {
-                    if (r.next()) {
-                        return new NhanVien(
-                                r.getString("maNV"),
-                                r.getString("hoTen"),
-                                r.getString("soDienThoai"),
-                                r.getString("diaChi"),
-                                VaiTro.fromDb(r.getString("viTriLamViec"))
-                        );
-                    }
-                }
-            }
-        }
-        String sql = "SELECT TOP 1 maNV, hoTen, soDienThoai, diaChi, viTriLamViec "
-                + "FROM NhanVien WHERE viTriLamViec = N'Kỹ thuật viên' ORDER BY maNV ASC";
-        try (Connection c = ConnectDB.getConnection();
-             PreparedStatement p = c.prepareStatement(sql);
-             ResultSet r = p.executeQuery()) {
-            if (r.next()) {
-                return new NhanVien(
-                        r.getString("maNV"),
-                        r.getString("hoTen"),
-                        r.getString("soDienThoai"),
-                        r.getString("diaChi"),
-                        VaiTro.fromDb(r.getString("viTriLamViec"))
-                );
-            }
-        }
-        return null;
-    }
-
     public List<PhieuTiepNhanVaSuaChua> searchPhieuĐượcGiao(String maNVKyThuat, String keyword, String trangThaiFilter) throws SQLException {
         String k = keyword == null ? "" : keyword.trim();
         String tt = trangThaiFilter == null || trangThaiFilter.equals("Tất cả") ? "" : trangThaiFilter.trim();

@@ -53,7 +53,7 @@ public class TrangChuThuKhoController {
 
     private void initThuKhoInfo() {
         try {
-            NhanVien tk = nhapKhoDao.findDefaultThuKho();
+            NhanVien tk = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (tk != null) {
                 TrangChuThuKho.capNhatHeaderThuKho(view.getLblAvatar(), view.getLblTenThuKhoHeader(), tk.getHoTen());
                 String ten = tk.getHoTen();

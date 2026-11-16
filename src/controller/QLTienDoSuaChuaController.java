@@ -66,11 +66,10 @@ public class QLTienDoSuaChuaController {
 
     private void initKyThuatVien() {
         try {
-            kyThuatVienHienTai = tienDoDao.findDefaultKyThuatVien();
+            kyThuatVienHienTai = new dao.NhanVien_Dao().findById(util.PhienDangNhap.getHienTai().getMaNV());
             if (kyThuatVienHienTai != null) {
                 view.capNhatThongTinKTVHeader(kyThuatVienHienTai.getHoTen());
-                NhanVien dayDu = new dao.NhanVien_Dao().findById(kyThuatVienHienTai.getMaNV());
-                view.setCaLamViec(dayDu == null ? null : dayDu.getCaLamViec());
+                view.setCaLamViec(kyThuatVienHienTai.getCaLamViec());
             }
         } catch (SQLException ex) {
             util.UIComponents.baoLoiCsdl(view, ex);

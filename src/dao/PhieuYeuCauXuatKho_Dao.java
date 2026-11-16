@@ -82,7 +82,7 @@ public class PhieuYeuCauXuatKho_Dao {
                     Timestamp tsXuat = rs.getTimestamp("ngayXuat");
                     PhieuYeuCauXuatKho yc = new PhieuYeuCauXuatKho(
                             rs.getString("maPhieuYC"),
-                            tsYC != null ? tsYC.toLocalDateTime() : LocalDateTime.now(),
+                            tsYC.toLocalDateTime(),
                             tsXuat != null ? tsXuat.toLocalDateTime() : null,
                             TrangThaiYeuCauXuat.fromDb(rs.getString("trangThai")),
                             new PhieuTiepNhanVaSuaChua(rs.getString("maPhieuTNSC")),
@@ -139,7 +139,7 @@ public class PhieuYeuCauXuatKho_Dao {
     }
 
     public List<ChiTietYeuCauXuatKho> getChiTietByMaPhieuYC(String maPhieuYC) throws SQLException {
-        String sql = "SELECT ct.maPhieuYC, ct.maSKU, ct.soLuong, pt.tenPhuTung, pt.hangSanXuat, pt.viTriLuuKho, pt.soLuongTon, pt.nguongCanhBao "
+        String sql = "SELECT ct.maPhieuYC, ct.maSKU, ct.soLuong, pt.tenPhuTung, pt.hangSanXuat, pt.viTriLuuKho, pt.soLuongTon, pt.nguongCanhBao, pt.giaBanLe "
                 + "FROM ChiTietYeuCauXuatKho ct "
                 + "JOIN PhuTung pt ON pt.maSKU = ct.maSKU "
                 + "WHERE ct.maPhieuYC = ? ORDER BY ct.maSKU ASC";
@@ -155,6 +155,7 @@ public class PhieuYeuCauXuatKho_Dao {
                     pt.setViTriLuuKho(rs.getString("viTriLuuKho"));
                     pt.setSoLuongTon(rs.getInt("soLuongTon"));
                     pt.setNguongCanhBao(rs.getInt("nguongCanhBao"));
+                    pt.setGiaBanLe(rs.getDouble("giaBanLe"));
                     list.add(new ChiTietYeuCauXuatKho(new PhieuYeuCauXuatKho(rs.getString("maPhieuYC")), pt,
                             rs.getInt("soLuong")));
                 }
@@ -166,6 +167,16 @@ public class PhieuYeuCauXuatKho_Dao {
     /**
      * Kiểm tra phiếu sửa chữa đã có Hóa đơn còn hiệu lực hay chưa (loại trừ trạng thái 'Đã hủy').
      */
+    public boolean coYeuCauXuatKho(String maPhieuTNSC) throws SQLException {
+        try (Connection c = ConnectDB.getConnection();
+             PreparedStatement ps = c.prepareStatement("SELECT 1 FROM PhieuYeuCauXuatKho WHERE maPhieuTNSC = ?")) {
+            ps.setString(1, maPhieuTNSC);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        }
+    }
+
     public boolean kiemTraTonTaiHoaDonHopLe(String maPhieuTNSC) throws SQLException {
         String sql = "SELECT 1 FROM HoaDon WHERE maPhieuTNSC = ? AND trangThaiThanhToan <> N'Đã hủy'";
         try (Connection c = ConnectDB.getConnection();
@@ -248,10 +259,11 @@ public class PhieuYeuCauXuatKho_Dao {
             throw new SQLException("Phiếu sửa chữa " + maPhieuTNSC + " đã có hóa đơn còn hiệu lực. Vui lòng hủy hóa đơn trước khi duyệt xuất kho!");
         }
 
+        // Xuất thêm cùng mã cho phiếu: cộng số lượng, giữ giá của lần xuất đầu để hóa đơn không đổi giá phần đã xuất.
         String sqlUpsertCTPT = "IF EXISTS (SELECT 1 FROM ChiTietSuaChua_PhuTung WHERE maPhieuTNSC = ? AND maSKU = ?) "
                 + "UPDATE ChiTietSuaChua_PhuTung SET soLuongSuDung = soLuongSuDung + ? WHERE maPhieuTNSC = ? AND maSKU = ? "
                 + "ELSE INSERT INTO ChiTietSuaChua_PhuTung(maPhieuTNSC, maSKU, soLuongSuDung, giaBanThucTe) "
-                + "SELECT ?, maSKU, ?, giaBanLe FROM PhuTung WHERE maSKU = ?";
+                + "VALUES (?, ?, ?, ?)";
         String sqlUpdateYC = "UPDATE PhieuYeuCauXuatKho SET trangThai = N'Đã xuất', ngayXuat = GETDATE(), maNV_ThuKho = ? "
                 + "WHERE maPhieuYC = ? AND trangThai = N'Chờ xuất'";
 
@@ -278,8 +290,9 @@ public class PhieuYeuCauXuatKho_Dao {
                     psCTPT.setString(4, maPhieuTNSC);
                     psCTPT.setString(5, ct.getPhuTung().getMaSKU());
                     psCTPT.setString(6, maPhieuTNSC);
-                    psCTPT.setInt(7, ct.getSoLuong());
-                    psCTPT.setString(8, ct.getPhuTung().getMaSKU());
+                    psCTPT.setString(7, ct.getPhuTung().getMaSKU());
+                    psCTPT.setInt(8, ct.getSoLuong());
+                    psCTPT.setDouble(9, ct.getPhuTung().getGiaBanLe());
                     psCTPT.executeUpdate();
                 }
 

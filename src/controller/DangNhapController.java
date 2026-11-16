@@ -149,4 +149,9 @@ public class DangNhapController {
         }
         return matKhauMoi.equals(nhapLai) ? null : "Hai mật khẩu mới không khớp.";
     }
+
+    /** Màn hình chờ gọi khi khởi động để biết CSDL đã sẵn sàng chưa. */
+    public static void kiemTraKetNoi() throws SQLException {
+        new DangNhap_Dao().kiemTraKetNoi();
+    }
 }

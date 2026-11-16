@@ -19,19 +19,12 @@ import java.util.List;
 
 /** Lịch hẹn của khách: tạo, xem theo khách, danh sách hôm nay và hủy. Tự đóng lịch khi lập phiếu nằm ở taoTiepNhan. */
 public class LichHen_Dao {
-    public static final String THOI_GIAN_QUA_KHU = "Thời gian hẹn không được ở quá khứ.";
     /** 0 giờ hôm nay theo đồng hồ máy chủ CSDL, cùng nguồn giờ với cột GETDATE() của các bảng khác. */
     static final String DAU_NGAY = "CAST(CAST(GETDATE() AS DATE) AS DATETIME)";
     private static final String COT_LICH_HEN = "l.maLichHen, l.thoiGianHen, l.ghiChu, l.trangThai, x.bienSo, x.hangXe, x.dongXe";
 
-    /** Gán mã cho lh. Ném IllegalArgumentException khi thiếu khách, thiếu giờ hoặc giờ hẹn đã qua (tính theo phút). */
+    /** Lưu lịch hẹn và gán mã cho lh; kiểm tra nghiệp vụ ở QLKhachHangController.datLichHen. */
     public void insert(LichHen lh) throws SQLException {
-        if (lh.getKhachHang() == null || lh.getThoiGianHen() == null) {
-            throw new IllegalArgumentException("Lịch hẹn cần có khách hàng và thời gian hẹn.");
-        }
-        if (lh.getThoiGianHen().isBefore(LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES))) {
-            throw new IllegalArgumentException(THOI_GIAN_QUA_KHU);
-        }
         try (Connection connection = ConnectDB.getConnection()) {
             connection.setAutoCommit(false);
             try {

@@ -309,7 +309,7 @@ public class QLKhachHangController {
                 lh.setXe((Xe) hop.getCboXe().getSelectedItem());
                 lh.setThoiGianHen(LocalDateTime.parse(gio, ChonNgay.NGAY_GIO));
                 lh.setGhiChu(hop.getTxtGhiChu().getText());
-                lichHenDao.insert(lh);
+                datLichHen(lh);
             } catch (IllegalArgumentException ex) {
                 hop.hienLoi(ex.getMessage());
                 return;
@@ -490,5 +490,16 @@ public class QLKhachHangController {
 
     private void baoLoi(String thongBao, Exception ex) {
         JOptionPane.showMessageDialog(view, thongBao + "\n" + ex.getMessage(), "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+    }
+
+    /** Đặt lịch hẹn: cần khách và giờ hẹn, giờ hẹn không được trước phút hiện tại. */
+    public static void datLichHen(LichHen lh) throws SQLException {
+        if (lh.getKhachHang() == null || lh.getThoiGianHen() == null) {
+            throw new IllegalArgumentException("Lịch hẹn cần có khách hàng và thời gian hẹn.");
+        }
+        if (lh.getThoiGianHen().isBefore(LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MINUTES))) {
+            throw new IllegalArgumentException("Thời gian hẹn không được ở quá khứ.");
+        }
+        new LichHen_Dao().insert(lh);
     }
 }

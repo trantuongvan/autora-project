@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 public class TrangChuLeTanController {
 
     private final TrangChuLeTan view;
+    /** Bảng công việc ở trang chủ chỉ hiện các phiếu mới nhất. */
+    private static final int SO_VIEC_HIEN_THI = 7;
     private final PhieuBanGiao_Dao dao = new PhieuBanGiao_Dao();
     private final LichHen_Dao lichHenDao = new LichHen_Dao();
     private List<LichHen> lichHen = new ArrayList<>();
@@ -87,7 +89,7 @@ public class TrangChuLeTanController {
         new SwingWorker<Object[], Void>() {
             @Override
             protected Object[] doInBackground() throws Exception {
-                return new Object[]{dao.findDashboardJobs(), dao.findDashboardStats(), lichHenDao.findHomNay()};
+                return new Object[]{dao.findChuaBanGiao(), dao.countDeliveredToday(), lichHenDao.findHomNay()};
             }
 
             @Override
@@ -99,9 +101,9 @@ public class TrangChuLeTanController {
                     Object[] result = get();
                     @SuppressWarnings("unchecked")
                     List<PhieuTiepNhanVaSuaChua> jobs = (List<PhieuTiepNhanVaSuaChua>) result[0];
-                    all = thanhDong(jobs);
-                    int[] stats = (int[]) result[1];
-                    view.setSoLieu(stats[0], stats[1], stats[2], stats[3]);
+                    all = thanhDong(jobs.subList(0, Math.min(SO_VIEC_HIEN_THI, jobs.size())));
+                    int[] dem = demTheoTrangThai(jobs);
+                    view.setSoLieu(dem[0], dem[1], dem[2], (Integer) result[1]);
                     @SuppressWarnings("unchecked")
                     List<LichHen> homNay = (List<LichHen>) result[2];
                     hienLichHen(homNay);
@@ -115,6 +117,22 @@ public class TrangChuLeTanController {
                 }
             }
         }.execute();
+    }
+
+    /** Đếm phiếu chưa bàn giao: {chờ tiếp nhận, đang sửa, chờ bàn giao}. */
+    static int[] demTheoTrangThai(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
+        int[] dem = new int[3];
+        for (PhieuTiepNhanVaSuaChua p : dsPhieu) {
+            if (p.getTrangThai() == entity.TrangThaiPhieu.CHO_KIEM_TRA) {
+                dem[0]++;
+            } else if (NghiepVuPhieu.phanTramHoanTat(p) < 100) {
+                dem[1]++;
+            }
+            if (NghiepVuPhieu.duDieuKienBanGiao(p)) {
+                dem[2]++;
+            }
+        }
+        return dem;
     }
 
     private static List<Object[]> thanhDong(List<PhieuTiepNhanVaSuaChua> dsPhieu) {
